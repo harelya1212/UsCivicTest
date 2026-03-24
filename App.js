@@ -25,7 +25,7 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import './node_modules/react-datepicker/dist/react-datepicker.css';
 
 // Firebase & Monetization Imports
 // Note: Initialize Firebase with your credentials in firebaseConfig.js
