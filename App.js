@@ -61,6 +61,7 @@ const PAUSED_SESSION_STORAGE_KEY = 'civics.pausedSession.v1';
 const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
 const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
 const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
+const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
 const DAILY_FREE_PACK_LIMIT = 1;
 const FREE_PACK_QUESTION_COUNT = 15;
 const FREE_PACK_COOLDOWN_MS = 60 * 60 * 1000;
@@ -203,6 +204,13 @@ const createDefaultAdRuntime = () => ({
   },
 });
 
+const createDefaultMasteryMap = () => ({
+  updatedAt: null,
+  totalSessions: 0,
+  totalQuestions: 0,
+  byQuestion: {},
+});
+
 // Question bank with all 3 test types
 const questionBank = {
   highschool: [
@@ -251,6 +259,9 @@ export const AppDataContext = createContext({
   trackAdEvent: () => { },
   resetAdAnalytics: () => { },
   unlockDailyFreePack: async () => ({ ok: false }),
+  masteryMap: createDefaultMasteryMap(),
+  recordMasterySession: () => { },
+  resetMasteryMap: () => { },
 });
 
 const weakAreaEstimator = (history) => {
@@ -985,6 +996,12 @@ function HomeScreen({ navigation }) {
             <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MasteryMap')}>
+            <MaterialCommunityIcons name="chart-bubble" size={20} color="#0EA5E9" />
+            <Text style={styles.actionButtonText}>Mastery Map & Heatmap</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Family')}>
             <MaterialCommunityIcons name="people" size={20} color="#9C27B0" />
             <Text style={styles.actionButtonText}>Family Challenge</Text>
@@ -1148,7 +1165,7 @@ function ModeSelectorScreen({ navigation }) {
 // 🎓 ADHD-FRIENDLY QUIZ SCREEN ✨
 // Slow-paced, visual, with 4 answer options and clear explanations
 function QuizScreen({ route, navigation }) {
-  const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial } = useContext(AppDataContext);
+  const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession } = useContext(AppDataContext);
   const { type, topicFilter, subTopicFilter } = route.params;
   const fullPool = getQuestionBank(type); // Use official USCIS questions
   const activeTopicFilter = topicFilter ? String(topicFilter).trim() : null;
@@ -1260,7 +1277,14 @@ function QuizScreen({ route, navigation }) {
     // Update history
     const newHistory = [
       ...history,
-      { id: question.id, topic: question.category, correct, difficulty }
+      {
+        id: question.id,
+        topic: question.topic || question.category || 'General',
+        subTopic: question.subTopic || 'General',
+        correct,
+        difficulty,
+        answeredAt: new Date().toISOString(),
+      }
     ];
     setHistory(newHistory);
 
@@ -1314,6 +1338,7 @@ function QuizScreen({ route, navigation }) {
     if (current + 1 >= pool.length) {
       // Quiz complete
       const weak = weakAreaEstimator(history);
+      recordMasterySession(history, type);
       clearPausedSession();
       await maybeShowInterstitial('quizComplete');
       navigation.replace('Review', {
@@ -2251,6 +2276,168 @@ function CaseProgressScreen({ navigation }) {
   );
 }
 
+function MasteryMapScreen({ navigation }) {
+  const { masteryMap, resetMasteryMap } = useContext(AppDataContext);
+  const entries = Object.entries(masteryMap?.byQuestion || {}).map(([id, value]) => ({ id, ...value }));
+
+  const topicAccumulator = {};
+  const subTopicAccumulator = {};
+
+  for (const entry of entries) {
+    const topic = entry.topic || 'General';
+    const subTopic = entry.subTopic || 'General';
+    if (!topicAccumulator[topic]) topicAccumulator[topic] = { attempts: 0, correct: 0, questions: 0 };
+    topicAccumulator[topic].attempts += entry.attempts || 0;
+    topicAccumulator[topic].correct += entry.correct || 0;
+    topicAccumulator[topic].questions += 1;
+
+    const key = `${topic}__${subTopic}`;
+    if (!subTopicAccumulator[key]) {
+      subTopicAccumulator[key] = {
+        topic,
+        subTopic,
+        attempts: 0,
+        correct: 0,
+        questions: 0,
+      };
+    }
+    subTopicAccumulator[key].attempts += entry.attempts || 0;
+    subTopicAccumulator[key].correct += entry.correct || 0;
+    subTopicAccumulator[key].questions += 1;
+  }
+
+  const topicStats = Object.entries(topicAccumulator)
+    .map(([topic, stat]) => ({
+      topic,
+      attempts: stat.attempts,
+      correct: stat.correct,
+      questions: stat.questions,
+      accuracy: stat.attempts ? Math.round((stat.correct / stat.attempts) * 100) : 0,
+    }))
+    .sort((a, b) => b.attempts - a.attempts);
+
+  const subTopicStats = Object.values(subTopicAccumulator)
+    .map((stat) => ({
+      ...stat,
+      accuracy: stat.attempts ? Math.round((stat.correct / stat.attempts) * 100) : 0,
+    }))
+    .sort((a, b) => {
+      if (a.accuracy === b.accuracy) return b.attempts - a.attempts;
+      return a.accuracy - b.accuracy;
+    });
+
+  const getHeatStyle = (accuracy, attempts) => {
+    if (!attempts) return { backgroundColor: '#E5E7EB', borderColor: '#D1D5DB', textColor: '#374151' };
+    if (accuracy < 60) return { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', textColor: '#991B1B' };
+    if (accuracy < 75) return { backgroundColor: '#FFEDD5', borderColor: '#FDBA74', textColor: '#9A3412' };
+    if (accuracy < 90) return { backgroundColor: '#FEF3C7', borderColor: '#FCD34D', textColor: '#92400E' };
+    return { backgroundColor: '#DCFCE7', borderColor: '#86EFAC', textColor: '#166534' };
+  };
+
+  const weakFocus = subTopicStats.slice(0, 5);
+  const totalAttempts = masteryMap?.totalQuestions || 0;
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#7C3AED" />
+          <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.pageTitle}>Mastery Map</Text>
+        <Text style={styles.pageSubtitle}>Topic confidence and subtopic heatmap from your real quiz history.</Text>
+
+        <View style={styles.masteryOverviewCard}>
+          <View style={styles.masteryOverviewRow}>
+            <View style={styles.masteryMetric}>
+              <Text style={styles.masteryMetricValue}>{masteryMap?.totalSessions || 0}</Text>
+              <Text style={styles.masteryMetricLabel}>Sessions</Text>
+            </View>
+            <View style={styles.masteryMetric}>
+              <Text style={styles.masteryMetricValue}>{totalAttempts}</Text>
+              <Text style={styles.masteryMetricLabel}>Attempts</Text>
+            </View>
+            <View style={styles.masteryMetric}>
+              <Text style={styles.masteryMetricValue}>{entries.length}</Text>
+              <Text style={styles.masteryMetricLabel}>Questions Tracked</Text>
+            </View>
+          </View>
+          <Text style={styles.masteryUpdatedText}>
+            {masteryMap?.updatedAt ? `Updated ${new Date(masteryMap.updatedAt).toLocaleString()}` : 'No attempts tracked yet'}
+          </Text>
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Topic Confidence</Text>
+          {!topicStats.length ? (
+            <Text style={styles.masteryEmptyText}>Take one quiz to generate your mastery map.</Text>
+          ) : (
+            topicStats.map((topic) => {
+              const pct = Math.max(5, topic.accuracy);
+              return (
+                <View key={topic.topic} style={styles.masteryTopicRow}>
+                  <View style={styles.masteryTopicHeader}>
+                    <Text style={styles.masteryTopicTitle}>{topic.topic}</Text>
+                    <Text style={styles.masteryTopicMeta}>{topic.accuracy}% • {topic.attempts} attempts</Text>
+                  </View>
+                  <View style={styles.masteryBarTrack}>
+                    <View style={[styles.masteryBarFill, { width: `${pct}%` }]} />
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Focus Now (Weakest Subtopics)</Text>
+          {!weakFocus.length ? (
+            <Text style={styles.masteryEmptyText}>No subtopic data yet.</Text>
+          ) : (
+            weakFocus.map((item, idx) => {
+              const heat = getHeatStyle(item.accuracy, item.attempts);
+              return (
+                <View key={`${item.topic}-${item.subTopic}-${idx}`} style={[styles.masteryHeatItem, { backgroundColor: heat.backgroundColor, borderColor: heat.borderColor }]}>
+                  <Text style={[styles.masteryHeatTitle, { color: heat.textColor }]}>{item.topic} → {item.subTopic}</Text>
+                  <Text style={[styles.masteryHeatMeta, { color: heat.textColor }]}>{item.accuracy}% accuracy • {item.attempts} attempts</Text>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Subtopic Heatmap</Text>
+          {!subTopicStats.length ? (
+            <Text style={styles.masteryEmptyText}>No heatmap yet. Complete a quiz first.</Text>
+          ) : (
+            <View style={styles.masteryHeatmapWrap}>
+              {subTopicStats.map((item, idx) => {
+                const heat = getHeatStyle(item.accuracy, item.attempts);
+                return (
+                  <View
+                    key={`${item.topic}-${item.subTopic}-${idx}`}
+                    style={[styles.masteryHeatTile, { backgroundColor: heat.backgroundColor, borderColor: heat.borderColor }]}
+                  >
+                    <Text style={[styles.masteryHeatTilePct, { color: heat.textColor }]}>{item.attempts ? `${item.accuracy}%` : 'N/A'}</Text>
+                    <Text style={[styles.masteryHeatTileName, { color: heat.textColor }]} numberOfLines={2}>{item.subTopic}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.masteryResetButton} onPress={resetMasteryMap}>
+          <MaterialCommunityIcons name="refresh" size={18} color="#7C3AED" />
+          <Text style={styles.masteryResetButtonText}>Reset Mastery Analytics</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
 // 👨‍👩‍👧‍👦 FAMILY DASHBOARD
 function FamilyScreen({ navigation }) {
   const [family] = useState([
@@ -2599,6 +2786,7 @@ export default function App() {
   const [errorBank, setErrorBank] = useState([]);
   const [pausedSession, setPausedSession] = useState(null);
   const [adRuntime, setAdRuntime] = useState(createDefaultAdRuntime());
+  const [masteryMap, setMasteryMap] = useState(createDefaultMasteryMap());
 
   useEffect(() => {
     let isMounted = true;
@@ -2642,6 +2830,26 @@ export default function App() {
     };
 
     loadAdRuntime();
+
+    const loadMasteryMap = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(MASTERY_MAP_STORAGE_KEY);
+        if (!stored || !isMounted) return;
+
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          setMasteryMap({
+            ...createDefaultMasteryMap(),
+            ...parsed,
+            byQuestion: parsed.byQuestion && typeof parsed.byQuestion === 'object' ? parsed.byQuestion : {},
+          });
+        }
+      } catch (error) {
+        console.log('Failed to load mastery map:', error);
+      }
+    };
+
+    loadMasteryMap();
     return () => {
       isMounted = false;
     };
@@ -2674,6 +2882,18 @@ export default function App() {
 
     persistAdRuntime();
   }, [adRuntime]);
+
+  useEffect(() => {
+    const persistMasteryMap = async () => {
+      try {
+        await AsyncStorage.setItem(MASTERY_MAP_STORAGE_KEY, JSON.stringify(masteryMap));
+      } catch (error) {
+        console.log('Failed to persist mastery map:', error);
+      }
+    };
+
+    persistMasteryMap();
+  }, [masteryMap]);
 
   useEffect(() => {
     const todayKey = adRuntime.dayKey || new Date().toISOString().slice(0, 10);
@@ -2741,6 +2961,60 @@ export default function App() {
 
   const clearPausedSession = () => {
     setPausedSession(null);
+  };
+
+  const recordMasterySession = (sessionHistory = [], quizType = 'unknown') => {
+    if (!Array.isArray(sessionHistory) || !sessionHistory.length) return;
+
+    setMasteryMap((prev) => {
+      const nextByQuestion = {
+        ...(prev.byQuestion || {}),
+      };
+
+      for (const item of sessionHistory) {
+        const id = item?.id ? String(item.id) : null;
+        if (!id) continue;
+        const existing = nextByQuestion[id] || {
+          attempts: 0,
+          correct: 0,
+          topic: item.topic || 'General',
+          subTopic: item.subTopic || 'General',
+          difficulty: item.difficulty || 'easy',
+          quizType,
+          lastSeen: null,
+        };
+
+        nextByQuestion[id] = {
+          ...existing,
+          attempts: (existing.attempts || 0) + 1,
+          correct: (existing.correct || 0) + (item.correct ? 1 : 0),
+          topic: item.topic || existing.topic || 'General',
+          subTopic: item.subTopic || existing.subTopic || 'General',
+          difficulty: item.difficulty || existing.difficulty || 'easy',
+          quizType,
+          lastSeen: item.answeredAt || new Date().toISOString(),
+        };
+      }
+
+      return {
+        ...prev,
+        updatedAt: new Date().toISOString(),
+        totalSessions: (prev.totalSessions || 0) + 1,
+        totalQuestions: (prev.totalQuestions || 0) + sessionHistory.length,
+        byQuestion: nextByQuestion,
+      };
+    });
+  };
+
+  const resetMasteryMap = () => {
+    Alert.alert('Reset Mastery Analytics', 'This clears your mastery map and heatmap history for this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: () => setMasteryMap(createDefaultMasteryMap()),
+      },
+    ]);
   };
 
   const trackAdEvent = (eventName) => {
@@ -3021,6 +3295,9 @@ export default function App() {
         trackAdEvent,
         resetAdAnalytics,
         unlockDailyFreePack,
+        masteryMap,
+        recordMasterySession,
+        resetMasteryMap,
       }}
     >
       <NavigationContainer>
@@ -3052,6 +3329,7 @@ export default function App() {
                 {(props) => <EditTestDetailsScreen {...props} testDetails={testDetails} onSave={handleEditTestDetails} />}
               </Stack.Screen>
               <Stack.Screen name="ModeSelector" component={ModeSelectorScreen} options={{ animationEnabled: true }} />
+              <Stack.Screen name="MasteryMap" component={MasteryMapScreen} options={{ animationEnabled: true }} />
               <Stack.Screen name="Quiz" component={QuizScreen} />
               <Stack.Screen name="Review" component={ReviewScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -3834,6 +4112,150 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#1F2937',
     fontWeight: '700',
+  },
+
+  // Mastery Map
+  masteryOverviewCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  masteryOverviewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  masteryMetric: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  masteryMetricValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  masteryMetricLabel: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  masteryUpdatedText: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  masteryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  masteryCardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  masteryEmptyText: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  masteryTopicRow: {
+    marginTop: 10,
+  },
+  masteryTopicHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  masteryTopicTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginRight: 10,
+  },
+  masteryTopicMeta: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  masteryBarTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  masteryBarFill: {
+    height: '100%',
+    backgroundColor: '#0EA5E9',
+  },
+  masteryHeatItem: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  masteryHeatTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  masteryHeatMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  masteryHeatmapWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  masteryHeatTile: {
+    width: '31%',
+    minWidth: 95,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  masteryHeatTilePct: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  masteryHeatTileName: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  masteryResetButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    marginBottom: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  masteryResetButtonText: {
+    marginLeft: 8,
+    fontWeight: '700',
+    color: '#7C3AED',
   },
 
   // Profile
