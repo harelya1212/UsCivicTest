@@ -779,6 +779,16 @@ function HomeScreen({ navigation }) {
     }
   };
 
+  const startFocusPreset = ({ count, label, focusMode = null }) => {
+    clearPausedSession();
+    navigation.navigate('Quiz', {
+      type: testDetails?.testType || 'naturalization128',
+      forceQuestionCount: count,
+      focusMode,
+    });
+    Alert.alert('Focus Session', `${label} started.`);
+  };
+
   const [user, setUser] = useState({
     name: testDetails?.name || 'Future Citizen',
     initials: (testDetails?.name || 'FC').split(' ').map(n => n[0]).join('').toUpperCase(),
@@ -871,6 +881,36 @@ function HomeScreen({ navigation }) {
             <Text style={styles.studyPlanCardHint}>Review every {studyPlan.reviewEvery} day(s). {studyPlan.focus}</Text>
           </View>
         )}
+
+        <View style={styles.focusPresetCard}>
+          <Text style={styles.focusPresetTitle}>ADHD Focus Presets</Text>
+          <Text style={styles.focusPresetSubtitle}>Pick the energy level you have right now.</Text>
+          <View style={styles.focusPresetRow}>
+            <TouchableOpacity
+              style={styles.focusPresetButton}
+              onPress={() => startFocusPreset({ count: 5, label: '3-minute quick reset', focusMode: 'minimal' })}
+            >
+              <Text style={styles.focusPresetButtonTitle}>3 min</Text>
+              <Text style={styles.focusPresetButtonMeta}>Quick reset</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.focusPresetButton}
+              onPress={() => startFocusPreset({ count: 8, label: '7-minute focus sprint', focusMode: 'minimal' })}
+            >
+              <Text style={styles.focusPresetButtonTitle}>7 min</Text>
+              <Text style={styles.focusPresetButtonMeta}>Focus sprint</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.focusPresetButton}
+              onPress={() => startFocusPreset({ count: 12, label: '12-minute deep practice', focusMode: null })}
+            >
+              <Text style={styles.focusPresetButtonTitle}>12 min</Text>
+              <Text style={styles.focusPresetButtonMeta}>Deep practice</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Big CTA Button */}
         <TouchableOpacity
@@ -1182,9 +1222,20 @@ function ModeSelectorScreen({ navigation }) {
 function QuizScreen({ route, navigation }) {
   const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession } = useContext(AppDataContext);
   const { type, topicFilter, subTopicFilter } = route.params;
+  const requestedQuestionIds = Array.isArray(route?.params?.questionIds)
+    ? route.params.questionIds.map((id) => String(id))
+    : [];
+  const focusModeMinimal = route?.params?.focusMode === 'minimal';
   const fullPool = getQuestionBank(type); // Use official USCIS questions
   const activeTopicFilter = topicFilter ? String(topicFilter).trim() : null;
   const activeSubTopicFilter = subTopicFilter ? String(subTopicFilter).trim() : null;
+
+  const explicitQueuePool = requestedQuestionIds.length
+    ? requestedQuestionIds
+      .map((id) => fullPool.find((question) => String(question.id) === id))
+      .filter(Boolean)
+    : [];
+
   const filteredPool = fullPool.filter((question) => {
     const questionTopic = getQuestionTopic(question);
     const questionSubTopic = getQuestionSubTopic(question);
@@ -1192,7 +1243,11 @@ function QuizScreen({ route, navigation }) {
     const subTopicMatch = !activeSubTopicFilter || questionSubTopic === activeSubTopicFilter;
     return topicMatch && subTopicMatch;
   });
-  const effectivePool = filteredPool.length ? filteredPool : fullPool;
+  const effectivePool = explicitQueuePool.length
+    ? explicitQueuePool
+    : filteredPool.length
+      ? filteredPool
+      : fullPool;
   const forcedQuestionCount = Number(route?.params?.forceQuestionCount || 0);
   const sessionQuestionCount = testDetails?.studyPlan?.questionsPerDay
     ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
@@ -1387,10 +1442,12 @@ function QuizScreen({ route, navigation }) {
             <MaterialCommunityIcons name="pause-circle-outline" size={20} color="#7C3AED" />
             <Text style={styles.quizActionText}>Pause</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quizActionButton} onPress={() => navigation.navigate('MainTabs')}>
-            <MaterialCommunityIcons name="home-outline" size={20} color="#7C3AED" />
-            <Text style={styles.quizActionText}>Home</Text>
-          </TouchableOpacity>
+          {!focusModeMinimal && (
+            <TouchableOpacity style={styles.quizActionButton} onPress={() => navigation.navigate('MainTabs')}>
+              <MaterialCommunityIcons name="home-outline" size={20} color="#7C3AED" />
+              <Text style={styles.quizActionText}>Home</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -1398,6 +1455,18 @@ function QuizScreen({ route, navigation }) {
         <Text style={styles.progressText}>
           Question {current + 1} of {pool.length}
         </Text>
+        {explicitQueuePool.length > 0 && (
+          <View style={styles.smartQueueBadge}>
+            <MaterialCommunityIcons name="brain" size={14} color="#0C4A6E" />
+            <Text style={styles.smartQueueBadgeText}>Smart Queue: mixed weak + due topics</Text>
+          </View>
+        )}
+        {focusModeMinimal && (
+          <View style={styles.focusModeBadge}>
+            <MaterialCommunityIcons name="target-variant" size={14} color="#3F6212" />
+            <Text style={styles.focusModeBadgeText}>Focus Mode: minimal distractions</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView 
@@ -1558,7 +1627,7 @@ function QuizScreen({ route, navigation }) {
         )}
 
         {/* Helper text when no answer selected yet */}
-        {!showFeedback && (
+        {!showFeedback && !focusModeMinimal && (
           <View style={styles.helperTextBox}>
             <MaterialCommunityIcons name="information-outline" size={16} color="#6B7280" />
             <Text style={styles.helperText}>
@@ -2449,12 +2518,46 @@ function MasteryMapScreen({ navigation }) {
   const totalAttempts = masteryMap?.totalQuestions || 0;
   const launchType = testDetails?.testType || 'naturalization128';
 
+  const smartQueueQuestionIds = (() => {
+    const withPriority = entries.map((entry) => {
+      const attempts = entry.attempts || 0;
+      const accuracy = attempts ? Math.round((entry.correct / attempts) * 100) : 0;
+      const since = daysSince(entry.lastSeen);
+      const dueDays = computeDueDays(entry);
+      const dueBoost = since >= dueDays ? 30 : 0;
+      const priority = (100 - accuracy) * 1.4 + Math.min(25, since) + dueBoost;
+      return {
+        id: String(entry.id),
+        priority,
+      };
+    });
+
+    const sorted = withPriority
+      .sort((a, b) => b.priority - a.priority)
+      .map((item) => item.id);
+    return sorted.slice(0, 8);
+  })();
+
   const startRecommendation = (topicName) => {
     navigation.navigate('Quiz', {
       type: launchType,
       topicFilter: topicName,
       subTopicFilter: null,
       forceQuestionCount: 8,
+    });
+  };
+
+  const startSmartQueue = (focusMode = null) => {
+    if (!smartQueueQuestionIds.length) {
+      Alert.alert('No Smart Queue Yet', 'Complete at least one quiz so Smart Queue can pick weak/due questions.');
+      return;
+    }
+
+    navigation.navigate('Quiz', {
+      type: launchType,
+      questionIds: smartQueueQuestionIds,
+      forceQuestionCount: 8,
+      focusMode,
     });
   };
 
@@ -2494,6 +2597,21 @@ function MasteryMapScreen({ navigation }) {
           <Text style={styles.masteryUpdatedText}>
             {masteryMap?.updatedAt ? `Updated ${new Date(masteryMap.updatedAt).toLocaleString()}` : 'No attempts tracked yet'}
           </Text>
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Smart Queue</Text>
+          <Text style={styles.masteryEmptyText}>Auto-mixes your weakest and due-for-review questions into an 8-question pack.</Text>
+          <View style={styles.masterySmartQueueActions}>
+            <TouchableOpacity style={styles.masteryActionButtonLarge} onPress={() => startSmartQueue(null)}>
+              <MaterialCommunityIcons name="brain" size={16} color="#fff" />
+              <Text style={styles.masteryActionButtonText}>Start Smart Queue (8)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.masteryActionButtonGhost} onPress={() => startSmartQueue('minimal')}>
+              <MaterialCommunityIcons name="target-variant" size={16} color="#0C4A6E" />
+              <Text style={styles.masteryActionButtonGhostText}>Focus Smart Queue</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.masteryCard}>
