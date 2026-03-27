@@ -209,7 +209,22 @@ const createDefaultMasteryMap = () => ({
   totalSessions: 0,
   totalQuestions: 0,
   byQuestion: {},
+  topicDaily: {},
 });
+
+function getDayKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
+  return date.toISOString().slice(0, 10);
+}
+
+function daysSince(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return Number.POSITIVE_INFINITY;
+  const now = new Date();
+  const deltaMs = now.getTime() - date.getTime();
+  return Math.floor(deltaMs / (1000 * 60 * 60 * 24));
+}
 
 // Question bank with all 3 test types
 const questionBank = {
@@ -2277,7 +2292,7 @@ function CaseProgressScreen({ navigation }) {
 }
 
 function MasteryMapScreen({ navigation }) {
-  const { masteryMap, resetMasteryMap } = useContext(AppDataContext);
+  const { masteryMap, resetMasteryMap, testDetails } = useContext(AppDataContext);
   const entries = Object.entries(masteryMap?.byQuestion || {}).map(([id, value]) => ({ id, ...value }));
 
   const topicAccumulator = {};
@@ -2326,6 +2341,102 @@ function MasteryMapScreen({ navigation }) {
       return a.accuracy - b.accuracy;
     });
 
+  const computeDueDays = (entry) => {
+    const attempts = entry?.attempts || 0;
+    const accuracy = attempts ? Math.round(((entry?.correct || 0) / attempts) * 100) : 0;
+    if (attempts <= 1) return 1;
+    if (accuracy < 60) return 1;
+    if (accuracy < 75) return 2;
+    if (accuracy < 90) return 4;
+    return 7;
+  };
+
+  const dueQuestions = entries.filter((entry) => {
+    const dueDays = computeDueDays(entry);
+    const since = daysSince(entry.lastSeen);
+    return since >= dueDays;
+  });
+
+  const dueByTopic = dueQuestions.reduce((acc, entry) => {
+    const topic = entry.topic || 'General';
+    if (!acc[topic]) acc[topic] = { topic, due: 0, attempts: 0, correct: 0 };
+    acc[topic].due += 1;
+    acc[topic].attempts += entry.attempts || 0;
+    acc[topic].correct += entry.correct || 0;
+    return acc;
+  }, {});
+
+  const dueTopicStats = Object.values(dueByTopic)
+    .map((item) => ({
+      ...item,
+      accuracy: item.attempts ? Math.round((item.correct / item.attempts) * 100) : 0,
+    }))
+    .sort((a, b) => b.due - a.due);
+
+  const recommendations = topicStats
+    .map((topic) => {
+      const due = dueByTopic[topic.topic]?.due || 0;
+      const score = ((100 - topic.accuracy) * 1.5) + due * 5 + Math.min(20, topic.attempts * 0.25);
+      return {
+        ...topic,
+        due,
+        score,
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+
+  const topicDaily = masteryMap?.topicDaily || {};
+  const buildWindow = (offsetStart, offsetEnd) => {
+    const keys = [];
+    for (let i = offsetStart; i <= offsetEnd; i++) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      keys.push(getDayKey(d));
+    }
+    return keys;
+  };
+  const currentWeekKeys = buildWindow(0, 6);
+  const previousWeekKeys = buildWindow(7, 13);
+
+  const trendRows = topicStats.map((topic) => {
+    const map = topicDaily[topic.topic] || {};
+    const aggregate = (keys) => keys.reduce((acc, key) => {
+      const day = map[key] || { attempts: 0, correct: 0 };
+      acc.attempts += day.attempts || 0;
+      acc.correct += day.correct || 0;
+      return acc;
+    }, { attempts: 0, correct: 0 });
+
+    const current = aggregate(currentWeekKeys);
+    const previous = aggregate(previousWeekKeys);
+    const currentAcc = current.attempts ? Math.round((current.correct / current.attempts) * 100) : 0;
+    const previousAcc = previous.attempts ? Math.round((previous.correct / previous.attempts) * 100) : 0;
+    const delta = currentAcc - previousAcc;
+    const trend = current.attempts === 0
+      ? 'no-data'
+      : delta >= 5
+        ? 'improving'
+        : delta <= -5
+          ? 'declining'
+          : 'stagnant';
+
+    return {
+      topic: topic.topic,
+      currentAcc,
+      previousAcc,
+      currentAttempts: current.attempts,
+      previousAttempts: previous.attempts,
+      delta,
+      trend,
+    };
+  }).sort((a, b) => {
+    if (a.trend === b.trend) return a.topic.localeCompare(b.topic);
+    const order = { declining: 0, stagnant: 1, improving: 2, 'no-data': 3 };
+    return (order[a.trend] ?? 9) - (order[b.trend] ?? 9);
+  });
+
   const getHeatStyle = (accuracy, attempts) => {
     if (!attempts) return { backgroundColor: '#E5E7EB', borderColor: '#D1D5DB', textColor: '#374151' };
     if (accuracy < 60) return { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', textColor: '#991B1B' };
@@ -2336,6 +2447,23 @@ function MasteryMapScreen({ navigation }) {
 
   const weakFocus = subTopicStats.slice(0, 5);
   const totalAttempts = masteryMap?.totalQuestions || 0;
+  const launchType = testDetails?.testType || 'naturalization128';
+
+  const startRecommendation = (topicName) => {
+    navigation.navigate('Quiz', {
+      type: launchType,
+      topicFilter: topicName,
+      subTopicFilter: null,
+      forceQuestionCount: 8,
+    });
+  };
+
+  const getTrendBadgeStyle = (trend) => {
+    if (trend === 'improving') return { bg: '#DCFCE7', color: '#166534', label: 'Improving' };
+    if (trend === 'declining') return { bg: '#FEE2E2', color: '#991B1B', label: 'Declining' };
+    if (trend === 'stagnant') return { bg: '#FEF3C7', color: '#92400E', label: 'Stagnant' };
+    return { bg: '#E5E7EB', color: '#374151', label: 'No Data' };
+  };
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -2366,6 +2494,82 @@ function MasteryMapScreen({ navigation }) {
           <Text style={styles.masteryUpdatedText}>
             {masteryMap?.updatedAt ? `Updated ${new Date(masteryMap.updatedAt).toLocaleString()}` : 'No attempts tracked yet'}
           </Text>
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Due For Review</Text>
+          {dueTopicStats.length === 0 ? (
+            <Text style={styles.masteryEmptyText}>Nothing due yet. Keep practicing to seed spaced repetition.</Text>
+          ) : (
+            dueTopicStats.map((item) => (
+              <View key={`due-${item.topic}`} style={styles.masteryDueRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.masteryDueTitle}>{item.topic}</Text>
+                  <Text style={styles.masteryDueMeta}>{item.due} due • {item.accuracy}% lifetime accuracy</Text>
+                </View>
+                <TouchableOpacity style={styles.masteryActionButton} onPress={() => startRecommendation(item.topic)}>
+                  <Text style={styles.masteryActionButtonText}>Do 8 Now</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Topic Recommendations</Text>
+          {!recommendations.length ? (
+            <Text style={styles.masteryEmptyText}>No recommendations yet. Complete one quiz session.</Text>
+          ) : (
+            recommendations.map((topic) => (
+              <View key={`rec-${topic.topic}`} style={styles.masteryRecommendationRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.masteryTopicTitle}>{topic.topic}</Text>
+                  <Text style={styles.masteryRecommendationMeta}>Recommended: do 8 questions now • {topic.accuracy}% accuracy • {topic.due} due</Text>
+                </View>
+                <TouchableOpacity style={styles.masteryActionButton} onPress={() => startRecommendation(topic.topic)}>
+                  <Text style={styles.masteryActionButtonText}>Start 8</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={styles.masteryCard}>
+          <Text style={styles.masteryCardTitle}>Weekly Trend By Topic</Text>
+          {!trendRows.length ? (
+            <Text style={styles.masteryEmptyText}>No trend data yet.</Text>
+          ) : (
+            trendRows.map((row) => {
+              const badge = getTrendBadgeStyle(row.trend);
+              return (
+                <View key={`trend-${row.topic}`} style={styles.masteryTrendRow}>
+                  <View style={styles.masteryTrendHeader}>
+                    <Text style={styles.masteryTopicTitle}>{row.topic}</Text>
+                    <View style={[styles.masteryTrendBadge, { backgroundColor: badge.bg }]}>
+                      <Text style={[styles.masteryTrendBadgeText, { color: badge.color }]}>{badge.label}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.masteryTrendMeta}>
+                    This week: {row.currentAcc}% ({row.currentAttempts} attempts) • Last week: {row.previousAcc}% ({row.previousAttempts} attempts)
+                  </Text>
+                  <View style={styles.masteryTrendBars}>
+                    <View style={styles.masteryTrendBarBlock}>
+                      <Text style={styles.masteryTrendBarLabel}>Last</Text>
+                      <View style={styles.masteryBarTrack}>
+                        <View style={[styles.masteryBarFill, { width: `${Math.max(2, row.previousAcc)}%`, backgroundColor: '#94A3B8' }]} />
+                      </View>
+                    </View>
+                    <View style={styles.masteryTrendBarBlock}>
+                      <Text style={styles.masteryTrendBarLabel}>Now</Text>
+                      <View style={styles.masteryBarTrack}>
+                        <View style={[styles.masteryBarFill, { width: `${Math.max(2, row.currentAcc)}%`, backgroundColor: '#0EA5E9' }]} />
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
 
         <View style={styles.masteryCard}>
@@ -2842,6 +3046,7 @@ export default function App() {
             ...createDefaultMasteryMap(),
             ...parsed,
             byQuestion: parsed.byQuestion && typeof parsed.byQuestion === 'object' ? parsed.byQuestion : {},
+            topicDaily: parsed.topicDaily && typeof parsed.topicDaily === 'object' ? parsed.topicDaily : {},
           });
         }
       } catch (error) {
@@ -2970,14 +3175,19 @@ export default function App() {
       const nextByQuestion = {
         ...(prev.byQuestion || {}),
       };
+      const nextTopicDaily = {
+        ...(prev.topicDaily || {}),
+      };
 
       for (const item of sessionHistory) {
         const id = item?.id ? String(item.id) : null;
         if (!id) continue;
+        const topicName = item.topic || 'General';
+        const dayKey = getDayKey(item.answeredAt || new Date());
         const existing = nextByQuestion[id] || {
           attempts: 0,
           correct: 0,
-          topic: item.topic || 'General',
+          topic: topicName,
           subTopic: item.subTopic || 'General',
           difficulty: item.difficulty || 'easy',
           quizType,
@@ -2988,11 +3198,18 @@ export default function App() {
           ...existing,
           attempts: (existing.attempts || 0) + 1,
           correct: (existing.correct || 0) + (item.correct ? 1 : 0),
-          topic: item.topic || existing.topic || 'General',
+          topic: topicName || existing.topic || 'General',
           subTopic: item.subTopic || existing.subTopic || 'General',
           difficulty: item.difficulty || existing.difficulty || 'easy',
           quizType,
           lastSeen: item.answeredAt || new Date().toISOString(),
+        };
+
+        if (!nextTopicDaily[topicName]) nextTopicDaily[topicName] = {};
+        const existingDaily = nextTopicDaily[topicName][dayKey] || { attempts: 0, correct: 0 };
+        nextTopicDaily[topicName][dayKey] = {
+          attempts: existingDaily.attempts + 1,
+          correct: existingDaily.correct + (item.correct ? 1 : 0),
         };
       }
 
@@ -3002,6 +3219,7 @@ export default function App() {
         totalSessions: (prev.totalSessions || 0) + 1,
         totalQuestions: (prev.totalQuestions || 0) + sessionHistory.length,
         byQuestion: nextByQuestion,
+        topicDaily: nextTopicDaily,
       };
     });
   };
@@ -4176,6 +4394,55 @@ const styles = StyleSheet.create({
   masteryTopicRow: {
     marginTop: 10,
   },
+  masteryDueRow: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#F8FBFF',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  masteryDueTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E3A8A',
+  },
+  masteryDueMeta: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#1E40AF',
+  },
+  masteryActionButton: {
+    backgroundColor: '#0EA5E9',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  masteryActionButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  masteryRecommendationRow: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  masteryRecommendationMeta: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#4B5563',
+  },
   masteryTopicHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -4239,6 +4506,45 @@ const styles = StyleSheet.create({
   masteryHeatTileName: {
     marginTop: 4,
     fontSize: 11,
+    fontWeight: '600',
+  },
+  masteryTrendRow: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+  },
+  masteryTrendHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
+  masteryTrendBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  masteryTrendBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  masteryTrendMeta: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#4B5563',
+  },
+  masteryTrendBars: {
+    marginTop: 8,
+    gap: 8,
+  },
+  masteryTrendBarBlock: {
+    gap: 4,
+  },
+  masteryTrendBarLabel: {
+    fontSize: 11,
+    color: '#6B7280',
     fontWeight: '600',
   },
   masteryResetButton: {
