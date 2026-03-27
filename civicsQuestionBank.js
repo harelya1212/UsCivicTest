@@ -1,6 +1,7 @@
 // Complete USCIS Civics Test Questions
-// Official 2025 USCIS 128 Civics Test Questions and Answers
+// Official 2026 USCIS 128 Civics Test Questions and Answers
 // Source: https://www.uscis.gov/citizenship/civics-test-study-materials
+// Enriched with imageUrl + topic + subTopic from civics-questions-2026-02-06.csv
 
 // Define all 128 official USCIS civics questions
 const civicsQuestions = [
@@ -11,6 +12,9 @@ const civicsQuestions = [
     alternateAnswers: ["Constitution-based federal republic","Representative democracy"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/06371a259_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -24,6 +28,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3539a33f4_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -37,6 +44,9 @@ const civicsQuestions = [
     alternateAnswers: ["Defines powers of government","Defines the parts of government","Protects the rights of the people"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fc4df5b1e_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -50,6 +60,9 @@ const civicsQuestions = [
     alternateAnswers: ["Popular sovereignty","Consent of the governed","People should govern themselves","(Example of) social contract"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2f69e1103_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -63,6 +76,9 @@ const civicsQuestions = [
     alternateAnswers: ["The amendment process"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d266c1597_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -72,10 +88,13 @@ const civicsQuestions = [
   {
     id: 'CIVICS_006',
     question: 'What does the Bill of Rights protect?',
-    correctAnswer: '(The basic) rights of Americans',
+    correctAnswer: '(The basic) rights of people in the United States',
     alternateAnswers: ["(The basic) rights of people living in the United States"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e7616352e_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -89,6 +108,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c9ab1e478_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -102,6 +124,9 @@ const civicsQuestions = [
     alternateAnswers: ["It says all people are created equal.","It identifies inherent rights.","It identifies individual freedoms."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/76c83485e_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -115,6 +140,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/78cbe68a8_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -128,6 +156,9 @@ const civicsQuestions = [
     alternateAnswers: ["Liberty","Social contract","Natural rights","Limited government","Self-government"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/071de79f6_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -141,6 +172,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/583c3bfe5_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -154,6 +188,9 @@ const civicsQuestions = [
     alternateAnswers: ["Free market economy"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/13ab54737_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -167,6 +204,9 @@ const civicsQuestions = [
     alternateAnswers: ["Leaders must obey the law.","Government must obey the law.","No one is above the law."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/46da765cb_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -180,6 +220,9 @@ const civicsQuestions = [
     alternateAnswers: ["Articles of Confederation","Federalist Papers","Anti-Federalist Papers","Virginia Declaration of Rights","Fundamental Orders of Connecticut","Mayflower Compact","Iroquois Great Law of Peace"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cccff0f1a_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -193,6 +236,9 @@ const civicsQuestions = [
     alternateAnswers: ["Checks and balances","Separation of powers"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/02779272f_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Principles',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -206,6 +252,9 @@ const civicsQuestions = [
     alternateAnswers: ["Congress, president, and the courts"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3bdb913e8_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -219,6 +268,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/918b9b626_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -232,6 +284,9 @@ const civicsQuestions = [
     alternateAnswers: ["(U.S. or national) legislature","Legislative branch"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2152345ac_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -245,6 +300,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/89a984b4c_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -258,6 +316,9 @@ const civicsQuestions = [
     alternateAnswers: ["Declares war","Makes the federal budget"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/aa36f134c_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -271,6 +332,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ec64bc34e_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -284,6 +348,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3b4bb7c0a_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -297,6 +364,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3ab8143ce_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -310,6 +380,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/31ea25bdd_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -323,6 +396,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a95fcb55a_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -336,6 +412,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ea535200f_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -349,6 +428,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f1e9671bd_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -362,6 +444,9 @@ const civicsQuestions = [
     alternateAnswers: ["The Great Compromise (Connecticut Compromise)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/54f12b836_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -375,6 +460,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -388,6 +476,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -397,10 +488,13 @@ const civicsQuestions = [
   {
     id: 'CIVICS_031',
     question: 'Who does a U.S. senator represent?',
-    correctAnswer: 'Citizens of their state',
-    alternateAnswers: ["People of their state"],
+    correctAnswer: 'People of their state',
+    alternateAnswers: ["Citizens of their state"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/6e68c3c54_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -414,6 +508,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d9334ffa7_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -427,6 +524,9 @@ const civicsQuestions = [
     alternateAnswers: ["Citizens in their district","People from their (congressional) district","People in their district"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/af5305ba1_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -440,6 +540,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a1ce7d722_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -453,6 +556,9 @@ const civicsQuestions = [
     alternateAnswers: ["(Because) they have more people","(Because) some states have more people"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/89bcb57da_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -466,6 +572,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fa2e02e79_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -479,6 +588,9 @@ const civicsQuestions = [
     alternateAnswers: ["To keep the president from becoming too powerful"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/60b8be23a_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -492,6 +604,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -505,6 +620,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -518,6 +636,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a44655572_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -531,6 +652,9 @@ const civicsQuestions = [
     alternateAnswers: ["Vetoes bills","Enforces laws","Commander in Chief (of the military)","Chief diplomat","Appoints federal judges"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e91b60641_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -544,6 +668,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cc8d66ebf_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -557,6 +684,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/96ca0623b_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -570,6 +700,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cb514a06b_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -583,6 +716,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e691f1bc8_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -596,6 +732,9 @@ const civicsQuestions = [
     alternateAnswers: ["Cabinet","Federal departments and agencies"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -609,6 +748,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -622,6 +764,9 @@ const civicsQuestions = [
     alternateAnswers: ["Secretary of Agriculture","Secretary of Commerce","Secretary of Education","Secretary of Energy","Secretary of Health and Human Services","Secretary of Homeland Security","Secretary of Housing and Urban Development","Secretary of the Interior","Secretary of Labor","Secretary of State","Secretary of Transportation","Secretary of the Treasury","Secretary of Veterans Affairs","Secretary of War (Defense)","Vice-President","Administrator of the Environmental Protection Agency","Administrator of the Small Business Administration","Director of the Central Intelligence Agency","Director of the Office of Management and Budget","Director of National Intelligence","United States Trade Representative"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: null,
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -635,6 +780,9 @@ const civicsQuestions = [
     alternateAnswers: ["It provides a compromise between the popular election of the president and congressional selection."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f23c4514f_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -648,6 +796,9 @@ const civicsQuestions = [
     alternateAnswers: ["Federal Courts"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b3607fe0d_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -661,6 +812,9 @@ const civicsQuestions = [
     alternateAnswers: ["Explains laws","Resolves disputes (disagreements) about the law","Decides if a law goes against the (U.S.) Constitution"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cd63a7409_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -674,6 +828,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a70435959_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -687,6 +844,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7614f6e85_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -700,6 +860,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/660b55b17_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -713,6 +876,9 @@ const civicsQuestions = [
     alternateAnswers: ["Lifetime appointment","(Until) retirement"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cfb757194_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -726,6 +892,9 @@ const civicsQuestions = [
     alternateAnswers: ["To limit outside (political) influence"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/481a8d759_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -739,6 +908,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/55b0f7081_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -752,6 +924,9 @@ const civicsQuestions = [
     alternateAnswers: ["Mint coins","Declare war","Create an army","Make treaties","Set foreign policy"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/55ef20f94_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -765,6 +940,9 @@ const civicsQuestions = [
     alternateAnswers: ["Provide protection (police)","Provide safety (fire departments)","Give a driver’s license","Approve zoning and land use"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7f9f1b4fc_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -778,6 +956,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0c16b214c_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -791,6 +972,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0dc029767_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -804,6 +988,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/dbd112b34_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'System of Government',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -817,6 +1004,9 @@ const civicsQuestions = [
     alternateAnswers: ["You don’t have to pay (a poll tax) to vote.","Any citizen can vote. (Women and men can vote.)","A male citizen of any race (can vote)."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a71ac4057_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -830,6 +1020,9 @@ const civicsQuestions = [
     alternateAnswers: ["Citizens of the United States","U.S. citizens"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/52a3f5ecc_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -843,6 +1036,9 @@ const civicsQuestions = [
     alternateAnswers: ["Freedom of speech","Freedom of assembly","Freedom to petition the government","Freedom of religion","The right to bear arms"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/edcde16f2_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -856,6 +1052,9 @@ const civicsQuestions = [
     alternateAnswers: ["The flag"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/df3c7030c_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -869,6 +1068,9 @@ const civicsQuestions = [
     alternateAnswers: ["Defend the (U.S.) Constitution","Obey the laws of the United States","Serve in the military (if needed)","Serve (help, do important work for) the nation (if needed)","Be loyal to the United States"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b12ac54b7_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -882,6 +1084,9 @@ const civicsQuestions = [
     alternateAnswers: ["Naturalize","Derive citizenship (under conditions set by Congress)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/736cac0a1_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -895,6 +1100,9 @@ const civicsQuestions = [
     alternateAnswers: ["Run for office","Join a political party","Help with a campaign","Join a civic group","Join a community group","Give an elected official your opinion (on an issue)","Contact elected officials","Support or oppose an issue or policy","Write to a newspaper"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f17d63992_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -908,6 +1116,9 @@ const civicsQuestions = [
     alternateAnswers: ["Pay taxes","Obey the law","Serve in the military","Run for office","Work for local, state, or federal government"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c062db4f3_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -921,6 +1132,9 @@ const civicsQuestions = [
     alternateAnswers: ["All people pay to fund the federal government","Required by the (U.S.) Constitution (16th Amendment)","Civic duty"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b3a87cd02_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -934,6 +1148,9 @@ const civicsQuestions = [
     alternateAnswers: ["Civic duty","Makes the draft fair, if needed"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e47f4b9d2_generated_image.png',
+    topic: 'American Government',
+    subTopic: 'Rights & Responsibilities',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -947,6 +1164,9 @@ const civicsQuestions = [
     alternateAnswers: ["Political liberty","Religious freedom","Economic opportunity","Escape persecution"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/082a762f3_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -960,6 +1180,9 @@ const civicsQuestions = [
     alternateAnswers: ["Native Americans"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/60188b457_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -973,6 +1196,9 @@ const civicsQuestions = [
     alternateAnswers: ["People from Africa"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/baef65074_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -986,6 +1212,9 @@ const civicsQuestions = [
     alternateAnswers: ["The (American) Revolutionary War","War for (American) Independence"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d79b60ac4_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -999,6 +1228,9 @@ const civicsQuestions = [
     alternateAnswers: ["Taxation without representation","British soldiers stayed in Americans’ houses (boarding, quartering)","They did not have self-government","Boston Massacre","Boston Tea Party (Tea Act)","Stamp Act","Sugar Act","Townshend Acts","Intolerable (Coercive) Acts"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d1965d839_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1012,6 +1244,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/299b2dd19_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1025,6 +1260,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/8320a5e82_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1038,6 +1276,9 @@ const civicsQuestions = [
     alternateAnswers: ["Declaration of Independence","Washington Crossing the Delaware (Battle of Trenton)","(Battle of) Saratoga","Valley Forge (Encampment)","(Battle of) Yorktown (British surrender at Yorktown)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/611c50e3e_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1051,6 +1292,9 @@ const civicsQuestions = [
     alternateAnswers: ["Massachusetts","Rhode Island","Connecticut","New York","New Jersey","Pennsylvania","Delaware","Maryland","Virginia","North Carolina","South Carolina","Georgia"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/9e9ad75bd_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1064,6 +1308,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/08ef20c7b_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1077,6 +1324,9 @@ const civicsQuestions = [
     alternateAnswers: ["(Alexander) Hamilton","(John) Jay","Publius"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/44bfa55b1_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1090,6 +1340,9 @@ const civicsQuestions = [
     alternateAnswers: ["They supported passing the (U.S.) Constitution."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f76d6513c_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1103,6 +1356,9 @@ const civicsQuestions = [
     alternateAnswers: ["First Postmaster General of the United States","Helped write the Declaration of Independence","Inventor","U.S. diplomat"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/41549ba13_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1116,6 +1372,9 @@ const civicsQuestions = [
     alternateAnswers: ["First president of the United States","General of the Continental Army","President of the Constitutional Convention"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fa0865957_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1129,6 +1388,9 @@ const civicsQuestions = [
     alternateAnswers: ["Third president of the United States","Doubled the size of the United States (Louisiana Purchase)","First Secretary of State","Founded the University of Virginia","Writer of the Virginia Statute on Religious Freedom"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a079a54ce_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1142,6 +1404,9 @@ const civicsQuestions = [
     alternateAnswers: ["Fourth president of the United States","President during the War of 1812","One of the writers of the Federalist Papers"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/12f60e0da_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1155,6 +1420,9 @@ const civicsQuestions = [
     alternateAnswers: ["One of the writers of the Federalist Papers","Helped establish the First Bank of the United States","Aide to General George Washington","Member of the Continental Congress"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e397dd41e_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Colonial & Independence',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1168,6 +1436,9 @@ const civicsQuestions = [
     alternateAnswers: ["Louisiana"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/375331634_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1181,6 +1452,9 @@ const civicsQuestions = [
     alternateAnswers: ["Mexican-American War","Civil War","Spanish-American War"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/aefe4d251_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1194,6 +1468,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4668ff7e3_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1207,6 +1484,9 @@ const civicsQuestions = [
     alternateAnswers: ["Emancipation Proclamation","(Battle of) Vicksburg","(Battle of) Gettysburg","Sherman’s March","(Surrender at) Appomattox","(Battle of) Antietam/Sharpsburg","Lincoln was assassinated."],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ea9daf299_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1220,6 +1500,9 @@ const civicsQuestions = [
     alternateAnswers: ["Saved (or preserved) the Union","Led the United States during the Civil War","16th president of the United States","Delivered the Gettysburg Address"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/306f4d5df_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1233,6 +1516,9 @@ const civicsQuestions = [
     alternateAnswers: ["Freed slaves in the Confederacy","Freed slaves in the Confederate states","Freed slaves in most Southern states"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/51cbe1069_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1246,6 +1532,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4d4cd71f3_generated_image.png',
+    topic: 'American History',
+    subTopic: '1800s',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1254,11 +1543,14 @@ const civicsQuestions = [
   },
   {
     id: 'CIVICS_097',
-    question: 'What amendment says all persons born or naturalized in the United States,',
+    question: 'What amendment says all persons born or naturalized in the United States are U.S. citizens?',
     correctAnswer: '14th Amendment',
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/17a1ce7bd_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1268,10 +1560,13 @@ const civicsQuestions = [
   {
     id: 'CIVICS_098',
     question: 'When did all men get the right to vote?',
-    correctAnswer: 'After the Civil War',
-    alternateAnswers: ["During Reconstruction","(With the) 15th Amendment","1870"],
+    correctAnswer: 'With the 15th Amendment',
+    alternateAnswers: ["After the Civil War","During Reconstruction","1870"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/42efd2952_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1285,6 +1580,9 @@ const civicsQuestions = [
     alternateAnswers: ["Elizabeth Cady Stanton","Sojourner Truth","Harriet Tubman","Lucretia Mott","Lucy Stone"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e8b08c3a4_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1298,6 +1596,9 @@ const civicsQuestions = [
     alternateAnswers: ["World War II","Korean War","Vietnam War","(Persian) Gulf War"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cb17c96a4_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1311,6 +1612,9 @@ const civicsQuestions = [
     alternateAnswers: ["To support the Allied Powers (England, France, Italy, and Russia)","To oppose the Central Powers (Germany, Austria-Hungary, the Ottoman Empire, and Bulgaria)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/469445221_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1324,6 +1628,9 @@ const civicsQuestions = [
     alternateAnswers: ["After World War I","(With the) 19th Amendment"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ec1d03742_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1337,6 +1644,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2158d3381_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1350,6 +1660,9 @@ const civicsQuestions = [
     alternateAnswers: ["Stock market crash of 1929"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/29655bbd5_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1363,6 +1676,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/628cc59b6_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1376,6 +1692,9 @@ const civicsQuestions = [
     alternateAnswers: ["Japanese attacked Pearl Harbor","To support the Allied Powers (England, France, and Russia)","To oppose the Axis Powers (Germany, Italy, and Japan)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/037beb25c_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1389,6 +1708,9 @@ const civicsQuestions = [
     alternateAnswers: ["President at the end of (during) the Korean War","34th president of the United States","Signed the Federal-Aid Highway Act of 1956 (Created the Interstate System)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/063de1298_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1402,6 +1724,9 @@ const civicsQuestions = [
     alternateAnswers: ["USSR","Russia"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d31e2a847_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1415,6 +1740,9 @@ const civicsQuestions = [
     alternateAnswers: ["Nuclear war"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/9ccdc5c2a_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1428,6 +1756,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cbb8b6b13_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1441,6 +1772,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b35ccd4fa_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1454,6 +1788,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ad72319e3_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1467,6 +1804,9 @@ const civicsQuestions = [
     alternateAnswers: ["Worked for equality for all Americans","Worked to ensure that people would “not be judged by the color of their skin, but by the content"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7454c7bd0_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1480,6 +1820,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/31f97ab57_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1493,6 +1836,9 @@ const civicsQuestions = [
     alternateAnswers: ["Terrorists took over two planes and crashed them into the World Trade Center in New York City","Terrorists took over a plane and crashed into the Pentagon in Arlington, Virginia","Terrorists took over a plane originally aimed at Washington, D.C., and crashed in a field in Pennsylvania"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a51eb401f_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1506,6 +1852,9 @@ const civicsQuestions = [
     alternateAnswers: ["War in Afghanistan","War in Iraq"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4a221a8d2_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1519,6 +1868,9 @@ const civicsQuestions = [
     alternateAnswers: ["Blackfeet","Cayuga","Cherokee","Cheyenne","Chippewa","Choctaw","Creek","Crow","Hopi","Huron","Inupiat","Lakota","Mohawk","Mohegan","Navajo","Oneida","Onondaga","Pueblo","Seminole","Seneca","Shawnee","Sioux","Teton","Tuscarora"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/35c588127_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1532,6 +1884,9 @@ const civicsQuestions = [
     alternateAnswers: ["Automobile (cars, internal combustion engine)","Skyscrapers","Airplane","Assembly line","Landing on the moon","Integrated circuit (IC)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/8eec11482_generated_image.png',
+    topic: 'American History',
+    subTopic: 'Recent History & Other',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1545,6 +1900,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0ba70739f_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1558,6 +1916,9 @@ const civicsQuestions = [
     alternateAnswers: ["Liberty Island [Also acceptable are New Jersey, near New York City, and on the Hudson (River).]"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3fff15221_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1571,6 +1932,9 @@ const civicsQuestions = [
     alternateAnswers: ["(Because the stripes) represent the original colonies"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/1c3341ef3_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1584,6 +1948,9 @@ const civicsQuestions = [
     alternateAnswers: ["(Because) each star represents a state","(Because there are) 50 states"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0596d86ce_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1597,6 +1964,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0fc936436_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1610,6 +1980,9 @@ const civicsQuestions = [
     alternateAnswers: ["We all become one"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c6847f974_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Symbols',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1623,6 +1996,9 @@ const civicsQuestions = [
     alternateAnswers: ["The country’s birthday"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/6ad95a5d5_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Holidays',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1636,6 +2012,9 @@ const civicsQuestions = [
     alternateAnswers: ["Martin Luther King, Jr. Day","Presidents Day (Washington’s Birthday)","Memorial Day","Juneteenth","Independence Day","Labor Day","Columbus Day","Veterans Day","Thanksgiving Day","Christmas Day"],
     category: '65/20 Special',
     is_65_20: true,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4c8398397_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Holidays',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1649,6 +2028,9 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/5253c2b7e_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Holidays',
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1662,6 +2044,9 @@ const civicsQuestions = [
     alternateAnswers: ["A holiday to honor people who have served (in the U.S. military)"],
     category: 'Standard',
     is_65_20: false,
+    imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/77d0b5de4_generated_image.png',
+    topic: 'Symbols & Holidays',
+    subTopic: 'Holidays',
     wrongAnswers: {
       easy: [],
       medium: [],
