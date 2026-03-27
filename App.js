@@ -26,6 +26,9 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from 'react-datepicker';
+import * as Notifications from 'expo-notifications';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import './node_modules/react-datepicker/dist/react-datepicker.css';
 
 // Firebase & Monetization Imports
@@ -57,6 +60,7 @@ const { width, height } = Dimensions.get('window');
 const PAUSED_SESSION_STORAGE_KEY = 'civics.pausedSession.v1';
 const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
 const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
+const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
 const DAILY_FREE_PACK_LIMIT = 1;
 const FREE_PACK_QUESTION_COUNT = 15;
 const FREE_PACK_COOLDOWN_MS = 60 * 60 * 1000;
@@ -71,10 +75,83 @@ const CASE_PROGRESS_STAGES = [
   'Naturalized',
 ];
 
+const WEEKDAY_OPTIONS = [
+  { label: 'Sunday', value: 1 },
+  { label: 'Monday', value: 2 },
+  { label: 'Tuesday', value: 3 },
+  { label: 'Wednesday', value: 4 },
+  { label: 'Thursday', value: 5 },
+  { label: 'Friday', value: 6 },
+  { label: 'Saturday', value: 7 },
+];
+
+const CASE_STAGE_CHECKLISTS = {
+  'Case Received': [
+    'Save USCIS online account login details in a secure password manager.',
+    'Keep receipt number copy (paper + screenshot).',
+    'Create a folder for notices and civil documents.',
+  ],
+  'Biometrics Scheduled': [
+    'Bring appointment notice and government-issued photo ID.',
+    'Confirm Application Support Center location and parking/transit.',
+    'Arrive 15-30 minutes early with notice barcode visible.',
+  ],
+  'Biometrics Completed': [
+    'Save proof biometrics were completed.',
+    'Monitor USCIS account weekly for next status.',
+    'Update your address with USCIS if moved.',
+  ],
+  'Interview Scheduled': [
+    'Review N-400 application for consistency and updates.',
+    'Prepare originals of green card, passport, tax and travel records.',
+    'Practice civics questions and reading/writing portions.',
+  ],
+  'Interview Completed': [
+    'Save interview result notice and officer notes.',
+    'If RFE issued, collect requested documents immediately.',
+    'Track oath scheduling notice in USCIS account.',
+  ],
+  'Oath Scheduled': [
+    'Review oath ceremony notice date, time, and location.',
+    'Bring green card and required forms to surrender.',
+    'Prepare name-change or travel documents if needed.',
+  ],
+  'Naturalized': [
+    'Apply for U.S. passport after certificate received.',
+    'Update Social Security citizenship status.',
+    'Update voter registration and state records.',
+  ],
+};
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 function buildCaseProgressStorageKey(testDetails) {
   const raw = `${testDetails?.name || 'default'}_${testDetails?.state || testDetails?.location || 'unknown'}`;
   const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   return `${CASE_PROGRESS_STORAGE_PREFIX}.${normalized || 'default'}`;
+}
+
+function buildCaseReminderStorageKey(testDetails) {
+  const raw = `${testDetails?.name || 'default'}_${testDetails?.state || testDetails?.location || 'unknown'}`;
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return `${CASE_REMINDER_STORAGE_PREFIX}.${normalized || 'default'}`;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function buildDefaultCaseProgress(testDetails) {
@@ -1638,6 +1715,7 @@ function ProfileScreen({ navigation }) {
 function CaseProgressScreen({ navigation }) {
   const { testDetails } = useContext(AppDataContext);
   const storageKey = buildCaseProgressStorageKey(testDetails);
+  const reminderStorageKey = buildCaseReminderStorageKey(testDetails);
   const [loading, setLoading] = useState(true);
   const [savedCase, setSavedCase] = useState(null);
   const [receiptNumber, setReceiptNumber] = useState('');
@@ -1646,6 +1724,9 @@ function CaseProgressScreen({ navigation }) {
   const [latestStatus, setLatestStatus] = useState('');
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleDateString());
   const [notes, setNotes] = useState('');
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderWeekday, setReminderWeekday] = useState(2);
+  const [reminderNotificationId, setReminderNotificationId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -1674,6 +1755,14 @@ function CaseProgressScreen({ navigation }) {
           setLastUpdated(fallback.lastUpdated);
           setNotes(fallback.notes);
         }
+
+        const reminderRaw = await AsyncStorage.getItem(reminderStorageKey);
+        if (reminderRaw) {
+          const reminder = JSON.parse(reminderRaw);
+          setReminderEnabled(Boolean(reminder.enabled));
+          setReminderWeekday(Number(reminder.weekday) || 2);
+          setReminderNotificationId(reminder.notificationId || null);
+        }
       } catch (error) {
         console.log('Failed to load case progress:', error);
       } finally {
@@ -1685,9 +1774,19 @@ function CaseProgressScreen({ navigation }) {
     return () => {
       mounted = false;
     };
-  }, [storageKey, testDetails]);
+  }, [storageKey, reminderStorageKey, testDetails]);
 
   const progressPct = Math.round(((currentStage + 1) / CASE_PROGRESS_STAGES.length) * 100);
+  const currentStageLabel = CASE_PROGRESS_STAGES[currentStage] || CASE_PROGRESS_STAGES[0];
+  const stageChecklist = CASE_STAGE_CHECKLISTS[currentStageLabel] || [];
+
+  const persistReminderSettings = async (nextReminder) => {
+    try {
+      await AsyncStorage.setItem(reminderStorageKey, JSON.stringify(nextReminder));
+    } catch (error) {
+      console.log('Failed to persist reminder settings:', error);
+    }
+  };
 
   const saveCaseProgress = async () => {
     if (!receiptNumber.trim()) {
@@ -1697,7 +1796,7 @@ function CaseProgressScreen({ navigation }) {
 
     const nowStamp = new Date().toLocaleDateString();
     const normalizedDate = lastUpdated.trim() || nowStamp;
-    const stageLabel = CASE_PROGRESS_STAGES[currentStage] || CASE_PROGRESS_STAGES[0];
+    const stageLabel = currentStageLabel;
     const statusLabel = latestStatus.trim() || stageLabel;
     const previousTimeline = Array.isArray(savedCase?.timeline) ? savedCase.timeline : [];
     const changed = !savedCase
@@ -1763,6 +1862,190 @@ function CaseProgressScreen({ navigation }) {
     ]);
   };
 
+  const enableWeeklyReminder = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not Supported on Web', 'Push reminders are available on iOS/Android builds.');
+      return;
+    }
+
+    try {
+      const existingPermission = await Notifications.getPermissionsAsync();
+      let finalStatus = existingPermission.status;
+      if (finalStatus !== 'granted') {
+        const requestPermission = await Notifications.requestPermissionsAsync();
+        finalStatus = requestPermission.status;
+      }
+
+      if (finalStatus !== 'granted') {
+        Alert.alert('Permission Needed', 'Enable notifications to receive weekly USCIS check reminders.');
+        return;
+      }
+
+      if (reminderNotificationId) {
+        await Notifications.cancelScheduledNotificationAsync(reminderNotificationId);
+      }
+
+      const identifier = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'USCIS Weekly Check-In',
+          body: 'Open your USCIS account and update your case tracker.',
+          data: { screen: 'CaseProgress' },
+        },
+        trigger: {
+          weekday: reminderWeekday,
+          hour: 9,
+          minute: 0,
+          repeats: true,
+        },
+      });
+
+      setReminderEnabled(true);
+      setReminderNotificationId(identifier);
+      await persistReminderSettings({
+        enabled: true,
+        weekday: reminderWeekday,
+        notificationId: identifier,
+      });
+
+      const label = WEEKDAY_OPTIONS.find((d) => d.value === reminderWeekday)?.label || 'selected day';
+      Alert.alert('Reminder Enabled', `Weekly reminder set for ${label} at 9:00 AM.`);
+    } catch (error) {
+      console.log('Failed to enable weekly reminder:', error);
+      Alert.alert('Reminder Error', 'Could not schedule weekly reminder.');
+    }
+  };
+
+  const disableWeeklyReminder = async () => {
+    try {
+      if (reminderNotificationId) {
+        await Notifications.cancelScheduledNotificationAsync(reminderNotificationId);
+      }
+      setReminderEnabled(false);
+      setReminderNotificationId(null);
+      await persistReminderSettings({
+        enabled: false,
+        weekday: reminderWeekday,
+        notificationId: null,
+      });
+      Alert.alert('Reminder Disabled', 'Weekly USCIS reminder has been turned off.');
+    } catch (error) {
+      console.log('Failed to disable weekly reminder:', error);
+      Alert.alert('Reminder Error', 'Could not disable reminder.');
+    }
+  };
+
+  const addChecklistToNotes = () => {
+    if (!stageChecklist.length) return;
+    const checklistText = [`${currentStageLabel} checklist:`]
+      .concat(stageChecklist.map((item) => `- ${item}`))
+      .join('\n');
+    const nextNotes = notes?.trim()
+      ? `${notes.trim()}\n\n${checklistText}`
+      : checklistText;
+    setNotes(nextNotes);
+  };
+
+  const buildTimelineTextSnapshot = () => {
+    const timeline = savedCase?.timeline || [];
+    const header = [
+      `USCIS Case Progress Snapshot`,
+      `Applicant: ${testDetails?.name || 'Applicant'}`,
+      `Receipt Number: ${receiptNumber || 'N/A'}`,
+      `Case Type: ${caseType || 'N/A'}`,
+      `Current Stage: ${currentStageLabel}`,
+      `Latest Status: ${latestStatus || 'N/A'}`,
+      `Last Updated: ${lastUpdated || 'N/A'}`,
+      '',
+      'Timeline',
+    ];
+
+    const timelineLines = timeline.length
+      ? timeline.map((event, idx) => `${idx + 1}. ${event.date} | ${event.stage} | ${event.status}`)
+      : ['No timeline updates saved yet.'];
+
+    const checklistLines = [
+      '',
+      `${currentStageLabel} Document Checklist`,
+      ...(stageChecklist.length ? stageChecklist.map((item, idx) => `${idx + 1}. ${item}`) : ['No checklist template available.']),
+    ];
+
+    return header.concat(timelineLines).concat(checklistLines).join('\n');
+  };
+
+  const shareTextSnapshot = async () => {
+    try {
+      await Share.share({
+        title: 'USCIS Case Snapshot',
+        message: buildTimelineTextSnapshot(),
+      });
+    } catch (error) {
+      console.log('Failed to share timeline text snapshot:', error);
+      Alert.alert('Share Error', 'Could not share text snapshot.');
+    }
+  };
+
+  const sharePdfSnapshot = async () => {
+    try {
+      const timeline = savedCase?.timeline || [];
+      const timelineRows = timeline.length
+        ? timeline.map((event) => `
+          <tr>
+            <td>${escapeHtml(event.date)}</td>
+            <td>${escapeHtml(event.stage)}</td>
+            <td>${escapeHtml(event.status)}</td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="3">No timeline updates saved yet.</td></tr>';
+      const checklistRows = stageChecklist.length
+        ? stageChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+        : '<li>No checklist template available.</li>';
+
+      const html = `
+        <html>
+          <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 20px; color: #111827;">
+            <h1>USCIS Case Progress Snapshot</h1>
+            <p><strong>Applicant:</strong> ${escapeHtml(testDetails?.name || 'Applicant')}</p>
+            <p><strong>Receipt Number:</strong> ${escapeHtml(receiptNumber || 'N/A')}</p>
+            <p><strong>Case Type:</strong> ${escapeHtml(caseType || 'N/A')}</p>
+            <p><strong>Current Stage:</strong> ${escapeHtml(currentStageLabel)}</p>
+            <p><strong>Latest Status:</strong> ${escapeHtml(latestStatus || 'N/A')}</p>
+            <p><strong>Last Updated:</strong> ${escapeHtml(lastUpdated || 'N/A')}</p>
+            <h2>Timeline</h2>
+            <table style="width:100%; border-collapse: collapse;" border="1" cellspacing="0" cellpadding="8">
+              <thead>
+                <tr>
+                  <th align="left">Date</th>
+                  <th align="left">Stage</th>
+                  <th align="left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${timelineRows}
+              </tbody>
+            </table>
+            <h2 style="margin-top: 18px;">${escapeHtml(currentStageLabel)} Checklist</h2>
+            <ul>${checklistRows}</ul>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html });
+      const shareAvailable = await Sharing.isAvailableAsync();
+      if (!shareAvailable) {
+        await Share.share({ message: `PDF created at: ${uri}` });
+        return;
+      }
+
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Share USCIS Case Snapshot PDF',
+      });
+    } catch (error) {
+      console.log('Failed to share PDF snapshot:', error);
+      Alert.alert('Export Error', 'Could not export PDF snapshot.');
+    }
+  };
+
   const openUSCISPortal = async () => {
     const url = 'https://myaccount.uscis.gov/sign-in';
     try {
@@ -1810,12 +2093,42 @@ function CaseProgressScreen({ navigation }) {
             <View style={[styles.caseProgressFill, { width: `${progressPct}%` }]} />
           </View>
 
-          <Text style={styles.caseSubtext}>Stage: {CASE_PROGRESS_STAGES[currentStage]}</Text>
+          <Text style={styles.caseSubtext}>Stage: {currentStageLabel}</Text>
 
           <TouchableOpacity style={styles.casePortalButton} onPress={openUSCISPortal}>
             <MaterialCommunityIcons name="open-in-new" size={18} color="#fff" />
             <Text style={styles.casePortalButtonText}>Open USCIS Account</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.caseCard}>
+          <Text style={styles.caseTitle}>Weekly Reminder</Text>
+          <Text style={styles.caseSubtext}>Set a weekly push reminder to check USCIS status and update this tracker.</Text>
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Reminder Day</Text>
+          <View style={styles.pickerContainer}>
+            <Picker selectedValue={reminderWeekday} onValueChange={(value) => setReminderWeekday(Number(value) || 2)} style={styles.picker}>
+              {WEEKDAY_OPTIONS.map((day) => (
+                <Picker.Item key={day.value} label={day.label} value={day.value} />
+              ))}
+            </Picker>
+          </View>
+
+          <View style={styles.caseActionRow}>
+            <TouchableOpacity style={styles.caseSaveButton} onPress={enableWeeklyReminder}>
+              <MaterialCommunityIcons name="bell-ring-outline" size={18} color="#fff" />
+              <Text style={styles.caseSaveButtonText}>Enable Weekly Reminder</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.caseResetButton} onPress={disableWeeklyReminder}>
+              <MaterialCommunityIcons name="bell-off-outline" size={18} color="#7C3AED" />
+              <Text style={styles.caseResetButtonText}>Disable</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.caseSubtext}>
+            Reminder status: {reminderEnabled ? 'Enabled' : 'Disabled'}
+          </Text>
         </View>
 
         <View style={styles.caseCard}>
@@ -1889,6 +2202,22 @@ function CaseProgressScreen({ navigation }) {
         </View>
 
         <View style={styles.caseCard}>
+          <Text style={styles.caseTitle}>Document Checklist Template</Text>
+          <Text style={styles.caseSubtext}>Recommended docs/tasks for stage: {currentStageLabel}</Text>
+          {stageChecklist.map((item, idx) => (
+            <View key={`${currentStageLabel}-${idx}`} style={styles.caseChecklistItem}>
+              <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={16} color="#2563EB" />
+              <Text style={styles.caseChecklistText}>{item}</Text>
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.caseSecondaryButton} onPress={addChecklistToNotes}>
+            <MaterialCommunityIcons name="note-plus-outline" size={18} color="#1F2937" />
+            <Text style={styles.caseSecondaryButtonText}>Add Checklist To Notes</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.caseCard}>
           <Text style={styles.caseTitle}>Timeline</Text>
           {(savedCase?.timeline || []).length === 0 ? (
             <Text style={styles.caseSubtext}>No updates yet. Save your first status update to start timeline tracking.</Text>
@@ -1904,6 +2233,18 @@ function CaseProgressScreen({ navigation }) {
               </View>
             ))
           )}
+
+          <View style={styles.caseActionRow}>
+            <TouchableOpacity style={styles.caseSaveButton} onPress={shareTextSnapshot}>
+              <MaterialCommunityIcons name="share-variant-outline" size={18} color="#fff" />
+              <Text style={styles.caseSaveButtonText}>Share Text Snapshot</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.caseResetButton} onPress={sharePdfSnapshot}>
+              <MaterialCommunityIcons name="file-pdf-box" size={18} color="#7C3AED" />
+              <Text style={styles.caseResetButtonText}>Export PDF</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -3465,6 +3806,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     marginTop: 2,
+  },
+  caseChecklistItem: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  caseChecklistText: {
+    marginLeft: 8,
+    color: '#374151',
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
+  },
+  caseSecondaryButton: {
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  caseSecondaryButtonText: {
+    marginLeft: 8,
+    color: '#1F2937',
+    fontWeight: '700',
   },
 
   // Profile
