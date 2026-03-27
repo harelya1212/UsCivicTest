@@ -872,7 +872,7 @@ function HomeScreen({ navigation }) {
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ModeSelector')}>
             <MaterialCommunityIcons name="target" size={20} color="#FF9800" />
-            <Text style={styles.actionButtonText}>Switch Test Type</Text>
+            <Text style={styles.actionButtonText}>Practice by Topic</Text>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
           </TouchableOpacity>
 
@@ -905,6 +905,17 @@ function HomeScreen({ navigation }) {
 }
 
 // 🎯 MODE SELECTOR SCREEN
+const ALL_TOPICS_VALUE = '__all_topics__';
+const ALL_SUBTOPICS_VALUE = '__all_subtopics__';
+
+function getQuestionTopic(question) {
+  return question?.topic || question?.category || 'General';
+}
+
+function getQuestionSubTopic(question) {
+  return question?.subTopic || 'General';
+}
+
 function ModeSelectorScreen({ navigation }) {
   const { testDetails } = useContext(AppDataContext);
   const modes = [
@@ -912,7 +923,42 @@ function ModeSelectorScreen({ navigation }) {
     { type: 'naturalization100', title: 'Naturalization (100Q)', icon: '🏛️', color: '#3B82F6' },
     { type: 'naturalization128', title: 'Naturalization (128Q)', icon: '🇺🇸', color: '#10B981' },
   ];
-  const selectedType = testDetails?.testType || 'naturalization128';
+  const defaultType = testDetails?.testType || 'naturalization128';
+  const [selectedType, setSelectedType] = useState(defaultType);
+  const [selectedTopic, setSelectedTopic] = useState(ALL_TOPICS_VALUE);
+  const [selectedSubTopic, setSelectedSubTopic] = useState(ALL_SUBTOPICS_VALUE);
+
+  const fullPool = getQuestionBank(selectedType);
+  const topicOptions = Array.from(new Set(fullPool.map((question) => getQuestionTopic(question)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+  const subTopicSourcePool = selectedTopic === ALL_TOPICS_VALUE
+    ? fullPool
+    : fullPool.filter((question) => getQuestionTopic(question) === selectedTopic);
+  const subTopicOptions = Array.from(new Set(subTopicSourcePool.map((question) => getQuestionSubTopic(question)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+  const filteredPool = fullPool.filter((question) => {
+    const topicMatch = selectedTopic === ALL_TOPICS_VALUE || getQuestionTopic(question) === selectedTopic;
+    const subTopicMatch = selectedSubTopic === ALL_SUBTOPICS_VALUE || getQuestionSubTopic(question) === selectedSubTopic;
+    return topicMatch && subTopicMatch;
+  });
+
+  const handleSelectType = (type) => {
+    setSelectedType(type);
+    setSelectedTopic(ALL_TOPICS_VALUE);
+    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
+  };
+
+  const startPractice = () => {
+    navigation.navigate('Quiz', {
+      type: selectedType,
+      topicFilter: selectedTopic === ALL_TOPICS_VALUE ? null : selectedTopic,
+      subTopicFilter: selectedSubTopic === ALL_SUBTOPICS_VALUE ? null : selectedSubTopic,
+    });
+  };
+
+  useEffect(() => {
+    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
+  }, [selectedTopic]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -922,8 +968,8 @@ function ModeSelectorScreen({ navigation }) {
           <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.pageTitle}>Switch Test Type</Text>
-        <Text style={styles.pageSubtitle}>Your current selection is highlighted</Text>
+        <Text style={styles.pageTitle}>Practice Setup</Text>
+        <Text style={styles.pageSubtitle}>Choose test type, topic, and subtopic before you start</Text>
 
         {modes.map((mode) => {
           const isSelected = mode.type === selectedType;
@@ -931,7 +977,7 @@ function ModeSelectorScreen({ navigation }) {
             <TouchableOpacity
               key={mode.type}
               style={[styles.modeCard, { borderLeftColor: mode.color, borderLeftWidth: isSelected ? 6 : 3, backgroundColor: isSelected ? '#F3F0FF' : '#fff' }]}
-              onPress={() => navigation.navigate('Quiz', { type: mode.type })}
+              onPress={() => handleSelectType(mode.type)}
               activeOpacity={0.7}
             >
               <View style={styles.modeIcon}>
@@ -939,12 +985,46 @@ function ModeSelectorScreen({ navigation }) {
               </View>
               <View style={styles.modeContent}>
                 <Text style={[styles.modeTitle, isSelected && { color: '#7C3AED' }]}>{mode.title}</Text>
-                <Text style={styles.modeDesc}>{isSelected ? '✅ Your selected test' : 'Tap to start quiz'}</Text>
+                <Text style={styles.modeDesc}>{isSelected ? '✅ Selected test type' : 'Tap to select this test'}</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={24} color={mode.color} />
+              <MaterialCommunityIcons name={isSelected ? 'check-circle' : 'chevron-right'} size={24} color={mode.color} />
             </TouchableOpacity>
           );
         })}
+
+        <View style={styles.modeFilterCard}>
+          <Text style={styles.modeFilterTitle}>Filter Questions</Text>
+          <Text style={styles.modeFilterHint}>Use these filters to focus practice on one area.</Text>
+
+          <Text style={styles.modeFilterLabel}>Topic</Text>
+          <View style={styles.pickerContainer}>
+            <Picker selectedValue={selectedTopic} onValueChange={(value) => setSelectedTopic(value)} style={styles.picker}>
+              <Picker.Item label="All topics" value={ALL_TOPICS_VALUE} />
+              {topicOptions.map((topic) => (
+                <Picker.Item key={topic} label={topic} value={topic} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={[styles.modeFilterLabel, { marginTop: 12 }]}>Subtopic</Text>
+          <View style={styles.pickerContainer}>
+            <Picker selectedValue={selectedSubTopic} onValueChange={(value) => setSelectedSubTopic(value)} style={styles.picker}>
+              <Picker.Item label="All subtopics" value={ALL_SUBTOPICS_VALUE} />
+              {subTopicOptions.map((subTopic) => (
+                <Picker.Item key={subTopic} label={subTopic} value={subTopic} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={styles.modeFilterSummary}>
+            {filteredPool.length} question{filteredPool.length === 1 ? '' : 's'} match your filters
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.modeStartButton} onPress={startPractice}>
+          <MaterialCommunityIcons name="play-circle" size={20} color="#fff" />
+          <Text style={styles.modeStartButtonText}>Start Practice</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -954,12 +1034,22 @@ function ModeSelectorScreen({ navigation }) {
 // Slow-paced, visual, with 4 answer options and clear explanations
 function QuizScreen({ route, navigation }) {
   const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial } = useContext(AppDataContext);
-  const { type } = route.params;
+  const { type, topicFilter, subTopicFilter } = route.params;
   const fullPool = getQuestionBank(type); // Use official USCIS questions
+  const activeTopicFilter = topicFilter ? String(topicFilter).trim() : null;
+  const activeSubTopicFilter = subTopicFilter ? String(subTopicFilter).trim() : null;
+  const filteredPool = fullPool.filter((question) => {
+    const questionTopic = getQuestionTopic(question);
+    const questionSubTopic = getQuestionSubTopic(question);
+    const topicMatch = !activeTopicFilter || questionTopic === activeTopicFilter;
+    const subTopicMatch = !activeSubTopicFilter || questionSubTopic === activeSubTopicFilter;
+    return topicMatch && subTopicMatch;
+  });
+  const effectivePool = filteredPool.length ? filteredPool : fullPool;
   const forcedQuestionCount = Number(route?.params?.forceQuestionCount || 0);
   const sessionQuestionCount = testDetails?.studyPlan?.questionsPerDay
-    ? Math.min(fullPool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
-    : fullPool.length;
+    ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
+    : effectivePool.length;
   const shouldResumeSession = Boolean(
     route?.params?.resumeSession &&
     pausedSession &&
@@ -969,7 +1059,7 @@ function QuizScreen({ route, navigation }) {
   );
   const initialPool = shouldResumeSession
     ? pausedSession.pool
-    : fullPool.slice(0, forcedQuestionCount > 0 ? Math.min(fullPool.length, forcedQuestionCount) : sessionQuestionCount);
+    : effectivePool.slice(0, forcedQuestionCount > 0 ? Math.min(effectivePool.length, forcedQuestionCount) : sessionQuestionCount);
   const initialCurrent = shouldResumeSession ? pausedSession.current || 0 : 0;
   const initialScore = shouldResumeSession ? pausedSession.score || 0 : 0;
   const initialHistory = shouldResumeSession ? pausedSession.history || [] : [];
@@ -2883,6 +2973,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 2,
+  },
+  modeFilterCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  modeFilterTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  modeFilterHint: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  modeFilterLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4b5563',
+    marginBottom: 6,
+  },
+  modeFilterSummary: {
+    marginTop: 12,
+    fontSize: 13,
+    color: '#065f46',
+    fontWeight: '600',
+  },
+  modeStartButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#7C3AED',
+  },
+  modeStartButtonText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '700',
   },
 
   // Profile
