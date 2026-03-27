@@ -460,7 +460,7 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -476,7 +476,7 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -604,7 +604,7 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -620,7 +620,7 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: '65/20 Special',
     is_65_20: true,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -732,7 +732,7 @@ const civicsQuestions = [
     alternateAnswers: ["Cabinet","Federal departments and agencies"],
     category: 'Standard',
     is_65_20: false,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -748,7 +748,7 @@ const civicsQuestions = [
     alternateAnswers: [],
     category: 'Standard',
     is_65_20: false,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
@@ -764,7 +764,7 @@ const civicsQuestions = [
     alternateAnswers: ["Secretary of Agriculture","Secretary of Commerce","Secretary of Education","Secretary of Energy","Secretary of Health and Human Services","Secretary of Homeland Security","Secretary of Housing and Urban Development","Secretary of the Interior","Secretary of Labor","Secretary of State","Secretary of Transportation","Secretary of the Treasury","Secretary of Veterans Affairs","Secretary of War (Defense)","Vice-President","Administrator of the Environmental Protection Agency","Administrator of the Small Business Administration","Director of the Central Intelligence Agency","Director of the Office of Management and Budget","Director of National Intelligence","United States Trade Representative"],
     category: 'Standard',
     is_65_20: false,
-    imageUrl: null,
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
     wrongAnswers: {
