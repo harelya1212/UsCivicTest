@@ -1507,6 +1507,17 @@ function FamilyScreen({ navigation }) {
     { id: 3, name: 'Brother', points: 320, level: 4, initials: 'B', completed: 6 },
   ]);
 
+  const inviteFamilyMembers = async () => {
+    try {
+      await Share.share({
+        message:
+          'Join my family in Civics Coach so we can practice together and track our progress!',
+      });
+    } catch (error) {
+      Alert.alert('Unable to Share', 'Please try again in a moment.');
+    }
+  };
+
   const sorted = [...family].sort((a, b) => b.points - a.points);
 
   return (
@@ -1537,7 +1548,10 @@ function FamilyScreen({ navigation }) {
           </View>
         ))}
 
-        <TouchableOpacity style={[styles.button, styles.buttonPrimary, { marginTop: 20 }]}>
+        <TouchableOpacity
+          style={[styles.button, styles.buttonPrimary, { marginTop: 20 }]}
+          onPress={inviteFamilyMembers}
+        >
           <MaterialCommunityIcons name="plus-circle" size={20} color="#fff" />
           <Text style={[styles.buttonText, { color: '#fff', marginLeft: 8 }]}>Invite Family Members</Text>
         </TouchableOpacity>
