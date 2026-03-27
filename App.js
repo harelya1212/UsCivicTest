@@ -19,6 +19,7 @@ import {
   TextInput,
   Platform,
   Modal,
+  Linking,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
@@ -55,9 +56,40 @@ const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get('window');
 const PAUSED_SESSION_STORAGE_KEY = 'civics.pausedSession.v1';
 const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
+const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
 const DAILY_FREE_PACK_LIMIT = 1;
 const FREE_PACK_QUESTION_COUNT = 15;
 const FREE_PACK_COOLDOWN_MS = 60 * 60 * 1000;
+
+const CASE_PROGRESS_STAGES = [
+  'Case Received',
+  'Biometrics Scheduled',
+  'Biometrics Completed',
+  'Interview Scheduled',
+  'Interview Completed',
+  'Oath Scheduled',
+  'Naturalized',
+];
+
+function buildCaseProgressStorageKey(testDetails) {
+  const raw = `${testDetails?.name || 'default'}_${testDetails?.state || testDetails?.location || 'unknown'}`;
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return `${CASE_PROGRESS_STORAGE_PREFIX}.${normalized || 'default'}`;
+}
+
+function buildDefaultCaseProgress(testDetails) {
+  const today = new Date().toLocaleDateString();
+  return {
+    applicantName: testDetails?.name || 'Applicant',
+    receiptNumber: '',
+    caseType: 'N-400',
+    currentStage: 0,
+    latestStatus: 'Case created in app tracker',
+    lastUpdated: today,
+    notes: '',
+    timeline: [],
+  };
+}
 
 const createDefaultAdRuntime = () => ({
   dayKey: '',
@@ -881,6 +913,12 @@ function HomeScreen({ navigation }) {
             <Text style={styles.actionButtonText}>Family Challenge</Text>
             <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('CaseProgress')}>
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#2563EB" />
+            <Text style={styles.actionButtonText}>Case Progress Tracker</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+          </TouchableOpacity>
         </View>
 
         {/* Achievements Preview */}
@@ -1592,6 +1630,281 @@ function ProfileScreen({ navigation }) {
             </View>
           </>
         )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function CaseProgressScreen({ navigation }) {
+  const { testDetails } = useContext(AppDataContext);
+  const storageKey = buildCaseProgressStorageKey(testDetails);
+  const [loading, setLoading] = useState(true);
+  const [savedCase, setSavedCase] = useState(null);
+  const [receiptNumber, setReceiptNumber] = useState('');
+  const [caseType, setCaseType] = useState('N-400');
+  const [currentStage, setCurrentStage] = useState(0);
+  const [latestStatus, setLatestStatus] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleDateString());
+  const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCaseProgress = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(storageKey);
+        if (!mounted) return;
+
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          setSavedCase(parsed);
+          setReceiptNumber(parsed.receiptNumber || '');
+          setCaseType(parsed.caseType || 'N-400');
+          setCurrentStage(Math.max(0, Math.min(CASE_PROGRESS_STAGES.length - 1, Number(parsed.currentStage) || 0)));
+          setLatestStatus(parsed.latestStatus || '');
+          setLastUpdated(parsed.lastUpdated || new Date().toLocaleDateString());
+          setNotes(parsed.notes || '');
+        } else {
+          const fallback = buildDefaultCaseProgress(testDetails);
+          setSavedCase(fallback);
+          setReceiptNumber(fallback.receiptNumber);
+          setCaseType(fallback.caseType);
+          setCurrentStage(fallback.currentStage);
+          setLatestStatus(fallback.latestStatus);
+          setLastUpdated(fallback.lastUpdated);
+          setNotes(fallback.notes);
+        }
+      } catch (error) {
+        console.log('Failed to load case progress:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadCaseProgress();
+    return () => {
+      mounted = false;
+    };
+  }, [storageKey, testDetails]);
+
+  const progressPct = Math.round(((currentStage + 1) / CASE_PROGRESS_STAGES.length) * 100);
+
+  const saveCaseProgress = async () => {
+    if (!receiptNumber.trim()) {
+      Alert.alert('Missing Receipt Number', 'Please enter your USCIS receipt number before saving.');
+      return;
+    }
+
+    const nowStamp = new Date().toLocaleDateString();
+    const normalizedDate = lastUpdated.trim() || nowStamp;
+    const stageLabel = CASE_PROGRESS_STAGES[currentStage] || CASE_PROGRESS_STAGES[0];
+    const statusLabel = latestStatus.trim() || stageLabel;
+    const previousTimeline = Array.isArray(savedCase?.timeline) ? savedCase.timeline : [];
+    const changed = !savedCase
+      || savedCase.currentStage !== currentStage
+      || String(savedCase.latestStatus || '') !== statusLabel
+      || String(savedCase.lastUpdated || '') !== normalizedDate;
+
+    const timeline = changed
+      ? [
+          {
+            id: `${Date.now()}`,
+            date: normalizedDate,
+            stage: stageLabel,
+            status: statusLabel,
+          },
+          ...previousTimeline,
+        ].slice(0, 30)
+      : previousTimeline;
+
+    const payload = {
+      applicantName: testDetails?.name || 'Applicant',
+      receiptNumber: receiptNumber.trim(),
+      caseType: caseType.trim() || 'N-400',
+      currentStage,
+      latestStatus: statusLabel,
+      lastUpdated: normalizedDate,
+      notes,
+      timeline,
+    };
+
+    try {
+      await AsyncStorage.setItem(storageKey, JSON.stringify(payload));
+      setSavedCase(payload);
+      Alert.alert('Saved', 'Case progress was saved for this user profile.');
+    } catch (error) {
+      console.log('Failed to save case progress:', error);
+      Alert.alert('Save Failed', 'Please try again.');
+    }
+  };
+
+  const clearCaseProgress = async () => {
+    Alert.alert('Reset Case Progress', 'This will remove saved case progress for this profile.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        style: 'destructive',
+        onPress: async () => {
+          const fallback = buildDefaultCaseProgress(testDetails);
+          try {
+            await AsyncStorage.removeItem(storageKey);
+            setSavedCase(fallback);
+            setReceiptNumber(fallback.receiptNumber);
+            setCaseType(fallback.caseType);
+            setCurrentStage(fallback.currentStage);
+            setLatestStatus(fallback.latestStatus);
+            setLastUpdated(fallback.lastUpdated);
+            setNotes(fallback.notes);
+          } catch (error) {
+            console.log('Failed to clear case progress:', error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const openUSCISPortal = async () => {
+    const url = 'https://myaccount.uscis.gov/sign-in';
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        Alert.alert('Unable to Open Link', 'Please open USCIS manually in your browser.');
+        return;
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.log('Unable to open USCIS link:', error);
+      Alert.alert('Unable to Open Link', 'Please open USCIS manually in your browser.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.container}>
+          <Text style={styles.pageTitle}>Case Progress</Text>
+          <Text style={styles.pageSubtitle}>Loading your case tracker...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#7C3AED" />
+          <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.pageTitle}>Case Progress Tracker</Text>
+        <Text style={styles.pageSubtitle}>Track your USCIS timeline and sync updates after checking your official account.</Text>
+
+        <View style={styles.caseCard}>
+          <View style={styles.caseHeaderRow}>
+            <Text style={styles.caseTitle}>{testDetails?.name || 'Applicant'}</Text>
+            <Text style={styles.casePct}>{progressPct}%</Text>
+          </View>
+
+          <View style={styles.caseProgressTrack}>
+            <View style={[styles.caseProgressFill, { width: `${progressPct}%` }]} />
+          </View>
+
+          <Text style={styles.caseSubtext}>Stage: {CASE_PROGRESS_STAGES[currentStage]}</Text>
+
+          <TouchableOpacity style={styles.casePortalButton} onPress={openUSCISPortal}>
+            <MaterialCommunityIcons name="open-in-new" size={18} color="#fff" />
+            <Text style={styles.casePortalButtonText}>Open USCIS Account</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.caseCard}>
+          <Text style={styles.caseLabel}>Receipt Number</Text>
+          <TextInput
+            style={styles.textInput}
+            value={receiptNumber}
+            onChangeText={setReceiptNumber}
+            placeholder="Example: IOE1234567890"
+            autoCapitalize="characters"
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Case Type</Text>
+          <TextInput
+            style={styles.textInput}
+            value={caseType}
+            onChangeText={setCaseType}
+            placeholder="N-400"
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Current Stage</Text>
+          <View style={styles.pickerContainer}>
+            <Picker selectedValue={currentStage} onValueChange={(value) => setCurrentStage(Number(value) || 0)} style={styles.picker}>
+              {CASE_PROGRESS_STAGES.map((stage, idx) => (
+                <Picker.Item key={stage} label={`${idx + 1}. ${stage}`} value={idx} />
+              ))}
+            </Picker>
+          </View>
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Latest USCIS Status</Text>
+          <TextInput
+            style={styles.textInput}
+            value={latestStatus}
+            onChangeText={setLatestStatus}
+            placeholder="Ex: Interview was scheduled"
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Last Updated (MM/DD/YYYY)</Text>
+          <TextInput
+            style={styles.textInput}
+            value={lastUpdated}
+            onChangeText={setLastUpdated}
+            placeholder="MM/DD/YYYY"
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Notes</Text>
+          <TextInput
+            style={[styles.textInput, { minHeight: 90, textAlignVertical: 'top' }]}
+            multiline
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Interview prep notes, document checklist, reminders..."
+            placeholderTextColor="#9CA3AF"
+          />
+
+          <View style={styles.caseActionRow}>
+            <TouchableOpacity style={styles.caseSaveButton} onPress={saveCaseProgress}>
+              <MaterialCommunityIcons name="content-save" size={18} color="#fff" />
+              <Text style={styles.caseSaveButtonText}>Save Progress</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.caseResetButton} onPress={clearCaseProgress}>
+              <MaterialCommunityIcons name="trash-can-outline" size={18} color="#7C3AED" />
+              <Text style={styles.caseResetButtonText}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.caseCard}>
+          <Text style={styles.caseTitle}>Timeline</Text>
+          {(savedCase?.timeline || []).length === 0 ? (
+            <Text style={styles.caseSubtext}>No updates yet. Save your first status update to start timeline tracking.</Text>
+          ) : (
+            (savedCase?.timeline || []).map((event) => (
+              <View key={event.id} style={styles.caseTimelineItem}>
+                <View style={styles.caseTimelineDot} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.caseTimelineStage}>{event.stage}</Text>
+                  <Text style={styles.caseTimelineStatus}>{event.status}</Text>
+                  <Text style={styles.caseTimelineDate}>{event.date}</Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -2402,6 +2715,7 @@ export default function App() {
               <Stack.Screen name="Review" component={ReviewScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Family" component={FamilyScreen} />
+              <Stack.Screen name="CaseProgress" component={CaseProgressScreen} />
             </>
           )}
         </Stack.Navigator>
@@ -3023,6 +3337,134 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // Case Progress
+  caseCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  caseHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  caseTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  casePct: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  caseSubtext: {
+    marginTop: 8,
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  caseProgressTrack: {
+    marginTop: 12,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  caseProgressFill: {
+    height: '100%',
+    backgroundColor: '#2563EB',
+  },
+  casePortalButton: {
+    marginTop: 12,
+    backgroundColor: '#111827',
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  casePortalButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  caseLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  caseActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+  },
+  caseSaveButton: {
+    flex: 1,
+    borderRadius: 10,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  caseSaveButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  caseResetButton: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  caseResetButtonText: {
+    color: '#7C3AED',
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+  caseTimelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  caseTimelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 6,
+    marginRight: 10,
+    backgroundColor: '#2563EB',
+  },
+  caseTimelineStage: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  caseTimelineStatus: {
+    fontSize: 13,
+    color: '#374151',
+    marginTop: 2,
+  },
+  caseTimelineDate: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
 
   // Profile
