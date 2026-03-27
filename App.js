@@ -1131,7 +1131,7 @@ function QuizScreen({ route, navigation }) {
     }
   };
 
-  const visualImageUrl = getVisualImage(question.question, question.answer);
+  const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -1163,14 +1163,24 @@ function QuizScreen({ route, navigation }) {
       >
         {/* 🎯 Question */}
         <View style={styles.questionCard}>
-          <Text style={[styles.questionText, { marginTop: 0 }]}>
-            {question.question}
-          </Text>
-          {isTwoAnswerQuestion && (
-            <Text style={styles.multiAnswerHint}>
-              In this quiz, choose one valid idea. In the interview, give any two accepted ideas.
+          {/* Visual memory hook — always visible before answering */}
+          {visualImageUrl ? (
+            <Image
+              source={{ uri: visualImageUrl }}
+              style={styles.questionImage}
+              resizeMode="cover"
+            />
+          ) : null}
+          <View style={{ padding: 20, paddingTop: visualImageUrl ? 16 : 20 }}>
+            <Text style={[styles.questionText, { marginTop: 0 }]}>
+              {question.question}
             </Text>
-          )}
+            {isTwoAnswerQuestion && (
+              <Text style={styles.multiAnswerHint}>
+                In this quiz, choose one valid idea. In the interview, give any two accepted ideas.
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* 🔘 4-Answer Options (ADHD-Friendly: Large Buttons) */}
@@ -1276,19 +1286,17 @@ function QuizScreen({ route, navigation }) {
               >
                 <MaterialCommunityIcons name="lightbulb-on" size={20} color="#fff" />
                 <Text style={styles.adhd_explanationButtonText}>
-                  🖼️ Show Photo
+                  � Why This Answer?
                 </Text>
               </TouchableOpacity>
             )}
 
-            {/* Visual Image Explanation */}
+            {/* Memory tip placeholder (replaces duplicate image box) */}
             {showExplanation && (
               <View style={styles.adhd_explanationBox}>
-                <Image
-                  source={{ uri: visualImageUrl }}
-                  style={styles.visualImage}
-                  resizeMode="cover"
-                />
+                <Text style={styles.adhd_explanationText}>
+                  {question.subTopic ? `📌 Topic: ${question.topic} → ${question.subTopic}` : ''}
+                </Text>
               </View>
             )}
 
@@ -3526,7 +3534,7 @@ const styles = StyleSheet.create({
   questionCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
+    overflow: 'hidden',
     marginBottom: 24,
     borderLeftWidth: 4,
     borderLeftColor: '#7C3AED',
@@ -3534,6 +3542,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+  },
+  questionImage: {
+    width: '100%',
+    height: 180,
   },
   multiAnswerHint: {
     marginTop: 10,

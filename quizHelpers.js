@@ -108,6 +108,30 @@ function normalizeForMatch(value) {
   return normalizeText(value).replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/**
+ * Strips parenthetical qualifiers and leading articles so that
+ * "(U.S.) Constitution" and "The Constitution" compare as equal.
+ * Prevents near-duplicate options from appearing in the quiz.
+ */
+function stripQualifiers(value) {
+  return normalizeText(value)
+    .replace(/\(.*?\)/g, '')          // remove (parenthetical) chunks
+    .replace(/^(the|a|an)\s+/g, '')  // strip leading articles
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isTooSimilar(candidate, reference) {
+  const cStripped = stripQualifiers(candidate);
+  const rStripped = stripQualifiers(reference);
+  if (!cStripped || !rStripped) return false;
+  // Exact match after stripping
+  if (cStripped === rStripped) return true;
+  // One is a substring of the other (e.g. "constitution" inside "u.s. constitution")
+  if (cStripped.includes(rStripped) || rStripped.includes(cStripped)) return true;
+  return false;
+}
+
 function inferTopicKey(question, answer = '') {
   const text = `${normalizeForMatch(question)} ${normalizeForMatch(answer)}`;
 
@@ -183,7 +207,9 @@ export function generateWrongAnswers(question, correctAnswer, alternateAnswers =
     normalizeText(correctAnswer),
     ...alternateAnswers.map(normalizeText)
   ]);
-  
+  // All reference answers we must not closely resemble
+  const allCorrect = [correctAnswer, ...alternateAnswers];
+
   // Build a broad candidate pool so each difficulty can still produce 3 wrong answers.
   const allTemplateValues = Object.values(DISTRACTOR_TEMPLATES).flat();
   const candidatePool = uniqueByNormalized([
@@ -193,7 +219,12 @@ export function generateWrongAnswers(question, correctAnswer, alternateAnswers =
     ...(topicKey === 'geography' ? GEOGRAPHY_CAPITALS : []),
     ...allTemplateValues,
     ...GLOBAL_FALLBACK_DISTRACTORS,
-  ]).filter((item) => !excluded.has(normalizeText(item)));
+  ]).filter((item) => {
+    if (excluded.has(normalizeText(item))) return false;
+    // Reject candidates that look the same after stripping parens/articles
+    if (allCorrect.some((ref) => isTooSimilar(item, ref))) return false;
+    return true;
+  });
 
   // Guarantee 9 values total (3 for each difficulty bucket).
   const filled = [...candidatePool];
@@ -241,6 +272,8 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
     alternateAnswers
   );
 
+  const allAccepted = [resolvedCorrectAnswer, ...alternateAnswers];
+
   // Build a unique wrong-answer pool across all difficulty levels, then pick 3.
   const wrongPool = uniqueByNormalized([
     ...(wrongAnswers[difficulty] || []),
@@ -249,9 +282,13 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
     ...wrongAnswers.hard,
     ...GLOBAL_FALLBACK_DISTRACTORS,
   ]).filter((option) => {
-    const normalizedOption = normalizeText(option);
-    if (normalizedOption === normalizeText(resolvedCorrectAnswer)) return false;
-    return !alternateAnswers.some((alt) => normalizeText(alt) === normalizedOption);
+    // Exact match
+    if (normalizeText(option) === normalizeText(resolvedCorrectAnswer)) return false;
+    // Exact match with any alternate
+    if (alternateAnswers.some((alt) => normalizeText(alt) === normalizeText(option))) return false;
+    // Fuzzy match — strip parens/articles before comparing
+    if (allAccepted.some((ref) => isTooSimilar(option, ref))) return false;
+    return true;
   });
 
   const selectedWrong = shuffleArray(wrongPool).slice(0, 3);
