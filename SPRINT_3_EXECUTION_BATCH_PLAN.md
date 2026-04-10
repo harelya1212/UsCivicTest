@@ -16,6 +16,14 @@ Progress update (2026-04-10):
 - Implemented Quiz speed toggle (0.75x, 1.0x, 1.25x)
 - Added analytics events for play/repeat/speed change
 
+Validation update (2026-04-10):
+- `node scripts/test-interview-scoring.mjs` -> 12/12 passed
+- `node scripts/comprehensive-scoring-tests.mjs` -> 40/40 passed
+- `node scripts/unseen-phrasing-scoring-tests.mjs` -> 30/30 passed
+- `node scripts/test-smartQueue.mjs` -> 28 passed
+- `npx expo export --platform web` -> Exported `dist`
+- Remaining: manual in-app Listen mode walkthrough + analytics payload spot-check
+
 Scope:
 - Implement TTS playback for question prompt in Listen mode
 - Add speed controls (0.75x, 1.0x, 1.25x)

@@ -120,4 +120,5 @@ Definition of done:
 - [ ] Interview Mode flow polish and integration QA (active - pass 1 complete)
 - [ ] Device/simulator smoke pass and release evidence capture (deferred blocker)
 - [x] Sprint 3 task breakdown into execution batches
-- [ ] Sprint 3 Batch 1 validation: manual Listen-mode pass + event payload verification
+- [x] Sprint 3 Batch 1 automated validation: regressions + web export smoke
+- [ ] Sprint 3 Batch 1 manual validation: Listen-mode walkthrough + event payload verification
