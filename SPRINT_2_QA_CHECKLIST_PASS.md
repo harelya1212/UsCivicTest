@@ -21,6 +21,7 @@ Scope: Interview Mode v1 end-to-end hardening, event consistency, scoring reliab
 - [x] Prompt -> recording -> scoring -> next question path remains functional
 - [x] Main-question skip emits consistent submission event with skipped metadata
 - [x] Follow-up skip emits follow-up completed event with skipped metadata
+- [x] Follow-up skip advances to next question without re-showing follow-up prompt
 - [x] Session completion event emits once (duplicate protection added)
 - [x] Early exit emits dedicated session-exited event (no funnel distortion)
 
@@ -53,6 +54,13 @@ Result:
 
 - [x] `node scripts/test-smartQueue.mjs` -> 28 passed
 - [x] No static diagnostics errors in edited files
+
+### Post-Checkpoint Integration Rerun (2026-04-10)
+
+- [x] `node scripts/test-interview-scoring.mjs` -> 12/12 passed
+- [x] `node scripts/comprehensive-scoring-tests.mjs` -> 40/40 passed
+- [x] `node scripts/unseen-phrasing-scoring-tests.mjs` -> 30/30 passed
+- [x] `node scripts/test-smartQueue.mjs` -> 28 passed
 
 ### Runtime Baseline Validation (Post-Hardening)
 

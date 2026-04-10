@@ -34,6 +34,8 @@ Status: `in progress`
 - [x] Hardened scoring against unseen phrasing (30/30 pass)
 - [x] Module cleanup completed (ESM script compatibility + warning removal)
 - [x] Checkpoint commit created for hardening + module cleanup
+- [x] Follow-up skip flow polish: skip now advances to next question without re-trigger loop
+- [x] Full regression rerun after polish: 12/12, 40/40, 30/30, Smart Queue 28 passed
 - [ ] iOS simulator smoke pass (deferred - local Simulator.app has no available devices)
 
 Definition of done:
@@ -114,6 +116,6 @@ Definition of done:
 - [ ] Run regression test pass before sprint close
 
 ## Immediate Next Work (Ready Queue)
-- [ ] Interview Mode flow polish and integration QA (active)
+- [ ] Interview Mode flow polish and integration QA (active - pass 1 complete)
 - [ ] Device/simulator smoke pass and release evidence capture (deferred blocker)
 - [ ] Sprint 3 task breakdown into execution batches
