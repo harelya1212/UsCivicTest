@@ -8,8 +8,14 @@
  *   node scripts/enrich-question-bank.js
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const ALLOWED_SOURCE_FILE = 'civics-questions-2026-02-06.csv';
+const BLOCKED_SOURCE_FILE = 'questions_ff_ready.csv';
 
 // ─── parse CSV ────────────────────────────────────────────────────────────────
 // columns: USCIS ID,Question,Option A,Option B,Option C,Option D,
@@ -46,6 +52,27 @@ function parseCSVLine(line) {
   return result;
 }
 
+function hasPlaceholderText(value) {
+  const text = String(value || '').toLowerCase();
+  if (!text) return false;
+  return (
+    text.includes('placeholder') ||
+    text.includes('lorem ipsum') ||
+    text.includes('sample answer') ||
+    text.includes('sample question') ||
+    text.includes('todo') ||
+    text.includes('tbd')
+  );
+}
+
+function escapeJsString(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r?\n/g, ' ')
+    .trim();
+}
+
 // ─── normalise text for fuzzy matching ───────────────────────────────────────
 function norm(s) {
   return s.toLowerCase()
@@ -56,9 +83,35 @@ function norm(s) {
 }
 
 // ─── load CSV ─────────────────────────────────────────────────────────────────
-const csvPath = path.join(__dirname, '../app/civics-questions-2026-02-06.csv');
+const sourceArg = process.argv[2];
+const resolvedSourcePath = sourceArg
+  ? path.resolve(process.cwd(), sourceArg)
+  : path.join(__dirname, `../app/${ALLOWED_SOURCE_FILE}`);
+
+const sourceBasename = path.basename(resolvedSourcePath);
+if (sourceBasename === BLOCKED_SOURCE_FILE) {
+  throw new Error(`Blocked source file: ${BLOCKED_SOURCE_FILE}. Replace placeholders before import.`);
+}
+
+if (sourceBasename !== ALLOWED_SOURCE_FILE) {
+  throw new Error(
+    `Only ${ALLOWED_SOURCE_FILE} is allowed for enrichment. Received: ${sourceBasename}`
+  );
+}
+
+const csvPath = resolvedSourcePath;
 const csvRaw = fs.readFileSync(csvPath, 'utf8');
 const csvRows = parseCSV(csvRaw);
+
+const placeholderRowCount = csvRows.filter(row => {
+  return hasPlaceholderText(row['Question'])
+    || hasPlaceholderText(row['Official Answer'])
+    || hasPlaceholderText(row['Why This Answer?']);
+}).length;
+
+if (placeholderRowCount > 0) {
+  throw new Error(`Source CSV contains ${placeholderRowCount} placeholder-like rows; import aborted.`);
+}
 
 // Build two lookup maps:
 //  1. by USCIS ID (integer)
@@ -74,6 +127,7 @@ csvRows.forEach(row => {
     uscisId:       id,
     officialQ:     row['Question'],
     officialA:     row['Official Answer'],
+    whyThisAnswer: row['Why This Answer?'] || null,
     imageUrl:      row['Visual Memory Hook URL'] || null,
     topic:         row['Topic'] || null,
     subTopic:      row['Sub-Topic'] || null,
@@ -120,7 +174,7 @@ bankText = bankText.replace(
 // CIVICS_098: CSV says "With the 15th Amendment" – bank has "After the Civil War" as primary
 // Keep bank answer, CSV answer is already an alternateAnswer
 
-// ─── inject imageUrl / topic / subTopic into each CIVICS question block ───────
+// ─── inject imageUrl / topic / subTopic / whyThisAnswer into each block ──────
 // Strategy: find each block ending with `wrongAnswers: {` ... `}` and inject after is_65_20 line
 // We'll do targeted injection per question using the id as anchor.
 
@@ -133,14 +187,15 @@ for (let seq = 1; seq <= 128; seq++) {
   const uid = getUscisId(seq);
   const enrichment = uid ? byId[uid] : null;
 
-  const imageUrl  = enrichment?.imageUrl  || null;
-  const topic     = enrichment?.topic     || 'American Government';
-  const subTopic  = enrichment?.subTopic  || 'System of Government';
+  const imageUrl = enrichment?.imageUrl || null;
+  const topic = enrichment?.topic || 'American Government';
+  const subTopic = enrichment?.subTopic || 'System of Government';
+  const whyThisAnswer = enrichment?.whyThisAnswer || null;
 
   if (enrichment) matched++; else noMatch++;
 
   // Build injection string
-  const injection = `    imageUrl: ${imageUrl ? `'${imageUrl}'` : 'null'},\n    topic: '${topic}',\n    subTopic: '${subTopic}',\n`;
+  const injection = `    imageUrl: ${imageUrl ? `'${escapeJsString(imageUrl)}'` : 'null'},\n    topic: '${escapeJsString(topic)}',\n    subTopic: '${escapeJsString(subTopic)}',\n    whyThisAnswer: ${whyThisAnswer ? `'${escapeJsString(whyThisAnswer)}'` : 'null'},\n`;
 
   // Find the anchor: "id: 'CIVICS_NNN'" followed (eventually) by "is_65_20: ..."
   // We inject the three new lines right after the is_65_20 line for this block.
@@ -167,12 +222,27 @@ for (let seq = 1; seq <= 128; seq++) {
   const eolPos = bankText.indexOf('\n', is65Pos);
   if (eolPos === -1) continue;
 
-  // Check if imageUrl already injected (avoid double injection on re-runs)
+  // Check if imageUrl already injected and patch whyThisAnswer in-place.
   const nextLineStart = eolPos + 1;
   const nextLineEnd = bankText.indexOf('\n', nextLineStart);
   const nextLine = bankText.substring(nextLineStart, nextLineEnd);
   if (nextLine.includes('imageUrl:')) {
-    // Already injected, skip
+    const blockEndPos = bankText.indexOf('wrongAnswers:', idPos);
+    if (blockEndPos === -1) {
+      continue;
+    }
+
+    const blockText = bankText.substring(idPos, blockEndPos);
+    const whyLine = `    whyThisAnswer: ${whyThisAnswer ? `'${escapeJsString(whyThisAnswer)}'` : 'null'},`;
+
+    if (blockText.includes('whyThisAnswer:')) {
+      const updatedBlock = blockText.replace(/\s{4}whyThisAnswer:\s.*?,\n/, `${whyLine}\n`);
+      bankText = bankText.substring(0, idPos) + updatedBlock + bankText.substring(blockEndPos);
+    } else if (blockText.includes('subTopic:')) {
+      const updatedBlock = blockText.replace(/(\s{4}subTopic:\s.*?,\n)/, `$1${whyLine}\n`);
+      bankText = bankText.substring(0, idPos) + updatedBlock + bankText.substring(blockEndPos);
+    }
+
     continue;
   }
 
@@ -215,5 +285,5 @@ bankText = bankText.replace(
 
 fs.writeFileSync(bankPath, bankText, 'utf8');
 console.log(`\n✅ Written to ${bankPath}`);
-console.log(`   - 128 CIVICS questions now have imageUrl, topic, subTopic fields`);
+console.log(`   - 128 CIVICS questions now have imageUrl, topic, subTopic, whyThisAnswer fields`);
 console.log(`   - ${matched} matched to CSV images, ${noMatch} dynamic (imageUrl: null)`);
