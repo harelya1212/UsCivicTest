@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Civic Citizenship Sprint Plan</title>
+  <style>
+    :root {
+      --bg: #f7f8f4;
+      --panel: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --warn: #b45309;
+      --ok: #166534;
+      --blocked: #991b1b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, #ecfeff 0%, transparent 42%),
+        radial-gradient(circle at 90% 20%, #fef3c7 0%, transparent 40%),
+        var(--bg);
+      line-height: 1.4;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 18px 56px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      letter-spacing: 0.2px;
+      font-size: clamp(1.5rem, 2vw + 1rem, 2.3rem);
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      font-size: 12px;
+    }
+
+    .chip.inprogress { border-color: #0ea5e9; background: #e0f2fe; }
+    .chip.done { border-color: #22c55e; background: #dcfce7; }
+    .chip.blocked { border-color: #ef4444; background: #fee2e2; }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .status {
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    li { margin: 5px 0; }
+
+    .footer {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin: 10px 0 20px;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #14b8a6, #0ea5e9);
+      transition: width 400ms ease;
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 18px 12px 40px; }
+      .card { border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Civic Citizenship Delivery Plan</h1>
+    <p class="subtitle">12-week execution view for Interview, Listen-and-Go, ADHD UX, Team/Family sync, and monetization intelligence.</p>
+
+    <div class="legend">
+      <span class="chip">Not Started</span>
+      <span class="chip inprogress">In Progress</span>
+      <span class="chip done">Done</span>
+      <span class="chip blocked">Blocked</span>
+    </div>
+
+    <div class="card" style="margin-bottom: 14px; border-left: 4px solid #0ea5e9;">
+      <h2 style="margin-bottom: 6px;">Current Status (Apr 10, 2026 - Sprint 2 Hardening Complete)</h2>
+      <div class="status">Sprint 2 hardening checkpoint is complete; active task is Interview Mode flow polish and integration QA, with iOS smoke deferred due to local simulator availability.</div>
+      <ul>
+        <li>Done: Sprint 1 complete with state/navigation audit + documentation</li>
+        <li>Done: Interview scoring hardening and unseen-phrasing validation (30/30 pass)</li>
+        <li>Done: Node module cleanup and warning removal</li>
+        <li>In Progress: Interview Mode flow polish and integration QA</li>
+        <li>Blocked (Deferred): iOS simulator smoke (no available Simulator.app devices on current machine)</li>
+        <li>Next: Continue Interview flow polish and integration QA while blocker is deferred</li>
+      </ul>
+    </div>
+
+    <div class="progress" aria-label="Overall progress">
+      <span id="progressBar"></span>
+    </div>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Sprint 1: Foundation + Data Guardrails</h2>
+        <div class="status">Status: Done</div>
+        <ul>
+          <li>Done: Resolve architecture drift between root app and src tree</li>
+          <li>Done: Unify analytics event taxonomy across context + affected screens</li>
+          <li>Done: Import trusted fields from civics-questions-2026-02-06.csv</li>
+          <li>Done: Block questions_ff_ready.csv placeholder import</li>
+          <li>Done: Run regression checks for quiz + monetization flow guardrails</li>
+          <li>Done: Full state/navigation audit with SPRINT_1_STATE_UNIFICATION_GUIDE.md</li>
+          <li>Done: Navigation parameter validators created</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 2: Interview Mode v1</h2>
+        <div class="status">Status: In Progress</div>
+        <ul>
+          <li>Done: Spoken prompt + answer capture (TTS + audio recording)</li>
+          <li>Done: Rubric scoring and unseen-phrasing hardening</li>
+          <li>Done: Smart follow-up question triggering</li>
+          <li>Done: Home screen Interview CTA and navigation</li>
+          <li>Done: Interview funnel analytics (8-stage tracking)</li>
+          <li>In Progress: Flow polish and integration QA sweep</li>
+          <li>Blocked (Deferred): iOS simulator smoke until local simulator device is available</li>
+          <li>Target: All features complete by Apr 21</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 3: Listen-and-Go + ADHD Pack</h2>
+        <div class="status">Status: Not Started</div>
+        <ul>
+          <li>TTS playback with speed + repeat</li>
+          <li>Screen-off-friendly queue behavior</li>
+          <li>Low-clutter mode and step pacing</li>
+          <li>Micro-goals, break nudges, and exact resume</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 4: Recovery + Modern Visuals</h2>
+        <div class="status">Status: Not Started</div>
+        <ul>
+          <li>3-session weak-score recovery campaign</li>
+          <li>Ad-light first recovery session</li>
+          <li>Topic radar, trend strip, urgency map</li>
+          <li>Actionable recommendations from mastery signals</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 5: Team + Family Real Sync</h2>
+        <div class="status">Status: Not Started</div>
+        <ul>
+          <li>Create team and invite code</li>
+          <li>Shared goals and weekly challenge</li>
+          <li>Family board, streak chain, parent-child nudges</li>
+          <li>Access control and anti-spam rules</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 6: Seasons + Revenue Intelligence</h2>
+        <div class="status">Status: Not Started</div>
+        <ul>
+          <li>Weekly reset scoreboard seasons and rank tiers</li>
+          <li>Fair-play weighting by activity quality</li>
+          <li>High-intent upsell segmentation</li>
+          <li>D2/D5/D10 comeback reward loops</li>
+          <li>Winner auto-promotion with confidence decay expiry</li>
+        </ul>
+      </article>
+    </section>
+
+    <div class="card" style="margin-top: 14px;">
+      <h2>New Items and Ideas Added</h2>
+      <div class="status">Captured from current Sprint 1 execution findings</div>
+      <ul>
+        <li>Add CI hook to run validate:sprint1 on pull requests</li>
+        <li>Add data-quality threshold for whyThisAnswer population before surfacing it in UI</li>
+        <li>Add event taxonomy documentation so new ad surfaces use canonical names by default</li>
+        <li>Address Node module-type warning in Smart Queue script execution path</li>
+      </ul>
+    </div>
+
+    <p class="footer">Tip: Keep this page open during implementation. Update statuses as each sprint starts and closes.</p>
+  </main>
+
+  <script>
+    // Updated after Sprint 2 hardening and module cleanup checkpoint.
+    const completionPercent = 36;
+    document.getElementById('progressBar').style.width = `${completionPercent}%`;
+  </script>
+</body>
+</html>

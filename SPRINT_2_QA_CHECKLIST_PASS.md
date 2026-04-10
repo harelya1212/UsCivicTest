@@ -66,6 +66,8 @@ Result:
 - Question-aware scoring is now active with per-question rule tuning and official-answer matching.
 - Added dedicated unseen-phrasing regression suite and npm script: `npm run test:scoring:unseen`.
 - Keep monitoring production answers for fresh paraphrase drift and periodically append new unseen cases.
+- iOS simulator smoke is deferred as an environment blocker (no available Simulator.app devices on current machine).
+- Sprint 2 continues with active Interview flow polish and integration QA while simulator blocker is deferred.
 
 ## Files Changed During QA Hardening
 
