@@ -47,16 +47,17 @@ Definition of done:
 - [x] No regressions in Quiz mode or monetization flows
 
 ## Sprint 3 (Weeks 5-6): Listen-and-Go + ADHD Focus Pack
-Status: `not started`
+Status: `in progress`
 
-- [ ] Build TTS question playback
-- [ ] Add speed control and repeat
+- [x] Create Sprint 3 execution batch plan (B1-B4)
+- [x] Build TTS question playback (Quiz Listen mode)
+- [x] Add speed control and repeat (0.75x / 1.0x / 1.25x)
 - [ ] Add screen-off-friendly queue behavior where OS allows
 - [ ] Add low-clutter mode
 - [ ] Add step pacing and micro-goals
 - [ ] Add break nudges
 - [ ] Add resume exactly where I was
-- [ ] Add Listen quick action on Home
+- [x] Add Listen quick action on Home
 
 Definition of done:
 - [ ] Full audio session works across a practice set
@@ -118,4 +119,5 @@ Definition of done:
 ## Immediate Next Work (Ready Queue)
 - [ ] Interview Mode flow polish and integration QA (active - pass 1 complete)
 - [ ] Device/simulator smoke pass and release evidence capture (deferred blocker)
-- [ ] Sprint 3 task breakdown into execution batches
+- [x] Sprint 3 task breakdown into execution batches
+- [ ] Sprint 3 Batch 1 validation: manual Listen-mode pass + event payload verification

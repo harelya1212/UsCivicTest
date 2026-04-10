@@ -139,17 +139,21 @@
     </div>
 
     <div class="card" style="margin-bottom: 14px; border-left: 4px solid #0ea5e9;">
-      <h2 style="margin-bottom: 6px;">Current Status (Apr 10, 2026 - Sprint 2 Hardening Complete)</h2>
-      <div class="status">Sprint 2 hardening checkpoint is complete; active task is Interview Mode flow polish and integration QA, with iOS smoke deferred due to local simulator availability.</div>
+      <h2 style="margin-bottom: 6px;">Current Status (Apr 10, 2026 - Sprint 3 Batch 1 Coding Started)</h2>
+      <div class="status">Sprint 2 hardening + QA pass is complete for current scope; Sprint 3 Batch 1 implementation is now in progress with Listen mode controls wired into Quiz.</div>
       <ul>
         <li>Done: Sprint 1 complete with state/navigation audit + documentation</li>
         <li>Done: Interview scoring hardening and unseen-phrasing validation (30/30 pass)</li>
         <li>Done: Node module cleanup and warning removal</li>
         <li>Done: Follow-up skip flow polish (skip now advances without follow-up re-trigger)</li>
         <li>Done: Full integration rerun (12/12, 40/40, 30/30, Smart Queue 28 passed)</li>
+        <li>Done: Sprint 3 execution batch plan created (B1-B4)</li>
+        <li>Done: Home Listen CTA launches Quiz Listen mode</li>
+        <li>Done: Quiz TTS play/repeat + speed controls (0.75x, 1.0x, 1.25x)</li>
         <li>In Progress: Interview Mode flow polish and integration QA</li>
+        <li>In Progress: Sprint 3 Batch 1 validation (manual Listen flow + analytics payload checks)</li>
         <li>Blocked (Deferred): iOS simulator smoke (no available Simulator.app devices on current machine)</li>
-        <li>Next: Continue UI/UX polish sweep while iOS smoke remains deferred</li>
+        <li>Next: Complete Batch 1 validation and close Sprint 2 residual QA items</li>
       </ul>
     </div>
 
@@ -190,9 +194,12 @@
 
       <article class="card">
         <h2>Sprint 3: Listen-and-Go + ADHD Pack</h2>
-        <div class="status">Status: Not Started</div>
+        <div class="status">Status: In Progress</div>
         <ul>
-          <li>TTS playback with speed + repeat</li>
+          <li>Done: Batch execution plan created in SPRINT_3_EXECUTION_BATCH_PLAN.md</li>
+          <li>Done: Home Listen CTA wired to Quiz listenMode</li>
+          <li>Done: TTS playback with speed/repeat controls in Quiz</li>
+          <li>Next: Batch 1 validation pass and event verification</li>
           <li>Screen-off-friendly queue behavior</li>
           <li>Low-clutter mode and step pacing</li>
           <li>Micro-goals, break nudges, and exact resume</li>
@@ -249,8 +256,8 @@
   </main>
 
   <script>
-    // Updated after Sprint 2 hardening and module cleanup checkpoint.
-    const completionPercent = 36;
+    // Updated after Sprint 3 Batch 1 coding kickoff.
+    const completionPercent = 44;
     document.getElementById('progressBar').style.width = `${completionPercent}%`;
   </script>
 </body>
