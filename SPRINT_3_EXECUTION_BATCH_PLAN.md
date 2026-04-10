@@ -22,6 +22,7 @@ Validation update (2026-04-10):
 - `node scripts/unseen-phrasing-scoring-tests.mjs` -> 30/30 passed
 - `node scripts/test-smartQueue.mjs` -> 28 passed
 - `npx expo export --platform web` -> Exported `dist`
+- Admin analytics panel now includes Listen-mode counters and conversion rates for faster manual spot-check
 - Remaining: manual in-app Listen mode walkthrough + analytics payload spot-check
 
 Scope:

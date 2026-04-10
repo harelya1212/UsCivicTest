@@ -121,4 +121,4 @@ Definition of done:
 - [ ] Device/simulator smoke pass and release evidence capture (deferred blocker)
 - [x] Sprint 3 task breakdown into execution batches
 - [x] Sprint 3 Batch 1 automated validation: regressions + web export smoke
-- [ ] Sprint 3 Batch 1 manual validation: Listen-mode walkthrough + event payload verification
+- [ ] Sprint 3 Batch 1 manual validation: Listen-mode walkthrough + Admin listen-event payload verification
