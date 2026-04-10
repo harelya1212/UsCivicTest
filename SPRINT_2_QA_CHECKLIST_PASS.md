@@ -12,6 +12,7 @@ Scope: Interview Mode v1 end-to-end hardening, event consistency, scoring reliab
 - Regression checks (smart queue baseline): PASS
 - Scoring reliability: PASS (question-aware scorer now above 90% target)
 - Unseen-phrasing hardening: PASS (new anti-overfitting regression suite)
+- Runtime baseline cleanup: PASS (Expo package alignment validated)
 
 ## Checklist Results
 
@@ -52,6 +53,13 @@ Result:
 
 - [x] `node scripts/test-smartQueue.mjs` -> 28 passed
 - [x] No static diagnostics errors in edited files
+
+### Runtime Baseline Validation (Post-Hardening)
+
+- [x] `npx expo install` package alignment pass completed
+- [x] `npx expo install --check` -> Dependencies are up to date
+- [x] `npx expo export --platform web` -> Exported: dist
+- [ ] `npx expo start --ios` blocked by environment (No iOS devices available in Simulator.app)
 
 ## Follow-Up Notes
 
