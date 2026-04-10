@@ -23,6 +23,7 @@ Validation update (2026-04-10):
 - `node scripts/test-smartQueue.mjs` -> 28 passed
 - `npx expo export --platform web` -> Exported `dist`
 - Admin analytics panel now includes Listen-mode counters and conversion rates for faster manual spot-check
+- Admin now provides "Send Listen Validation Events" to quickly seed listen-event analytics during verification
 - Remaining: manual in-app Listen mode walkthrough + analytics payload spot-check
 
 Scope:

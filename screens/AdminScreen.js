@@ -358,6 +358,49 @@ function AdminScreen() {
     Alert.alert('Sent', 'Analytics verification event sent. Refresh if it does not appear immediately.');
   };
 
+  const sendListenValidationEvents = async () => {
+    const quizType = testDetails?.testType || 'naturalization128';
+
+    trackAppEvent(APP_EVENT_NAMES.HOME_LISTEN_CTA_CLICKED, {
+      source_screen: 'AdminTab',
+      synthetic_validation: true,
+    });
+
+    trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_PLAYED, {
+      quiz_type: quizType,
+      question_id: 'synthetic_q1',
+      question_index: 0,
+      total_questions: 3,
+      rate: 1.0,
+      synthetic_validation: true,
+    });
+
+    trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_REPEATED, {
+      quiz_type: quizType,
+      question_id: 'synthetic_q1',
+      question_index: 0,
+      total_questions: 3,
+      rate: 1.0,
+      synthetic_validation: true,
+    });
+
+    trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_SPEED_CHANGED, {
+      quiz_type: quizType,
+      question_id: 'synthetic_q1',
+      question_index: 0,
+      total_questions: 3,
+      from_rate: 1.0,
+      to_rate: 1.25,
+      synthetic_validation: true,
+    });
+
+    setTimeout(() => {
+      void loadAnalyticsDebugEvents();
+    }, 800);
+
+    Alert.alert('Sent', 'Synthetic Listen-mode validation events sent. Refresh if needed.');
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -380,6 +423,10 @@ function AdminScreen() {
                 <Text style={styles.buttonText}>{analyticsDebugLoading ? 'Refreshing...' : 'Refresh Events'}</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity style={[styles.button, styles.buttonSecondary, { marginTop: 10 }]} onPress={sendListenValidationEvents}>
+              <Text style={styles.buttonText}>Send Listen Validation Events</Text>
+            </TouchableOpacity>
 
             {analyticsDebugError ? (
               <Text style={[styles.adminMetricSubtext, { color: '#B91C1C', marginTop: 10 }]}>{analyticsDebugError}</Text>
