@@ -24,7 +24,8 @@ Validation update (2026-04-10):
 - `npx expo export --platform web` -> Exported `dist`
 - Admin analytics panel now includes Listen-mode counters and conversion rates for faster manual spot-check
 - Admin now provides "Send Listen Validation Events" to quickly seed listen-event analytics during verification
-- Remaining: manual in-app Listen mode walkthrough + analytics payload spot-check
+- One-pass validation sweep executed: regressions green + web export green + Listen analytics instrumentation verified in code paths
+- Remaining for strict device-manual closure: in-app Listen walkthrough + payload spot-check on physical/simulator runtime
 
 Scope:
 - Implement TTS playback for question prompt in Listen mode
@@ -47,7 +48,13 @@ Validation:
   - `node scripts/test-smartQueue.mjs`
 
 ## Batch 2: Queue + Resume Reliability
-Status: planned
+Status: in progress
+
+Progress update (2026-04-10):
+- Quiz now auto-saves paused session snapshot on app background/inactive transitions
+- Resume snapshot now preserves exact pointer metadata (question id, progress percent, queue length)
+- Resume now preserves Listen mode context and playback speed index
+- Home action in Quiz now saves session before navigation when quiz is incomplete
 
 Scope:
 - Implement screen-off-friendly queue handling where OS permits
@@ -62,9 +69,16 @@ Acceptance criteria:
 Validation:
 - Manual background/foreground stress pass (>=5 cycles)
 - Resume verification from at least 3 different queue positions
+- One-pass validation sweep completed in this environment: AppState background autosave path + restore snapshot path verified in code and regression-safe build checks
 
 ## Batch 3: ADHD Focus Pack UI
-Status: planned
+Status: in progress
+
+Progress update (2026-04-10):
+- Added low-clutter toggle directly in Quiz (Focus/Classic switch)
+- Added step pacing micro-goal indicator in Quiz header
+- Added break nudge prompt after each 6 answered questions
+- Persisted low-clutter mode in paused session snapshots for reliable resume
 
 Scope:
 - Low-clutter mode toggle
@@ -79,9 +93,15 @@ Acceptance criteria:
 Validation:
 - Manual UX pass on compact and regular device sizes
 - Verify state persistence after app restart
+- One-pass validation sweep completed in this environment: Focus/Classic toggle, step-goal math, and break-nudge cadence verified in Quiz logic
 
 ## Batch 4: Integration + QA Closure
-Status: planned
+Status: in progress
+
+Progress update (2026-04-10):
+- Completed Sprint 3 analytics event audit for Listen and Focus-pack flows
+- Added Focus-pack telemetry events (focus toggle, step-goal reached, break-nudge shown)
+- Extended Admin analytics funnel and synthetic validator to include Focus-pack events
 
 Scope:
 - Wire Listen quick action on Home for final Sprint 3 flow
@@ -97,6 +117,7 @@ Validation:
 - Full regression suite
 - Sprint 3 smoke checklist pass
 - Documentation updates in tracker + plan dashboard
+- Quick regression smoke after telemetry changes remains green (Smart Queue 28 passed, Interview scoring 12/12)
 
 ## Dependencies and Risks
 - iOS simulator availability remains a known local risk for device smoke evidence.
@@ -104,4 +125,4 @@ Validation:
 - Persisted resume state must remain schema-compatible with existing queue data.
 
 ## Next Immediate Action
-Start Batch 1 implementation: TTS playback controls and event instrumentation.
+Execute strict runtime-manual closure pass: Listen walkthrough, 5-cycle background/foreground resume stress, and compact/regular focus-pack UX checks.

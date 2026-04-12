@@ -139,8 +139,8 @@
     </div>
 
     <div class="card" style="margin-bottom: 14px; border-left: 4px solid #0ea5e9;">
-      <h2 style="margin-bottom: 6px;">Current Status (Apr 10, 2026 - Sprint 3 Batch 1 Coding Started)</h2>
-      <div class="status">Sprint 2 hardening + QA pass is complete for current scope; Sprint 3 Batch 1 implementation is now in progress with Listen mode controls wired into Quiz.</div>
+      <h2 style="margin-bottom: 6px;">Current Status (Apr 12, 2026 - Sprint 6 Closed, Sprint 7 Planned)</h2>
+      <div class="status">Sprint 6 is fully closed. Backlog quick fixes are implemented (Admin copy feedback, Home scroll-to-top, Admin variant-panel render optimization). Next sequence is Sprint 7 growth experiments, then capability/revenue expansion sprints, then deployment prep.</div>
       <ul>
         <li>Done: Sprint 1 complete with state/navigation audit + documentation</li>
         <li>Done: Interview scoring hardening and unseen-phrasing validation (30/30 pass)</li>
@@ -153,8 +153,48 @@
         <li>In Progress: Interview Mode flow polish and integration QA</li>
         <li>Done: Batch 1 automated validation (regression suites + web export smoke)</li>
         <li>In Progress: Sprint 3 Batch 1 manual validation (Listen flow + Admin analytics payload checks)</li>
+        <li>Done: Batch 2 reliability coding (background autosave + exact resume metadata)</li>
+        <li>In Progress: Batch 2 resume stress validation (background/foreground cycles)</li>
+        <li>Done: Batch 3 focus-pack coding (low-clutter toggle + pacing goals + break nudges)</li>
+        <li>Done: One-pass Batch 1/2/3 validation sweep (regressions + web export + code-path checks)</li>
+        <li>Done: Batch 4 telemetry instrumentation (focus toggle + step-goal + break-nudge analytics)</li>
+        <li>Done: Exact resume reliability hardening (debounced checkpoint autosave for latest quiz state)</li>
+        <li>Done: Sprint 4 kickoff scaffold (3-session recovery path + first-session ad-light flow)</li>
+        <li>Done: Sprint 4 data prep in Mastery Map (Topic Radar + 7-day Trend Strip)</li>
+        <li>Done: Sprint 4 urgency map layer on top of Radar/Trend prep</li>
+        <li>Done: Auto-generated 3-step study route recommendations from urgency map</li>
+        <li>Done: Recovery campaign per-step timestamps in Review + Admin metrics</li>
+        <li>Done: Dedicated Sprint 4 recovery runtime checklist wired in script + tracker</li>
+        <li>Done: Onboarding state selection clarity pass (dimmed placeholder + explicit selected-state confirmation)</li>
+        <li>Done: State code + exact state-flag image shown after state selection</li>
+        <li>Done: Profile personalization upgrade (camera/library profile photo + remove photo)</li>
+        <li>Done: Inline nickname editor with auto-save on blur (no save button)</li>
+        <li>Done: Batch 4 listen auto-advance telemetry wired end-to-end (emit + Admin funnel + synthetic validator + runtime script)</li>
+        <li>Done: Sprint 5 kickoff foundation (persistent squad state + team create/invite code lifecycle)</li>
+        <li>Done: Sprint 5 weekly goal/challenge controls wired in Family screen</li>
+        <li>In Progress: Batch 3 UX validation sweep + strict runtime-manual closure (B1/B2/B3)</li>
         <li>Blocked (Deferred): iOS simulator smoke (no available Simulator.app devices on current machine)</li>
-        <li>Next: Complete Batch 1 validation and close Sprint 2 residual QA items</li>
+        <li>Done: Sprint 5 role-based permissions (parent/admin) for invite, goal, and nudge actions</li>
+        <li>Done: Per-member nudge cooldowns replace previous global nudge cooldown</li>
+        <li>Done: Lightweight field-clock + revision reconciliation baseline for future multi-device conflicts</li>
+        <li>Done: Firestore remote transport (pull/push cycles) for squad sync by teamId</li>
+        <li>Done: Moderation policy with role rate buckets + temporary mute + escalation + audit logging</li>
+        <li>Done: Server-authoritative moderation enforcement via Firestore transactions</li>
+        <li>Done: Admin moderation controls (refresh, clear mute, reset escalation/rate buckets, audit reset)</li>
+        <li>Done: Admin moderation audit mini-table (top 10 latest entries for one-tap verification)</li>
+        <li>Done: Measured two-runtime conflict validation rerun (simultaneous edits, mute/escalation propagation, audit consistency)</li>
+        <li>Done: Captured concrete revision deltas + moderation propagation values + audit doc references</li>
+        <li>Done: Sprint 6 kickoff execution plan created</li>
+        <li>Done: Sprint 6 season engine + rank tiers validated</li>
+        <li>Done: Sprint 6 fair-play weighting validated with anti-spam delta evidence</li>
+        <li>Done: Sprint 6 segmentation, transitions, cap policy, and trend analytics wired</li>
+        <li>Done: Sprint 6 comeback loops and reward claim UX validated for D2/D5/D10</li>
+        <li>Done: Sprint 6 reward-first winner pipeline and confidence decay auto-expiry validated</li>
+        <li>Done: Sprint 6 treatment-only revenue gating (holdout baseline vs treatment runtime paths)</li>
+        <li>Done: Admin stability fix for white-screen crash in rewarded offer tests panel</li>
+        <li>Done: Profile exit usability fix (explicit Exit Profile + Home actions)</li>
+        <li>Done: Admin cohort debug override + one-tap self-check with copyable summary</li>
+        <li>Done: Sprint 6 six-step manual Home/Admin validation (scroll fix, cohort override treatment/holdout, self-check treatment path, self-check holdout path, copy summary, no crash cycles)</li>
       </ul>
     </div>
 
@@ -200,57 +240,138 @@
           <li>Done: Batch execution plan created in SPRINT_3_EXECUTION_BATCH_PLAN.md</li>
           <li>Done: Home Listen CTA wired to Quiz listenMode</li>
           <li>Done: TTS playback with speed/repeat controls in Quiz</li>
+          <li>Done: Auto-save on background + resume context persistence</li>
+          <li>Done: Low-clutter toggle and pacing micro-goals in Quiz</li>
+          <li>Done: Break nudge prompt cadence in Quiz</li>
+          <li>Done: Focus-pack analytics instrumentation and Admin funnel visibility</li>
+          <li>Done: Listen auto-advance analytics event wired (`quiz_listen_auto_advanced`)</li>
+          <li>Done: Exact resume reliability hardening with debounced checkpoint autosave</li>
           <li>Done: Automated validation pass (regressions + web export)</li>
-          <li>Next: Manual Listen mode walkthrough and Admin analytics verification</li>
-          <li>Screen-off-friendly queue behavior</li>
-          <li>Low-clutter mode and step pacing</li>
-          <li>Micro-goals, break nudges, and exact resume</li>
+          <li>In Progress: Manual Listen + resume + focus-pack runtime validation sweep</li>
+          <li>Done: Screen-off-friendly queue behavior</li>
+          <li>Done: Low-clutter mode and step pacing</li>
+          <li>Done: Micro-goals, break nudges, and exact resume</li>
         </ul>
       </article>
 
       <article class="card">
         <h2>Sprint 4: Recovery + Modern Visuals</h2>
-        <div class="status">Status: Not Started</div>
+        <div class="status">Status: In Progress</div>
         <ul>
-          <li>3-session weak-score recovery campaign</li>
-          <li>Ad-light first recovery session</li>
-          <li>Topic radar, trend strip, urgency map</li>
-          <li>Actionable recommendations from mastery signals</li>
+          <li>Done: 3-session weak-score recovery campaign scaffold</li>
+          <li>Done: Ad-light first recovery session path</li>
+          <li>Done: Topic Radar + 7-day Trend Strip data prep in Mastery Map</li>
+          <li>Done: Weak-area urgency map layer in Mastery Map</li>
+          <li>Done: Auto-generated 3-step study route from urgency/trend/due signals</li>
+          <li>Done: Recovery per-step completion timestamps in Review/Admin</li>
+          <li>Done: Onboarding polish for state picker selection clarity + selected-state flag identity</li>
+          <li>Done: Profile card personalization (photo capture/library + nickname auto-save UX)</li>
+          <li>Done: Topic radar, trend strip, urgency map</li>
+          <li>Done: Actionable recommendations from mastery signals</li>
         </ul>
       </article>
 
       <article class="card">
         <h2>Sprint 5: Team + Family Real Sync</h2>
-        <div class="status">Status: Not Started</div>
+        <div class="status">Status: In Progress</div>
         <ul>
-          <li>Create team and invite code</li>
-          <li>Shared goals and weekly challenge</li>
-          <li>Family board, streak chain, parent-child nudges</li>
-          <li>Access control and anti-spam rules</li>
+          <li>Done: Team creation and invite code lifecycle</li>
+          <li>Done: Shared goals and weekly challenge controls</li>
+          <li>Done: Family mode upgraded from mock to persistent squad sync state</li>
+          <li>Done: Shared household board data model + UI in Family screen</li>
+          <li>Done: Streak chain + parent-child nudge analytics events</li>
+          <li>Done: Basic anti-spam access controls for invite refresh and nudges</li>
+          <li>Done: Role-based permissions for parent/admin-only team controls</li>
+          <li>Done: Per-member nudge cooldown tracking in shared squad state</li>
+          <li>Done: Lightweight sync reconciliation rules (field clock + revision)</li>
+          <li>Done: Remote pull/push transport for multi-device squad sync</li>
+          <li>Done: Stronger moderation policy (rate bucket + mute + escalation + audit trail)</li>
+          <li>Done: Server-authoritative policy enforcement (transaction-backed)</li>
+          <li>Done: Admin moderation controls in Admin tab</li>
+          <li>Done: Compact moderation audit mini-table (action/reason/allowed/actor/time)</li>
+          <li>Done: Measured conflict-validation rerun with concrete convergence + moderation audit evidence</li>
         </ul>
       </article>
 
       <article class="card">
         <h2>Sprint 6: Seasons + Revenue Intelligence</h2>
-        <div class="status">Status: Not Started</div>
+        <div class="status">Status: Done</div>
         <ul>
-          <li>Weekly reset scoreboard seasons and rank tiers</li>
-          <li>Fair-play weighting by activity quality</li>
-          <li>High-intent upsell segmentation</li>
-          <li>D2/D5/D10 comeback reward loops</li>
-          <li>Winner auto-promotion with confidence decay expiry</li>
+          <li>Done: Sprint 6 execution plan + batch sequencing (S6-B1..S6-B4)</li>
+          <li>Done: Weekly reset scoreboard seasons and rank tiers (S6-B1)</li>
+          <li>Done: Fair-play weighting by activity quality with Admin raw-vs-weighted diagnostics (S6-B2)</li>
+          <li>Done: High-intent segmentation, transitions, cap policy, and trend analytics (S6-B3)</li>
+          <li>Done: D2/D5/D10 comeback loops, reward-first winner selection, and confidence decay expiry (S6-B4)</li>
+          <li>Done: Deterministic cohort assignment + treatment-only runtime gating for lift measurement</li>
+          <li>Done: Admin cohort override control + one-tap self-check copy summary</li>
+          <li>Done: Manual Home/Admin runtime QA closeout (6 validation steps passed; cohort override reads on both screens; self-check shows treatment vs holdout runtime paths; scroll enabled; no crashes)</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 7: Growth Experiments + Win-Rate Lift</h2>
+        <div class="status">Status: Not Started</div>
+        <div class="status">Plan file: SPRINT_7_EXECUTION_PLAN.md</div>
+        <ul>
+          <li>Plan: A/B test Home Sprint copy variants (urgency vs value vs outcome)</li>
+          <li>Plan: A/B test reward framing (instant gain vs streak protection vs milestone framing)</li>
+          <li>Plan: Comeback timing optimization for D2/D5/D10 windows by segment and local study hour</li>
+          <li>Plan: Add experiment dashboard panel (sample size, significance proxy, lift-attempt curve)</li>
+          <li>Plan: Add guardrails (max ad fatigue, min satisfaction threshold, holdout parity checks)</li>
+          <li>Definition of done: identify one promoted winner for copy + reward framing with measured lift and no retention regression</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 8: Capability Expansion (Study Outcomes)</h2>
+        <div class="status">Status: Not Started</div>
+        <div class="status">Plan file: SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md</div>
+        <ul>
+          <li>Plan: Smart mission engine (daily mission, weekly mission, adaptive catch-up mission)</li>
+          <li>Plan: Explain-why answer coaching cards with confidence labels and weak-topic drill links</li>
+          <li>Plan: Personalized weekly plan regeneration using mastery + urgency + upcoming test date</li>
+          <li>Plan: Family/squad accountability nudges tied to study milestones, not only streak counts</li>
+          <li>Definition of done: improved session completion rate and next-day return rate vs Sprint 6 baseline</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Sprint 9: Revenue Expansion + Monetization Safety</h2>
+        <div class="status">Status: Not Started</div>
+        <div class="status">Plan file: SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md</div>
+        <ul>
+          <li>Plan: Introduce value-based reward bundles (bonus drills, interview prep packs, weak-area rescue packs)</li>
+          <li>Plan: Revenue quality scoring (rewarded completion quality, bounce risk, fatigue risk)</li>
+          <li>Plan: Dynamic cap policy by intent segment + session depth to protect retention</li>
+          <li>Plan: Add monetization audit screen for daily pacing, holdout parity, and user sentiment signals</li>
+          <li>Definition of done: revenue per active user increases while keeping churn and fatigue within guardrail limits</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Deployment Prep: Release Hardening + Store Readiness</h2>
+        <div class="status">Status: Not Started</div>
+        <div class="status">Plan file: DEPLOYMENT_PREP_EXECUTION_PLAN.md</div>
+        <ul>
+          <li>Plan: full regression pass on web + iOS + Android with evidence capture</li>
+          <li>Plan: release config validation (bundle IDs, permissions, env keys, analytics toggles)</li>
+          <li>Plan: crash + performance smoke checks on production-like builds</li>
+          <li>Plan: App Store / Play Store artifact checklist and screenshot capture runbook execution</li>
+          <li>Definition of done: signed release candidates with final QA evidence and submission packet complete</li>
         </ul>
       </article>
     </section>
 
     <div class="card" style="margin-top: 14px;">
       <h2>New Items and Ideas Added</h2>
-      <div class="status">Captured from current Sprint 1 execution findings</div>
+      <div class="status">Updated after backlog quick-fix execution and next-sprint sequencing</div>
       <ul>
-        <li>Add CI hook to run validate:sprint1 on pull requests</li>
-        <li>Add data-quality threshold for whyThisAnswer population before surfacing it in UI</li>
-        <li>Add event taxonomy documentation so new ad surfaces use canonical names by default</li>
-        <li>Address Node module-type warning in Smart Queue script execution path</li>
+        <li>Done: Copy Summary feedback now shown in Admin as inline success/error status</li>
+        <li>Done: Admin rewarded offer variant rows now memoized to reduce heavy rerenders</li>
+        <li>Done: Home now has floating scroll-to-top control for deep content sessions</li>
+        <li>Next: show cohort assignment reason in Admin (seed bucket, override source, assignedAt)</li>
+        <li>Next: Sprint 7 experiment matrix execution (copy framing, reward framing, comeback timing)</li>
+        <li>Next: Deployment prep starts after Sprint 7/8/9 capability + monetization expansion sprints</li>
       </ul>
     </div>
 
@@ -258,8 +379,8 @@
   </main>
 
   <script>
-    // Updated after Sprint 3 Batch 1 coding kickoff.
-    const completionPercent = 44;
+    // Updated after Sprint 6 manual validation pass (cohort override, self-check, scroll, home/admin stability).
+    const completionPercent = 100;
     document.getElementById('progressBar').style.width = `${completionPercent}%`;
   </script>
 </body>

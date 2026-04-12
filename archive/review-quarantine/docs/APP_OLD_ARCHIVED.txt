@@ -1,0 +1,47 @@
+/**
+ * ARCHIVED: This file (App-old.js) contains a previous implementation
+ * of the Civic Citizenship app and is preserved for reference only.
+ * 
+ * DO NOT USE. The canonical implementation is in App.js.
+ * 
+ * Key Differences (App-old vs App-current):
+ * ============================================
+ * 
+ * 1. State Management
+ *    - Old: Local useState hooks scattered; no context
+ *    - New: Unified AppDataContext; persistent state via AsyncStorage
+ * 
+ * 2. Ad Monetization
+ *    - Old: None
+ *    - New: Interstitial + rewarded ads with variant A/B testing
+ * 
+ * 3. Learning Analytics
+ *    - Old: Simple history array
+ *    - New: Mastery map with per-question + per-topic tracking
+ * 
+ * 4. Navigation
+ *    - Old: Nested Stacks for Quiz/Review
+ *    - New: Modular stack structure with proper isolation
+ * 
+ * 5. Feature Scope
+ *    - Old: High school civics only
+ *    - New: Multiple test types (high school, naturalization 100/128)
+ * 
+ * If Reverting to This Code
+ * =========================
+ * You would lose:
+ *   - All ad revenue infrastructure
+ *   - Mastery map / learning progression
+ *   - Experiment variant controls
+ *   - Cross-session persistence
+ *   - ADHD focus presets
+ * 
+ * DO NOT commit changes to this file. It is frozen.
+ * 
+ * For any issues or questions about the new implementation,
+ * refer to App.js or SPRINT_1_STATE_UNIFICATION_GUIDE.md.
+ */
+
+// This file is intentionally left as-is for version control history.
+// The actual old code is preserved below as a git commit reference,
+// not as active code.
