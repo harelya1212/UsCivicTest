@@ -158,6 +158,15 @@ function AdminScreen() {
   const homeRevenueRuntimeExposedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED)?.count || 0;
   const reviewRevenueRuntimeExposedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED)?.count || 0;
   const experimentVariantFallbackAppliedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED)?.count || 0;
+  const last24hCutoffMs = Date.now() - (24 * 60 * 60 * 1000);
+  const countEventsInLast24h = (eventName) => analyticsDebugEvents.filter((event) => {
+    if (event?.eventName !== eventName) return false;
+    const createdAtMs = Date.parse(String(event?.createdAtIso || '').trim());
+    return Number.isFinite(createdAtMs) && createdAtMs >= last24hCutoffMs;
+  }).length;
+  const homeRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
+  const reviewRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
+  const experimentVariantFallbackAppliedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
   const quizAnswerRate = quizStartedCount ? Math.round((questionAnsweredCount / quizStartedCount) * 100) : 0;
   const interviewResponseRate = interviewStartedCount ? Math.round((interviewResponseCount / interviewStartedCount) * 100) : 0;
   const interviewRecordingStartRate = interviewStartedCount ? Math.round((interviewRecordingStartedCount / interviewStartedCount) * 100) : 0;
@@ -912,30 +921,31 @@ function AdminScreen() {
 
             <View style={{ marginTop: 12 }}>
               <Text style={styles.adminMetricLabel}>Revenue Runtime Instrumentation (Batch 1)</Text>
-              <Text style={styles.adminMetricSubtext}>Exposure and fallback volumes from mirrored analytics events.</Text>
+              <Text style={styles.adminMetricSubtext}>Reset window view: Last 24h vs All-time volumes from mirrored analytics events.</Text>
               <View style={{ marginTop: 8, marginBottom: 10 }}>
                 <View style={styles.adminMetricRow}>
                   <View style={styles.adminMetricLabelBlock}>
                     <Text style={styles.adminMetricLabel}>Home Runtime Exposed</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{homeRevenueRuntimeExposedCount}</Text>
+                  <Text style={styles.adminMetricValue}>{homeRevenueRuntimeExposedLast24hCount} / {homeRevenueRuntimeExposedCount}</Text>
                 </View>
                 <View style={styles.adminMetricRow}>
                   <View style={styles.adminMetricLabelBlock}>
                     <Text style={styles.adminMetricLabel}>Review Runtime Exposed</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{reviewRevenueRuntimeExposedCount}</Text>
+                  <Text style={styles.adminMetricValue}>{reviewRevenueRuntimeExposedLast24hCount} / {reviewRevenueRuntimeExposedCount}</Text>
                 </View>
                 <View style={styles.adminMetricRow}>
                   <View style={styles.adminMetricLabelBlock}>
                     <Text style={styles.adminMetricLabel}>Variant Fallback Applied</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{experimentVariantFallbackAppliedCount}</Text>
+                  <Text style={styles.adminMetricValue}>{experimentVariantFallbackAppliedLast24hCount} / {experimentVariantFallbackAppliedCount}</Text>
                 </View>
               </View>
+              <Text style={styles.adminMetricSubtext}>Format: Last 24h / All-time</Text>
 
               <Text style={styles.adminMetricLabel}>Recent Funnel Snapshot</Text>
               <Text style={styles.adminMetricSubtext}>Based on the latest mirrored analytics events in Firestore.</Text>
