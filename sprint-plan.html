@@ -139,8 +139,8 @@
     </div>
 
     <div class="card" style="margin-bottom: 14px; border-left: 4px solid #0ea5e9;">
-      <h2 style="margin-bottom: 6px;">Current Status (Apr 12, 2026 - Sprint 6 Closed, Sprint 7 Planned)</h2>
-      <div class="status">Sprint 6 is fully closed. Backlog quick fixes are implemented (Admin copy feedback, Home scroll-to-top, Admin variant-panel render optimization). Next sequence is Sprint 7 growth experiments, then capability/revenue expansion sprints, then deployment prep.</div>
+      <h2 style="margin-bottom: 6px;">Current Status (Apr 12, 2026 - Sprint 7 Batch 1 Active)</h2>
+      <div class="status">Sprint 6 is fully closed and smoke checks are green. Sprint 7 execution has started with Batch 1 (experiment instrumentation, variant guardrails, and runtime visibility). Next sequence is Sprint 7 Batch 2/3, then Sprint 8/9 capability-revenue expansion, then deployment prep.</div>
       <ul>
         <li>Done: Sprint 1 complete with state/navigation audit + documentation</li>
         <li>Done: Interview scoring hardening and unseen-phrasing validation (30/30 pass)</li>
@@ -310,14 +310,17 @@
 
       <article class="card">
         <h2>Sprint 7: Growth Experiments + Win-Rate Lift</h2>
-        <div class="status">Status: Not Started</div>
+        <div class="status">Status: In Progress (Batch 1)</div>
         <div class="status">Plan file: SPRINT_7_EXECUTION_PLAN.md</div>
         <ul>
-          <li>Plan: A/B test Home Sprint copy variants (urgency vs value vs outcome)</li>
-          <li>Plan: A/B test reward framing (instant gain vs streak protection vs milestone framing)</li>
-          <li>Plan: Comeback timing optimization for D2/D5/D10 windows by segment and local study hour</li>
-          <li>Plan: Add experiment dashboard panel (sample size, significance proxy, lift-attempt curve)</li>
-          <li>Plan: Add guardrails (max ad fatigue, min satisfaction threshold, holdout parity checks)</li>
+          <li>In Progress (Batch 1): experiment event contracts and payload schema wiring</li>
+          <li>In Progress (Batch 1): cohort/variant decision logging at Home and Review entry points</li>
+          <li>In Progress (Batch 1): variant fallback guardrails for missing/invalid runtime values</li>
+          <li>Next (Batch 2): A/B test Home Sprint copy variants (urgency vs value vs outcome)</li>
+          <li>Next (Batch 2): A/B test reward framing (instant gain vs streak protection vs milestone framing)</li>
+          <li>Next (Batch 3): comeback timing optimization for D2/D5/D10 windows by segment and local study hour</li>
+          <li>Next: add experiment dashboard panel (sample size, significance proxy, lift-attempt curve)</li>
+          <li>Next: enforce guardrails (max ad fatigue, min satisfaction threshold, holdout parity checks)</li>
           <li>Definition of done: identify one promoted winner for copy + reward framing with measured lift and no retention regression</li>
         </ul>
       </article>
@@ -364,13 +367,14 @@
 
     <div class="card" style="margin-top: 14px;">
       <h2>New Items and Ideas Added</h2>
-      <div class="status">Updated after backlog quick-fix execution and next-sprint sequencing</div>
+      <div class="status">Updated for Sprint 7 Batch 1 kickoff</div>
       <ul>
         <li>Done: Copy Summary feedback now shown in Admin as inline success/error status</li>
         <li>Done: Admin rewarded offer variant rows now memoized to reduce heavy rerenders</li>
         <li>Done: Home now has floating scroll-to-top control for deep content sessions</li>
         <li>Next: show cohort assignment reason in Admin (seed bucket, override source, assignedAt)</li>
-        <li>Next: Sprint 7 experiment matrix execution (copy framing, reward framing, comeback timing)</li>
+        <li>In Progress: Sprint 7 Batch 1 instrumentation and guardrails implementation</li>
+        <li>Next: Sprint 7 Batch 2 copy and reward-framing experiment rollout</li>
         <li>Next: Deployment prep starts after Sprint 7/8/9 capability + monetization expansion sprints</li>
       </ul>
     </div>
