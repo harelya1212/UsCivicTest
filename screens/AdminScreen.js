@@ -173,12 +173,33 @@ function AdminScreen() {
     });
     return latestMs > 0 ? new Date(latestMs).toLocaleString() : 'never';
   };
+  const getLastSeenAgeLabelByEventName = (eventName) => {
+    let latestMs = 0;
+    analyticsDebugEvents.forEach((event) => {
+      if (event?.eventName !== eventName) return;
+      const createdAtMs = Date.parse(String(event?.createdAtIso || '').trim());
+      if (Number.isFinite(createdAtMs) && createdAtMs > latestMs) latestMs = createdAtMs;
+    });
+    if (latestMs <= 0) return 'never';
+
+    const elapsedMs = Math.max(0, Date.now() - latestMs);
+    const elapsedHours = Math.floor(elapsedMs / (60 * 60 * 1000));
+    if (elapsedHours < 1) return '<1h ago';
+    if (elapsedHours < 24) return `${elapsedHours}h ago`;
+
+    const elapsedDays = Math.floor(elapsedHours / 24);
+    const remainingHours = elapsedHours % 24;
+    return remainingHours > 0 ? `${elapsedDays}d ${remainingHours}h ago` : `${elapsedDays}d ago`;
+  };
   const homeRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
   const reviewRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
   const experimentVariantFallbackAppliedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
   const homeRevenueRuntimeLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
   const reviewRevenueRuntimeLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
   const experimentVariantFallbackLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
+  const homeRevenueRuntimeLastSeenAge = getLastSeenAgeLabelByEventName(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
+  const reviewRevenueRuntimeLastSeenAge = getLastSeenAgeLabelByEventName(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
+  const experimentVariantFallbackLastSeenAge = getLastSeenAgeLabelByEventName(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
   const homeRuntimeExposureStale = homeRevenueRuntimeExposedLast24hCount === 0 && homeRevenueRuntimeExposedCount > 0;
   const reviewRuntimeExposureStale = reviewRevenueRuntimeExposedLast24hCount === 0 && reviewRevenueRuntimeExposedCount > 0;
   const variantFallbackStale = experimentVariantFallbackAppliedLast24hCount === 0 && experimentVariantFallbackAppliedCount > 0;
@@ -987,13 +1008,13 @@ function AdminScreen() {
                 <>
                   <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Stale counters: {staleInstrumentationLabels}</Text>
                   {homeRuntimeExposureStale ? (
-                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen homeRuntime: {homeRevenueRuntimeLastSeen}</Text>
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen homeRuntime: {homeRevenueRuntimeLastSeen} ({homeRevenueRuntimeLastSeenAge})</Text>
                   ) : null}
                   {reviewRuntimeExposureStale ? (
-                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen reviewRuntime: {reviewRevenueRuntimeLastSeen}</Text>
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen reviewRuntime: {reviewRevenueRuntimeLastSeen} ({reviewRevenueRuntimeLastSeenAge})</Text>
                   ) : null}
                   {variantFallbackStale ? (
-                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen fallback: {experimentVariantFallbackLastSeen}</Text>
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen fallback: {experimentVariantFallbackLastSeen} ({experimentVariantFallbackLastSeenAge})</Text>
                   ) : null}
                 </>
               ) : null}
