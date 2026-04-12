@@ -105,6 +105,7 @@ function AdminScreen() {
   const [moderationBusy, setModerationBusy] = useState(false);
   const [runtimeSelfCheckSummary, setRuntimeSelfCheckSummary] = useState('Tap "Run Self-Check" to capture active treatment/baseline runtime paths.');
   const [copyFeedback, setCopyFeedback] = useState({ type: '', text: '' });
+  const [staleCopyFeedback, setStaleCopyFeedback] = useState({ type: '', text: '' });
 
   const verificationMode = getAnalyticsVerificationMode();
   const analyticsFunnelRows = [
@@ -210,6 +211,17 @@ function AdminScreen() {
     reviewRuntimeExposureStale ? 'reviewRuntime' : null,
     variantFallbackStale ? 'fallback' : null,
   ].filter(Boolean).join(', ');
+  const staleDiagnosticsRows = [
+    homeRuntimeExposureStale
+      ? { key: 'homeRuntime', lastSeen: homeRevenueRuntimeLastSeen, coldDuration: homeRevenueRuntimeLastSeenAge }
+      : null,
+    reviewRuntimeExposureStale
+      ? { key: 'reviewRuntime', lastSeen: reviewRevenueRuntimeLastSeen, coldDuration: reviewRevenueRuntimeLastSeenAge }
+      : null,
+    variantFallbackStale
+      ? { key: 'fallback', lastSeen: experimentVariantFallbackLastSeen, coldDuration: experimentVariantFallbackLastSeenAge }
+      : null,
+  ].filter(Boolean);
   const quizAnswerRate = quizStartedCount ? Math.round((questionAnsweredCount / quizStartedCount) * 100) : 0;
   const interviewResponseRate = interviewStartedCount ? Math.round((interviewResponseCount / interviewStartedCount) * 100) : 0;
   const interviewRecordingStartRate = interviewStartedCount ? Math.round((interviewRecordingStartedCount / interviewStartedCount) * 100) : 0;
@@ -619,6 +631,27 @@ function AdminScreen() {
     }
   };
 
+  const copyStaleDiagnosticsSummary = async () => {
+    if (!hasStaleInstrumentation || staleDiagnosticsRows.length === 0) {
+      setStaleCopyFeedback({ type: 'info', text: 'No stale counters right now.' });
+      return;
+    }
+
+    const summary = [
+      'Batch 1 Stale Diagnostics',
+      `Captured: ${new Date().toLocaleString()}`,
+      `Stale counters: ${staleInstrumentationLabels}`,
+      ...staleDiagnosticsRows.map((row) => `${row.key} | lastSeen=${row.lastSeen} | coldDuration=${row.coldDuration}`),
+    ].join('\n');
+
+    try {
+      await Clipboard.setStringAsync(summary);
+      setStaleCopyFeedback({ type: 'success', text: 'Stale diagnostics copied.' });
+    } catch (error) {
+      setStaleCopyFeedback({ type: 'error', text: 'Copy failed on this device.' });
+    }
+  };
+
   useEffect(() => {
     const office = DYNAMIC_CIVICS_DATA.stateOfficeholders[stateName] || {};
     setGovernor(office.governor || '');
@@ -1016,6 +1049,14 @@ function AdminScreen() {
                   {variantFallbackStale ? (
                     <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen fallback: {experimentVariantFallbackLastSeen} ({experimentVariantFallbackLastSeenAge})</Text>
                   ) : null}
+                  <TouchableOpacity style={[styles.button, styles.buttonSecondary, { marginTop: 8 }]} onPress={copyStaleDiagnosticsSummary}>
+                    <Text style={styles.buttonText}>Copy Stale Diagnostics</Text>
+                  </TouchableOpacity>
+                  {!!staleCopyFeedback.text && (
+                    <Text style={[styles.adminMetricSubtext, staleCopyFeedback.type === 'error' ? { color: '#B91C1C' } : null]}>
+                      {staleCopyFeedback.text}
+                    </Text>
+                  )}
                 </>
               ) : null}
 
