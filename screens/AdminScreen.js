@@ -1786,15 +1786,23 @@ function AdminScreen() {
             {offerVariantRows.map((group) => {
               const controlVariant = group.variantStats?.control || { attempts: 0, completions: 0 };
               const formatSigned = (value) => `${value > 0 ? '+' : ''}${value}`;
+              const controlCvrRaw = controlVariant.attempts ? (controlVariant.completions / controlVariant.attempts) : 0;
               const batch2DeltaRows = group.key === 'homeSprintOffer'
                 ? ['value', 'outcome']
                   .filter((variantName) => group.variantOptions.includes(variantName))
                   .map((variantName) => {
                     const variant = group.variantStats?.[variantName] || { attempts: 0, completions: 0 };
+                    const variantCvrRaw = variant.attempts ? (variant.completions / variant.attempts) : 0;
+                    const cvrDeltaPctPoints = (variantCvrRaw - controlCvrRaw) * 100;
+                    const relativeLiftPct = controlCvrRaw > 0
+                      ? ((variantCvrRaw - controlCvrRaw) / controlCvrRaw) * 100
+                      : 0;
                     return {
                       variantName,
                       attemptDelta: (variant.attempts || 0) - (controlVariant.attempts || 0),
                       completionDelta: (variant.completions || 0) - (controlVariant.completions || 0),
+                      cvrDeltaPctPoints,
+                      relativeLiftPct,
                     };
                   })
                 : [];
@@ -1870,7 +1878,7 @@ function AdminScreen() {
                   )}
                   {batch2DeltaRows.map((deltaRow) => (
                     <Text key={`${group.key}-${deltaRow.variantName}-delta`} style={styles.adminMetricSubtext}>
-                      Batch 2 delta ({VARIANT_LABELS[deltaRow.variantName] || deltaRow.variantName}) vs Control: attempts {formatSigned(deltaRow.attemptDelta)} • completions {formatSigned(deltaRow.completionDelta)}
+                      Batch 2 delta ({VARIANT_LABELS[deltaRow.variantName] || deltaRow.variantName}) vs Control: attempts {formatSigned(deltaRow.attemptDelta)} • completions {formatSigned(deltaRow.completionDelta)} • CVR {deltaRow.cvrDeltaPctPoints > 0 ? '+' : ''}{deltaRow.cvrDeltaPctPoints.toFixed(1)} pts • lift {deltaRow.relativeLiftPct > 0 ? '+' : ''}{deltaRow.relativeLiftPct.toFixed(1)}%
                     </Text>
                   ))}
                   {group.leader && group.baselineVariant && (
