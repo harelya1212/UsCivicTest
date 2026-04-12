@@ -456,8 +456,7 @@ function HomeScreen({ navigation }) {
             <Text style={styles.studyPlanCardLine}>Questions per day: {studyPlan.questionsPerDay}</Text>
             <Text style={styles.studyPlanCardLine}>Weekly target: {studyPlan.targetWeeklyQuestions}</Text>
             <Text style={styles.studyPlanCardHint}>Review every {studyPlan.reviewEvery} day(s). {studyPlan.focus}</Text>
-          </VifriendGhostIntensity={friendGhostIntensity}
-              ew>
+          </View>
         )}
 
         {showSpatialPath ? (
@@ -467,6 +466,7 @@ function HomeScreen({ navigation }) {
             <ThreeDPath
               studyRoute={spatialStudyRoute}
               focusVelocity={Number(adRuntime?.focusTelemetry?.focusVelocity || 0)}
+              friendGhostIntensity={friendGhostIntensity}
               onStepEnter={handleSpatialStepEnter}
               onAdaptivePacingNudge={() => {
                 trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
