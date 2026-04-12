@@ -114,7 +114,7 @@ const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get('window');
 
 const OFFER_VARIANT_OPTIONS = {
-  homeSprintOffer: ['control', 'urgency'],
+  homeSprintOffer: ['control', 'urgency', 'value', 'outcome'],
   homeSprintReward: ['standard', 'extended'],
   reviewBonusOffer: ['control', 'challenge'],
   reviewWeakOffer: ['control', 'coach'],

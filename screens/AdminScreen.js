@@ -35,7 +35,7 @@ const OFFER_VARIANT_GROUPS = [
   {
     key: 'homeSprintOffer',
     label: 'Home Sprint Copy Test',
-    variants: ['control', 'urgency'],
+    variants: ['control', 'urgency', 'value', 'outcome'],
   },
   {
     key: 'homeSprintReward',
@@ -57,6 +57,8 @@ const OFFER_VARIANT_GROUPS = [
 const VARIANT_LABELS = {
   control: 'Control',
   urgency: 'Urgency',
+  value: 'Value',
+  outcome: 'Outcome',
   standard: 'Standard Reward',
   extended: 'Extended Reward',
   challenge: 'Challenge',

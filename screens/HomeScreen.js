@@ -26,7 +26,7 @@ import {
 } from '../adMobService';
 
 const OFFER_VARIANT_ALLOWED = Object.freeze({
-  homeSprintOffer: ['control', 'urgency'],
+  homeSprintOffer: ['control', 'urgency', 'value', 'outcome'],
   homeSprintReward: ['standard', 'extended'],
 });
 
@@ -108,15 +108,25 @@ function HomeScreen({ navigation }) {
   };
   const homeSprintCopyLeader = getLeadingVariant('homeSprintOffer');
   const homeSprintRewardLeader = getLeadingVariant('homeSprintReward');
-  const homeSprintCopy = homeSprintVariant === 'urgency'
-    ? {
-        title: 'Need a Fast Study Boost?',
-        subtitle: 'Watch once and jump into an extra-question sprint right now',
-      }
-    : {
-        title: 'Watch Ad: Unlock Sprint Practice',
-        subtitle: `Get ${sprintRewardLabel} today at no cost`,
-      };
+  const homeSprintCopyByVariant = {
+    urgency: {
+      title: 'Need a Fast Study Boost?',
+      subtitle: 'Watch once and jump into an extra-question sprint right now',
+    },
+    value: {
+      title: 'Quick Win: Extra Practice Pack',
+      subtitle: `One short ad unlocks ${sprintRewardLabel} instantly`,
+    },
+    outcome: {
+      title: 'Boost Pass Confidence Today',
+      subtitle: `Add ${sprintRewardLabel} to improve today\'s session outcome`,
+    },
+    control: {
+      title: 'Watch Ad: Unlock Sprint Practice',
+      subtitle: `Get ${sprintRewardLabel} today at no cost`,
+    },
+  };
+  const homeSprintCopy = homeSprintCopyByVariant[homeSprintVariant] || homeSprintCopyByVariant.control;
 
   useEffect(() => {
     if (!runtimeExposureTrackedRef.current) {
