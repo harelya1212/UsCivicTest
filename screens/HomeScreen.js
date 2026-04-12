@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
+import ThreeDPath from './components/ThreeDPath';
 import {
   achievements,
   AD_EVENT_NAMES,
@@ -30,6 +31,8 @@ const OFFER_VARIANT_ALLOWED = Object.freeze({
   homeSprintReward: ['standard', 'extended'],
 });
 
+const ENABLE_SPATIAL_HOME_PATH = false;
+
 function sanitizeVariant(variantKey, candidate) {
   const options = OFFER_VARIANT_ALLOWED[variantKey] || [];
   if (options.includes(candidate)) {
@@ -45,6 +48,7 @@ function HomeScreen({ navigation }) {
   const studyPlan = testDetails?.studyPlan;
   const [nowTick, setNowTick] = useState(Date.now());
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [spatialPathFailed, setSpatialPathFailed] = useState(false);
   const homeScrollRef = useRef(null);
   const runtimeExposureTrackedRef = useRef(false);
 
@@ -127,6 +131,48 @@ function HomeScreen({ navigation }) {
     },
   };
   const homeSprintCopy = homeSprintCopyByVariant[homeSprintVariant] || homeSprintCopyByVariant.control;
+  const showSpatialPath = ENABLE_SPATIAL_HOME_PATH && !spatialPathFailed;
+  const spatialStudyRoute = [
+    {
+      id: 'weak-area-drill',
+      title: 'Weak-Area Drill',
+      subtitle: 'Focus mode + urgency-first questions',
+      urgency: 0.92,
+      action: { screen: 'Quiz', params: { type: testDetails?.testType || 'naturalization128', forceQuestionCount: 8, focusMode: 'minimal' } },
+    },
+    {
+      id: 'trend-stabilizer',
+      title: 'Trend Stabilizer',
+      subtitle: 'Recover your 7-day momentum',
+      urgency: 0.74,
+      action: { screen: 'Quiz', params: { type: testDetails?.testType || 'naturalization128', forceQuestionCount: 10 } },
+    },
+    {
+      id: 'interview-rehearsal',
+      title: 'Interview Rehearsal',
+      subtitle: 'Lock in confidence with spoken practice',
+      urgency: 0.58,
+      action: { screen: 'Interview', params: {} },
+    },
+  ];
+
+  const handleSpatialPathRuntimeFailure = (reason = 'unknown') => {
+    setSpatialPathFailed(true);
+    trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, {
+      screen: 'home',
+      variant_key: 'homeSpatialPath',
+      requested_variant: 'threeDPath',
+      fallback_variant: 'currentRouteUI',
+      reason,
+    });
+  };
+
+  const handleSpatialStepEnter = (step) => {
+    clearPausedSession();
+    const screen = step?.action?.screen || 'Quiz';
+    const params = step?.action?.params || { type: testDetails?.testType || 'naturalization128' };
+    navigation.navigate(screen, params);
+  };
 
   useEffect(() => {
     if (!runtimeExposureTrackedRef.current) {
@@ -380,35 +426,55 @@ function HomeScreen({ navigation }) {
           </View>
         )}
 
-        <View style={styles.focusPresetCard}>
-          <Text style={styles.focusPresetTitle}>Focus Presets</Text>
-          <Text style={styles.focusPresetSubtitle}>Pick the energy level you have right now.</Text>
-          <View style={styles.focusPresetRow}>
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 5, label: '3-minute quick reset', focusMode: 'minimal' })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>3 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Quick reset</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 8, label: '7-minute focus sprint', focusMode: 'minimal' })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>7 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Focus sprint</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 12, label: '12-minute deep practice', focusMode: null })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>12 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Deep practice</Text>
-            </TouchableOpacity>
+        {showSpatialPath ? (
+          <View style={styles.focusPresetCard}>
+            <Text style={styles.focusPresetTitle}>Spatial Study Route (Beta)</Text>
+            <Text style={styles.focusPresetSubtitle}>Snap through your 3-step path. If unavailable, Home falls back automatically.</Text>
+            <ThreeDPath
+              studyRoute={spatialStudyRoute}
+              onStepEnter={handleSpatialStepEnter}
+              onAdaptivePacingNudge={() => {
+                trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
+                  quiz_type: testDetails?.testType || 'naturalization128',
+                  from_screen: 'HomeTab',
+                  source: 'threeDPath',
+                  reason: 'fast-scroll-no-step-entry',
+                });
+              }}
+              onRuntimeFailure={handleSpatialPathRuntimeFailure}
+            />
           </View>
-        </View>
+        ) : (
+          <View style={styles.focusPresetCard}>
+            <Text style={styles.focusPresetTitle}>Focus Presets</Text>
+            <Text style={styles.focusPresetSubtitle}>Pick the energy level you have right now.</Text>
+            <View style={styles.focusPresetRow}>
+              <TouchableOpacity
+                style={styles.focusPresetButton}
+                onPress={() => startFocusPreset({ count: 5, label: '3-minute quick reset', focusMode: 'minimal' })}
+              >
+                <Text style={styles.focusPresetButtonTitle}>3 min</Text>
+                <Text style={styles.focusPresetButtonMeta}>Quick reset</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.focusPresetButton}
+                onPress={() => startFocusPreset({ count: 8, label: '7-minute focus sprint', focusMode: 'minimal' })}
+              >
+                <Text style={styles.focusPresetButtonTitle}>7 min</Text>
+                <Text style={styles.focusPresetButtonMeta}>Focus sprint</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.focusPresetButton}
+                onPress={() => startFocusPreset({ count: 12, label: '12-minute deep practice', focusMode: null })}
+              >
+                <Text style={styles.focusPresetButtonTitle}>12 min</Text>
+                <Text style={styles.focusPresetButtonMeta}>Deep practice</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Big CTA Button - Quiz Mode */}
         <TouchableOpacity

@@ -24,6 +24,7 @@ function ThreeDPath({
   onStepFocus,
   onStepEnter,
   onAdaptivePacingNudge,
+  onRuntimeFailure,
 }) {
   const { triggerSensoryEvent, events: sensoryEvents } = useHapticEngine();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -38,32 +39,44 @@ function ThreeDPath({
   );
 
   const handleStepEnter = (step, index) => {
-    lastStepEntryAtRef.current = Date.now();
-    onStepEnter?.(step, index);
+    try {
+      lastStepEntryAtRef.current = Date.now();
+      onStepEnter?.(step, index);
+    } catch (error) {
+      onRuntimeFailure?.('step-enter-failed');
+    }
   };
 
   const handleFocusChange = (index) => {
-    if (index < 0 || index >= route.length) return;
-    if (lastFocusedIndexRef.current === index) return;
+    try {
+      if (index < 0 || index >= route.length) return;
+      if (lastFocusedIndexRef.current === index) return;
 
-    lastFocusedIndexRef.current = index;
-    triggerSensoryEvent(sensoryEvents.PATH_SNAP_TOCK);
-    onStepFocus?.(route[index], index);
+      lastFocusedIndexRef.current = index;
+      triggerSensoryEvent(sensoryEvents.PATH_SNAP_TOCK);
+      onStepFocus?.(route[index], index);
+    } catch (error) {
+      onRuntimeFailure?.('focus-change-failed');
+    }
   };
 
   const maybeTriggerAdaptiveNudge = (velocityPxPerMs) => {
-    const now = Date.now();
-    const noRecentEntry = now - lastStepEntryAtRef.current > NO_STEP_ENTRY_WINDOW_MS;
-    const cooldownPassed = now - lastNudgeAtRef.current > NUDGE_COOLDOWN_MS;
-    if (!noRecentEntry || !cooldownPassed) return;
+    try {
+      const now = Date.now();
+      const noRecentEntry = now - lastStepEntryAtRef.current > NO_STEP_ENTRY_WINDOW_MS;
+      const cooldownPassed = now - lastNudgeAtRef.current > NUDGE_COOLDOWN_MS;
+      if (!noRecentEntry || !cooldownPassed) return;
 
-    if (velocityPxPerMs >= FAST_SCROLL_THRESHOLD_PX_PER_MS) {
-      lastNudgeAtRef.current = now;
-      triggerSensoryEvent(sensoryEvents.PATH_ADAPTIVE_SOFT_THUD);
-      onAdaptivePacingNudge?.({
-        reason: 'fast-scroll-no-step-entry',
-        velocityPxPerMs,
-      });
+      if (velocityPxPerMs >= FAST_SCROLL_THRESHOLD_PX_PER_MS) {
+        lastNudgeAtRef.current = now;
+        triggerSensoryEvent(sensoryEvents.PATH_ADAPTIVE_SOFT_THUD);
+        onAdaptivePacingNudge?.({
+          reason: 'fast-scroll-no-step-entry',
+          velocityPxPerMs,
+        });
+      }
+    } catch (error) {
+      onRuntimeFailure?.('adaptive-nudge-failed');
     }
   };
 
