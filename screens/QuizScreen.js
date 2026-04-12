@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   Animated,
+  AppState,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
@@ -27,6 +28,7 @@ import {
   isAnswerCorrect as checkAnswerCorrect,
 } from '../quizHelpers';
 import { ttsManager } from '../utils/ttsWrapper';
+import { playCorrectFeedback, playWrongFeedback } from '../utils/audioHaptics';
 
 function QuizScreen({ route, navigation }) {
   const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession, trackAppEvent } = useContext(AppDataContext);
@@ -35,7 +37,9 @@ function QuizScreen({ route, navigation }) {
     ? route.params.questionIds.map((id) => String(id))
     : [];
   const focusModeMinimal = route?.params?.focusMode === 'minimal';
-  const listenMode = Boolean(route?.params?.listenMode);
+  const requestedListenMode = Boolean(route?.params?.listenMode);
+  const recoveryCampaignActive = Boolean(route?.params?.recoveryCampaignActive);
+  const recoveryStepNumber = Number(route?.params?.recoveryStepNumber || 0);
   const speechRates = [0.75, 1.0, 1.25];
   const fullPool = getQuestionBank(type); // Use official USCIS questions
   const activeTopicFilter = topicFilter ? String(topicFilter).trim() : null;
@@ -70,6 +74,8 @@ function QuizScreen({ route, navigation }) {
     Array.isArray(pausedSession.pool) &&
     pausedSession.pool.length > 0
   );
+  const restoredListenMode = shouldResumeSession ? Boolean(pausedSession.listenMode) : false;
+  const listenMode = requestedListenMode || restoredListenMode;
   const initialPool = shouldResumeSession
     ? pausedSession.pool
     : effectivePool.slice(0, forcedQuestionCount > 0 ? Math.min(effectivePool.length, forcedQuestionCount) : sessionQuestionCount);
@@ -82,6 +88,12 @@ function QuizScreen({ route, navigation }) {
   const initialFeedbackMessage = shouldResumeSession ? pausedSession.feedbackMessage || '' : '';
   const initialIsAnswerCorrect = shouldResumeSession ? Boolean(pausedSession.isAnswerCorrect) : false;
   const initialShowExplanation = shouldResumeSession ? Boolean(pausedSession.showExplanation) : false;
+  const initialLowClutterMode = shouldResumeSession
+    ? Boolean(pausedSession.lowClutterMode)
+    : focusModeMinimal;
+  const initialSpeechRateIndex = shouldResumeSession && Number.isInteger(pausedSession.speechRateIndex)
+    ? Math.max(0, Math.min(speechRates.length - 1, pausedSession.speechRateIndex))
+    : 1;
 
   const [pool] = useState(() => initialPool);
   
@@ -95,7 +107,8 @@ function QuizScreen({ route, navigation }) {
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(initialIsAnswerCorrect);
   const [showExplanation, setShowExplanation] = useState(initialShowExplanation);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speechRateIndex, setSpeechRateIndex] = useState(1);
+  const [lowClutterMode, setLowClutterMode] = useState(initialLowClutterMode);
+  const [speechRateIndex, setSpeechRateIndex] = useState(initialSpeechRateIndex);
   // Store generated question in state so options don't reshuffle on every re-render
   const [currentQuestion, setCurrentQuestion] = useState(() =>
     shouldResumeSession && pausedSession.currentQuestion
@@ -105,6 +118,89 @@ function QuizScreen({ route, navigation }) {
         : null
   );
   const [justRestoredSession, setJustRestoredSession] = useState(shouldResumeSession);
+  const lastStepGoalTrackedCountRef = useRef(0);
+  const lastBreakNudgeTrackedCountRef = useRef(0);
+  // Screen-off-friendly queue: auto-advance for hands-free listen mode
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState(0);
+  const [autoAdvancePhase, setAutoAdvancePhase] = useState(null); // 'reveal' | 'next' | null
+  const autoAdvanceTimerRef = useRef(null);
+  const autoAdvanceCounterRef = useRef(null);
+  const showFeedbackRef = useRef(showFeedback);
+  const latestSnapshotRef = useRef({
+    current,
+    score,
+    history,
+    difficulty,
+    showFeedback,
+    selectedOption,
+    feedbackMessage,
+    isAnswerCorrect,
+    showExplanation,
+    lowClutterMode,
+    currentQuestion,
+    speechRateIndex,
+  });
+
+  useEffect(() => {
+    latestSnapshotRef.current = {
+      current,
+      score,
+      history,
+      difficulty,
+      showFeedback,
+      selectedOption,
+      feedbackMessage,
+      isAnswerCorrect,
+      showExplanation,
+      lowClutterMode,
+      currentQuestion,
+      speechRateIndex,
+    };
+  }, [
+    current,
+    score,
+    history,
+    difficulty,
+    showFeedback,
+    selectedOption,
+    feedbackMessage,
+    isAnswerCorrect,
+    showExplanation,
+    lowClutterMode,
+    currentQuestion,
+    speechRateIndex,
+  ]);
+
+  const buildSessionSnapshot = (reason = 'manual') => {
+    const snap = latestSnapshotRef.current;
+    const questionId = snap.currentQuestion?.id ? String(snap.currentQuestion.id) : null;
+    const progressPercent = pool.length ? Math.round(((snap.current + 1) / pool.length) * 100) : 0;
+
+    return {
+      type,
+      pool,
+      current: snap.current,
+      score: snap.score,
+      history: snap.history,
+      difficulty: snap.difficulty,
+      showFeedback: snap.showFeedback,
+      selectedOption: snap.selectedOption,
+      feedbackMessage: snap.feedbackMessage,
+      isAnswerCorrect: snap.isAnswerCorrect,
+      showExplanation: snap.showExplanation,
+      currentQuestion: snap.currentQuestion,
+      lowClutterMode: snap.lowClutterMode,
+      listenMode,
+      speechRateIndex: snap.speechRateIndex,
+      resumeContext: {
+        questionId,
+        progressPercent,
+        queueLength: pool.length,
+        savedReason: reason,
+        savedAt: new Date().toISOString(),
+      },
+    };
+  };
 
   useEffect(() => {
     trackAppEvent(APP_EVENT_NAMES.QUIZ_STARTED, {
@@ -114,8 +210,52 @@ function QuizScreen({ route, navigation }) {
       topic_filter: activeTopicFilter || 'none',
       subtopic_filter: activeSubTopicFilter || 'none',
       listen_mode: listenMode,
+      recovery_campaign_active: recoveryCampaignActive,
+      recovery_step: recoveryStepNumber || 0,
     });
   }, []);
+
+  // Keep showFeedbackRef in sync so AppState handler can read it without stale closure
+  useEffect(() => { showFeedbackRef.current = showFeedback; }, [showFeedback]);
+
+  // ── Screen-off-friendly queue: auto-advance delay constants ──────────────
+  const LISTEN_AUTO_REVEAL_DELAY_MS = 2500; // after question TTS → auto-reveal correct answer
+  const LISTEN_AUTO_NEXT_DELAY_MS = 3000;   // after answer TTS → auto-advance to next question
+
+  const clearAutoAdvance = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    if (autoAdvanceCounterRef.current) {
+      clearInterval(autoAdvanceCounterRef.current);
+      autoAdvanceCounterRef.current = null;
+    }
+    setAutoAdvanceCountdown(0);
+    setAutoAdvancePhase(null);
+  };
+
+  const startAutoAdvance = (delayMs, phase, callback) => {
+    clearAutoAdvance();
+    setAutoAdvancePhase(phase);
+    const totalSeconds = Math.ceil(delayMs / 1000);
+    setAutoAdvanceCountdown(totalSeconds);
+    autoAdvanceCounterRef.current = setInterval(() => {
+      setAutoAdvanceCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(autoAdvanceCounterRef.current);
+          autoAdvanceCounterRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      autoAdvanceTimerRef.current = null;
+      setAutoAdvancePhase(null);
+      callback();
+    }, delayMs);
+  };
 
   const speakCurrentQuestion = async ({ repeated = false } = {}) => {
     if (!listenMode || !currentQuestion?.question) return;
@@ -130,7 +270,13 @@ function QuizScreen({ route, navigation }) {
       pitch: 1.0,
       language: 'en-US',
       onStart: () => setIsSpeaking(true),
-      onDone: () => setIsSpeaking(false),
+      onDone: () => {
+        setIsSpeaking(false);
+        // Screen-off-friendly: after question plays (not a repeat), schedule auto-reveal
+        if (!repeated && !showFeedbackRef.current) {
+          startAutoAdvance(LISTEN_AUTO_REVEAL_DELAY_MS, 'reveal', handleAutoRevealAnswer);
+        }
+      },
       onError: () => setIsSpeaking(false),
     });
 
@@ -164,7 +310,86 @@ function QuizScreen({ route, navigation }) {
 
   useEffect(() => () => {
     ttsManager.stop();
+    clearAutoAdvance();
   }, []);
+
+  useEffect(() => {
+    const onAppStateChange = (nextState) => {
+      if (nextState !== 'active') {
+        // Going to background/inactive: always save session
+        if (current + 1 < pool.length) {
+          savePausedSession(buildSessionSnapshot('background'));
+        }
+        // Only stop TTS if NOT in listen mode — screen-off listening should continue
+        if (!listenMode && ttsManager.isSpeakingNow()) {
+          ttsManager.stop();
+          setIsSpeaking(false);
+        }
+      } else if (listenMode && !showFeedbackRef.current) {
+        // Returning to foreground mid-question in listen mode: re-speak current question
+        clearAutoAdvance();
+        speakCurrentQuestion();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', onAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [current, pool.length, savePausedSession, listenMode]);
+
+  useEffect(() => {
+    const answeredCount = history.length;
+    if (answeredCount > 0 && answeredCount % 3 === 0 && lastStepGoalTrackedCountRef.current !== answeredCount) {
+      lastStepGoalTrackedCountRef.current = answeredCount;
+      trackAppEvent(APP_EVENT_NAMES.QUIZ_STEP_GOAL_REACHED, {
+        quiz_type: type,
+        answered_count: answeredCount,
+        total_questions: pool.length,
+        step_size: 3,
+      });
+    }
+  }, [history.length, pool.length, trackAppEvent, type]);
+
+  useEffect(() => {
+    const answeredCount = history.length;
+    if (!showFeedback || answeredCount === 0 || answeredCount % 6 !== 0) return;
+    if (lastBreakNudgeTrackedCountRef.current === answeredCount) return;
+
+    lastBreakNudgeTrackedCountRef.current = answeredCount;
+    trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
+      quiz_type: type,
+      answered_count: answeredCount,
+      total_questions: pool.length,
+      break_step: 6,
+    });
+  }, [showFeedback, history.length, pool.length, trackAppEvent, type]);
+
+  useEffect(() => {
+    if (current + 1 >= pool.length) return;
+
+    // Keep a near-real-time checkpoint so resume is exact even after abrupt exits.
+    const checkpointTimer = setTimeout(() => {
+      savePausedSession(buildSessionSnapshot('checkpoint'));
+    }, 500);
+
+    return () => clearTimeout(checkpointTimer);
+  }, [
+    current,
+    score,
+    history,
+    difficulty,
+    showFeedback,
+    selectedOption,
+    feedbackMessage,
+    isAnswerCorrect,
+    showExplanation,
+    lowClutterMode,
+    currentQuestion,
+    speechRateIndex,
+    pool.length,
+    savePausedSession,
+  ]);
 
   if (!pool || !pool.length || !currentQuestion) {
     return (
@@ -178,6 +403,13 @@ function QuizScreen({ route, navigation }) {
 
   const question = currentQuestion;
   const progress = ((current + 1) / pool.length) * 100;
+  const answeredCount = history.length;
+  const pacingStep = 3;
+  const breakStep = 6;
+  const currentGoalStart = Math.floor(answeredCount / pacingStep) * pacingStep;
+  const currentGoalTarget = Math.min(pool.length, currentGoalStart + pacingStep);
+  const currentGoalProgress = Math.min(pacingStep, answeredCount - currentGoalStart);
+  const shouldShowBreakNudge = showFeedback && answeredCount > 0 && answeredCount % breakStep === 0;
   const acceptedAnswers = [
     question.answer,
     ...(Array.isArray(question.alternateAnswers) ? question.alternateAnswers : []),
@@ -188,9 +420,50 @@ function QuizScreen({ route, navigation }) {
   });
   const isTwoAnswerQuestion = /name two|two important ideas|name 2|two ideas/i.test(question.question);
 
+  // Speak the official answer aloud in listen mode, then schedule auto-next
+  const speakAnswer = async () => {
+    const answerText = latestSnapshotRef.current.currentQuestion?.answer;
+    if (!listenMode || !answerText) {
+      startAutoAdvance(LISTEN_AUTO_NEXT_DELAY_MS, 'next', handleNextQuestion);
+      return;
+    }
+    const rate = speechRates[latestSnapshotRef.current.speechRateIndex ?? speechRateIndex];
+    await ttsManager.speak(`The answer is: ${answerText}`, {
+      rate,
+      pitch: 1.0,
+      language: 'en-US',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => {
+        setIsSpeaking(false);
+        startAutoAdvance(LISTEN_AUTO_NEXT_DELAY_MS, 'next', handleNextQuestion);
+      },
+      onError: () => {
+        setIsSpeaking(false);
+        startAutoAdvance(LISTEN_AUTO_NEXT_DELAY_MS, 'next', handleNextQuestion);
+      },
+    });
+  };
+
+  // Called automatically after question TTS ends (hands-free queue)
+  const handleAutoRevealAnswer = () => {
+    if (showFeedbackRef.current) return; // user already answered
+    const correctAnswer = latestSnapshotRef.current.currentQuestion?.answer;
+    if (!correctAnswer) return;
+    trackAppEvent(APP_EVENT_NAMES.QUIZ_LISTEN_AUTO_ADVANCED, {
+      quiz_type: type,
+      question_id: String(latestSnapshotRef.current.currentQuestion?.id || ''),
+      question_index: latestSnapshotRef.current.current,
+      total_questions: pool.length,
+    });
+    handleSelectAnswer(correctAnswer, { auto: true });
+  };
+
   // Select answer with visual feedback
-  const handleSelectAnswer = (selectedAnswer) => {
+  const handleSelectAnswer = (selectedAnswer, opts = {}) => {
     if (showFeedback) return; // Prevent double-clicking
+
+    // Cancel any pending auto-advance when user (or auto) selects an answer
+    clearAutoAdvance();
 
     if (listenMode && ttsManager.isSpeakingNow()) {
       ttsManager.stop();
@@ -204,9 +477,11 @@ function QuizScreen({ route, navigation }) {
     setIsAnswerCorrect(correct);
 
     if (correct) {
+      playCorrectFeedback();
       setFeedbackMessage('✅ Correct! Amazing job! 🎉');
       setScore((prev) => prev + 1);
     } else {
+      playWrongFeedback();
       setFeedbackMessage('❌ Good try! Review the correct answer below.');
     }
 
@@ -241,6 +516,11 @@ function QuizScreen({ route, navigation }) {
     const nextDifficulty = getAdaptiveDifficulty(difficulty, performance);
     setDifficulty(nextDifficulty);
     // Note: next question is generated on setCurrent in handleNextQuestion
+
+    // Screen-off-friendly: in listen mode, speak the answer then schedule auto-next
+    if (listenMode) {
+      speakAnswer();
+    }
   };
 
   // Show explanation after reading feedback
@@ -257,20 +537,7 @@ function QuizScreen({ route, navigation }) {
         {
           text: 'Save & Go Home',
           onPress: () => {
-            savePausedSession({
-              type,
-              pool,
-              current,
-              score,
-              history,
-              difficulty,
-              showFeedback,
-              selectedOption,
-              feedbackMessage,
-              isAnswerCorrect,
-              showExplanation,
-              currentQuestion,
-            });
+            savePausedSession(buildSessionSnapshot('pause_button'));
             navigation.navigate('MainTabs');
           },
         },
@@ -280,6 +547,7 @@ function QuizScreen({ route, navigation }) {
 
   // Slower pace - user controls next question
   const handleNextQuestion = async () => {
+    clearAutoAdvance(); // Cancel any pending auto-advance
     if (listenMode && ttsManager.isSpeakingNow()) {
       await ttsManager.stop();
       setIsSpeaking(false);
@@ -300,6 +568,9 @@ function QuizScreen({ route, navigation }) {
         total: pool.length,
         weak,
         type,
+        recoveryCampaignCompleted: recoveryCampaignActive,
+        recoveryStepNumber: recoveryCampaignActive ? recoveryStepNumber : 0,
+        recoveryTopic: activeTopicFilter || null,
       });
     } else {
       // Move to next question — generate it with the (possibly updated) difficulty
@@ -323,46 +594,90 @@ function QuizScreen({ route, navigation }) {
       <View style={styles.quizHeader}>
         <View style={styles.quizTopActions}>
           <TouchableOpacity style={styles.quizActionButton} onPress={handlePauseQuiz}>
-            <MaterialCommunityIcons name="pause-circle-outline" size={20} color="#7C3AED" />
+            <MaterialCommunityIcons name="pause-circle-outline" size={20} color="#A78BFA" />
             <Text style={styles.quizActionText}>Pause</Text>
           </TouchableOpacity>
           {!focusModeMinimal && (
-            <TouchableOpacity style={styles.quizActionButton} onPress={() => navigation.navigate('MainTabs')}>
-              <MaterialCommunityIcons name="home-outline" size={20} color="#7C3AED" />
+            <TouchableOpacity
+              style={styles.quizActionButton}
+              onPress={() => {
+                if (current + 1 < pool.length) {
+                  savePausedSession(buildSessionSnapshot('home_button'));
+                }
+                navigation.navigate('MainTabs');
+              }}
+            >
+              <MaterialCommunityIcons name="home-outline" size={20} color="#A78BFA" />
               <Text style={styles.quizActionText}>Home</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.quizActionButton}
+            onPress={() => {
+              const nextLowClutterMode = !lowClutterMode;
+              setLowClutterMode(nextLowClutterMode);
+              trackAppEvent(APP_EVENT_NAMES.QUIZ_FOCUS_MODE_TOGGLED, {
+                quiz_type: type,
+                low_clutter_mode: nextLowClutterMode,
+                question_index: current,
+                total_questions: pool.length,
+              });
+            }}
+          >
+            <MaterialCommunityIcons name={lowClutterMode ? 'view-agenda-outline' : 'target-variant'} size={20} color="#A78BFA" />
+            <Text style={styles.quizActionText}>{lowClutterMode ? 'Classic' : 'Focus'}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.focusModeBadge}>
+          <MaterialCommunityIcons name="progress-check" size={14} color="#6EE7B7" />
+          <Text style={styles.focusModeBadgeText}>
+            Step Goal: {Math.max(0, currentGoalProgress)}/{Math.max(1, Math.min(pacingStep, currentGoalTarget - currentGoalStart))} (to Q{currentGoalTarget})
+          </Text>
         </View>
         {listenMode && (
-          <View style={styles.listenControlsRow}>
-            <TouchableOpacity
-              style={styles.listenControlButton}
-              onPress={() => speakCurrentQuestion({ repeated: true })}
-              disabled={isSpeaking}
-            >
-              <MaterialCommunityIcons name={isSpeaking ? 'volume-high' : 'play-circle-outline'} size={18} color="#0F766E" />
-              <Text style={styles.listenControlText}>{isSpeaking ? 'Playing' : 'Play / Repeat'}</Text>
-            </TouchableOpacity>
+          <>
+            <View style={styles.listenControlsRow}>
+              <TouchableOpacity
+                style={styles.listenControlButton}
+                onPress={() => { clearAutoAdvance(); speakCurrentQuestion({ repeated: true }); }}
+                disabled={isSpeaking}
+              >
+                <MaterialCommunityIcons name={isSpeaking ? 'volume-high' : 'play-circle-outline'} size={18} color="#2DD4BF" />
+                <Text style={styles.listenControlText}>{isSpeaking ? 'Playing' : 'Play / Repeat'}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.listenControlButton}
-              onPress={() => {
-                const nextIndex = (speechRateIndex + 1) % speechRates.length;
-                setSpeechRateIndex(nextIndex);
-                trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_SPEED_CHANGED, {
-                  quiz_type: type,
-                  question_id: String(question.id),
-                  question_index: current,
-                  total_questions: pool.length,
-                  from_rate: speechRates[speechRateIndex],
-                  to_rate: speechRates[nextIndex],
-                });
-              }}
-            >
-              <MaterialCommunityIcons name="speedometer" size={18} color="#0C4A6E" />
-              <Text style={styles.listenControlText}>Speed {speechRates[speechRateIndex]}x</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={styles.listenControlButton}
+                onPress={() => {
+                  const nextIndex = (speechRateIndex + 1) % speechRates.length;
+                  setSpeechRateIndex(nextIndex);
+                  trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_SPEED_CHANGED, {
+                    quiz_type: type,
+                    question_id: String(question.id),
+                    question_index: current,
+                    total_questions: pool.length,
+                    from_rate: speechRates[speechRateIndex],
+                    to_rate: speechRates[nextIndex],
+                  });
+                }}
+              >
+                <MaterialCommunityIcons name="speedometer" size={18} color="#67E8F9" />
+                <Text style={styles.listenControlText}>Speed {speechRates[speechRateIndex]}x</Text>
+              </TouchableOpacity>
+            </View>
+
+            {autoAdvancePhase != null && autoAdvanceCountdown > 0 && (
+              <View style={styles.listenAutoAdvanceBar}>
+                <MaterialCommunityIcons name="timer-outline" size={14} color="#A78BFA" />
+                <Text style={styles.listenAutoAdvanceText}>
+                  {autoAdvancePhase === 'reveal' ? 'Auto-answering' : 'Next question'} in {autoAdvanceCountdown}s
+                </Text>
+                <TouchableOpacity onPress={clearAutoAdvance} style={styles.listenAutoAdvanceCancelBtn}>
+                  <Text style={styles.listenAutoAdvanceCancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -372,13 +687,13 @@ function QuizScreen({ route, navigation }) {
         </Text>
         {explicitQueuePool.length > 0 && (
           <View style={styles.smartQueueBadge}>
-            <MaterialCommunityIcons name="brain" size={14} color="#0C4A6E" />
+            <MaterialCommunityIcons name="brain" size={14} color="#67E8F9" />
             <Text style={styles.smartQueueBadgeText}>Smart Queue: mixed weak + due topics</Text>
           </View>
         )}
         {focusModeMinimal && (
           <View style={styles.focusModeBadge}>
-            <MaterialCommunityIcons name="target-variant" size={14} color="#3F6212" />
+            <MaterialCommunityIcons name="target-variant" size={14} color="#6EE7B7" />
             <Text style={styles.focusModeBadgeText}>Focus Mode: minimal distractions</Text>
           </View>
         )}
@@ -393,7 +708,7 @@ function QuizScreen({ route, navigation }) {
         {/* 🎯 Question */}
         <View style={styles.questionCard}>
           {/* Visual memory hook — always visible before answering */}
-          {visualImageUrl ? (
+          {!lowClutterMode && visualImageUrl ? (
             <Image
               source={{ uri: visualImageUrl }}
               style={styles.questionImage}
@@ -458,7 +773,7 @@ function QuizScreen({ route, navigation }) {
                   <MaterialCommunityIcons
                     name="check-circle"
                     size={28}
-                    color="#10B981"
+                    color="#34D399"
                     style={{ marginLeft: 8 }}
                   />
                 )}
@@ -466,7 +781,7 @@ function QuizScreen({ route, navigation }) {
                   <MaterialCommunityIcons
                     name="close-circle"
                     size={28}
-                    color="#EF4444"
+                    color="#F87171"
                     style={{ marginLeft: 8 }}
                   />
                 )}
@@ -529,22 +844,31 @@ function QuizScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* Continue Button - User controls pace */}
+            {/* Continue Button - shows auto-advance countdown in listen mode */}
             <TouchableOpacity
               style={styles.adhd_continueButton}
               onPress={handleNextQuestion}
             >
               <Text style={styles.adhd_continueButtonText}>
-                {current + 1 >= pool.length ? '📊 See Results' : '➡️ Next Question'}
+                {listenMode && autoAdvancePhase === 'next' && autoAdvanceCountdown > 0
+                  ? `➡️ Next in ${autoAdvanceCountdown}s  (tap to skip)`
+                  : current + 1 >= pool.length ? '📊 See Results' : '➡️ Next Question'}
               </Text>
             </TouchableOpacity>
+
+            {shouldShowBreakNudge && (
+              <View style={styles.helperTextBox}>
+                <MaterialCommunityIcons name="coffee-outline" size={16} color="#64748B" />
+                <Text style={styles.helperText}>Great consistency. Consider a short break before the next set.</Text>
+              </View>
+            )}
           </Animated.View>
         )}
 
         {/* Helper text when no answer selected yet */}
-        {!showFeedback && !focusModeMinimal && (
+        {!showFeedback && !focusModeMinimal && !lowClutterMode && (
           <View style={styles.helperTextBox}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#6B7280" />
+            <MaterialCommunityIcons name="information-outline" size={16} color="#64748B" />
             <Text style={styles.helperText}>
               Take your time. There's no rush. Choose the best answer. ✨
             </Text>

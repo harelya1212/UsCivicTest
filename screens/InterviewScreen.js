@@ -381,7 +381,7 @@ const InterviewScreen = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0f766e" />
+          <ActivityIndicator size="large" color="#2DD4BF" />
           <Text style={styles.loadingText}>Loading interview session...</Text>
         </View>
       </SafeAreaView>
@@ -495,23 +495,23 @@ const InterviewScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f8f4',
+    backgroundColor: '#0A0A12',
   },
   header: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#12121E',
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#F1F5F9',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748B',
   },
   phaseContainer: {
     flex: 1,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6b7280',
+    color: '#64748B',
   },
   completeContainer: {
     flex: 1,
@@ -536,19 +536,19 @@ const styles = StyleSheet.create({
   completeTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#166534',
+    color: '#34D399',
     marginBottom: 24,
     textAlign: 'center',
   },
   completeStats: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#0f766e',
+    color: '#2DD4BF',
     marginBottom: 12,
   },
   completeSubtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#64748B',
     textAlign: 'center',
     marginBottom: 18,
   },
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primaryCompleteButton: {
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2DD4BF',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -569,14 +569,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   secondaryCompleteButton: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignItems: 'center',
   },
   secondaryCompleteButtonText: {
-    color: '#374151',
+    color: '#94A3B8',
     fontWeight: '700',
     fontSize: 15,
   },
@@ -588,20 +588,20 @@ const styles = StyleSheet.create({
   followUpTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#d97706',
+    color: '#FBBF24',
     marginBottom: 16,
     textAlign: 'center',
   },
   followUpScoreTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#0f766e',
+    color: '#2DD4BF',
     marginBottom: 16,
     textAlign: 'center',
   },
   followUpQuestion: {
     fontSize: 18,
-    color: '#1f2937',
+    color: '#F1F5F9',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -620,23 +620,23 @@ const styles = StyleSheet.create({
   },
   gradeA: {
     color: '#fff',
-    backgroundColor: '#166534',
+    backgroundColor: '#34D399',
   },
   gradeB: {
     color: '#fff',
-    backgroundColor: '#0f766e',
+    backgroundColor: '#2DD4BF',
   },
   gradeC: {
     color: '#fff',
-    backgroundColor: '#d97706',
+    backgroundColor: '#FBBF24',
   },
   gradeD: {
     color: '#fff',
-    backgroundColor: '#dc2626',
+    backgroundColor: '#F87171',
   },
   followUpFeedback: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#64748B',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -648,11 +648,11 @@ const styles = StyleSheet.create({
   actionButton: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0f766e',
+    color: '#2DD4BF',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#d1fae5',
+    backgroundColor: 'rgba(45,212,191,0.12)',
   },
 });
 

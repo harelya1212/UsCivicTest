@@ -3,6 +3,9 @@ export const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
 export const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
 export const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
 export const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
+export const USER_PROFILE_STORAGE_KEY = 'civics.userProfile.v1';
+export const SQUAD_SYNC_STORAGE_KEY = 'civics.squadSync.v1';
+export const RECOVERY_CAMPAIGN_STORAGE_PREFIX = 'civics.recoveryCampaign.v1';
 export const ALL_TOPICS_VALUE = '__all_topics__';
 export const ALL_SUBTOPICS_VALUE = '__all_subtopics__';
 export const DAILY_FREE_PACK_LIMIT = 1;
@@ -31,6 +34,11 @@ export const APP_EVENT_NAMES = Object.freeze({
   QUIZ_TTS_PLAYED: 'quiz_tts_played',
   QUIZ_TTS_REPEATED: 'quiz_tts_repeated',
   QUIZ_TTS_SPEED_CHANGED: 'quiz_tts_speed_changed',
+  QUIZ_FOCUS_MODE_TOGGLED: 'quiz_focus_mode_toggled',
+  QUIZ_STEP_GOAL_REACHED: 'quiz_step_goal_reached',
+  QUIZ_BREAK_NUDGE_SHOWN: 'quiz_break_nudge_shown',
+  RECOVERY_SESSION_STARTED: 'recovery_session_started',
+  RECOVERY_SESSION_COMPLETED: 'recovery_session_completed',
   INTERVIEW_STARTED: 'interview_started',
   INTERVIEW_PROMPT_PLAYED: 'interview_prompt_played',
   INTERVIEW_RECORDING_STARTED: 'interview_recording_started',
@@ -44,6 +52,21 @@ export const APP_EVENT_NAMES = Object.freeze({
   INTERVIEW_COMPLETED: 'interview_completed',
   HOME_INTERVIEW_CTA_CLICKED: 'home_interview_cta_clicked',
   HOME_LISTEN_CTA_CLICKED: 'home_listen_cta_clicked',
+  QUIZ_LISTEN_AUTO_ADVANCED: 'quiz_listen_auto_advanced',
+  TEAM_CREATED: 'team_created',
+  TEAM_INVITE_CODE_REFRESHED: 'team_invite_code_refreshed',
+  TEAM_INVITE_CODE_REFRESH_BLOCKED: 'team_invite_code_refresh_blocked',
+  TEAM_WEEKLY_GOAL_UPDATED: 'team_weekly_goal_updated',
+  STREAK_CHAIN_UPDATED: 'streak_chain_updated',
+  PARENT_CHILD_NUDGE_SENT: 'parent_child_nudge_sent',
+  PARENT_CHILD_NUDGE_BLOCKED: 'parent_child_nudge_blocked',
+  COMEBACK_TRIGGERED: 'comeback_triggered',
+  COMEBACK_REWARD_CLAIMED: 'comeback_reward_claimed',
+  SEGMENT_TRANSITION: 'segment_transition',
+  OFFER_CAP_DECISION: 'offer_cap_decision',
+  OFFER_WINNER_SELECTED: 'offer_winner_selected',
+  OFFER_WINNER_EXPIRED: 'offer_winner_expired',
+  EXPERIMENT_COHORT_ASSIGNED: 'experiment_cohort_assigned',
   ADMIN_DEBUG_PING: 'admin_debug_ping',
 });
 

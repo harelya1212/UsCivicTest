@@ -7,7 +7,13 @@
       "Constitution-based federal republic",
       "Representative democracy"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Identifies as republic/federal republic AND explains representative nature",
+      "B": "Identifies as republic or federal republic",
+      "C": "Mentions government type but vague or partially correct",
+      "D": "Incorrect or off-topic response"
+    }
   },
   {
     "id": 2,
@@ -15,7 +21,13 @@
     "answers": [
       "(U.S.) Constitution"
     ],
-    "is_65_20": true
+    "is_65_20": true,
+    "rubric": {
+      "A": "Identifies Constitution with clear explanation of supremacy",
+      "B": "Correctly identifies U.S. Constitution",
+      "C": "Mentions Constitution but lacks clarity",
+      "D": "Incorrect or no reference to Constitution"
+    }
   },
   {
     "id": 3,
@@ -26,11 +38,17 @@
       "Defines the parts of government",
       "Protects the rights of the people"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Names two or more correct functions with explanation",
+      "B": "Names one correct function (forms government, defines powers, protects rights)",
+      "C": "Attempts to describe function but incomplete",
+      "D": "Incorrect or cannot name a function"
+    }
   },
   {
     "id": 4,
-    "question": "The U.S. Constitution starts with the words \u201cWe the People.\u201d What does \u201cWe the People\u201d mean?",
+    "question": "The U.S. Constitution starts with the words “We the People.” What does “We the People” mean?",
     "answers": [
       "Self-government",
       "Popular sovereignty",
@@ -38,7 +56,13 @@
       "People should govern themselves",
       "(Example of) social contract"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Explains popular sovereignty/self-government AND mentions consent of governed",
+      "B": "Explains popular sovereignty, self-government, or consent of governed",
+      "C": "Partial explanation showing some understanding",
+      "D": "Incorrect definition or off-topic"
+    }
   },
   {
     "id": 5,
@@ -47,7 +71,13 @@
       "Amendments",
       "The amendment process"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Identifies amendment process AND explains steps (proposal + ratification)",
+      "B": "Correctly identifies amendments as the method",
+      "C": "Mentions amendment but incomplete process description",
+      "D": "Incorrect or vague about amendment process"
+    }
   },
   {
     "id": 6,
@@ -56,7 +86,13 @@
       "(The basic) rights of Americans",
       "(The basic) rights of people living in the United States"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Identifies basic rights of people AND names specific rights (speech, religion, etc.)",
+      "B": "Correctly identifies basic rights of Americans/residents",
+      "C": "Mentions rights but vague or incomplete",
+      "D": "Incorrect or cannot answer"
+    }
   },
   {
     "id": 7,
@@ -64,7 +100,13 @@
     "answers": [
       "Twenty-seven (27)"
     ],
-    "is_65_20": true
+    "is_65_20": true,
+    "rubric": {
+      "A": "States 27 amendments with confidence",
+      "B": "States 27 amendments",
+      "C": "Attempt with approximate number or hesitation",
+      "D": "Incorrect number or no answer"
+    }
   },
   {
     "id": 8,
@@ -75,7 +117,13 @@
       "It identifies inherent rights.",
       "It identifies individual freedoms."
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "States freedom from Britain AND explains concept of universal/inherent rights",
+      "B": "States freedom from Britain OR explains rights/equality",
+      "C": "Partial understanding of significance",
+      "D": "Incorrect or off-topic"
+    }
   },
   {
     "id": 9,
@@ -83,7 +131,13 @@
     "answers": [
       "Declaration of Independence"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Identifies Declaration of Independence AND explains context",
+      "B": "Correctly identifies Declaration of Independence",
+      "C": "Approximate or hesitant answer",
+      "D": "Incorrect document or no answer"
+    }
   },
   {
     "id": 10,
@@ -96,11 +150,17 @@
       "Limited government",
       "Self-government"
     ],
-    "is_65_20": false
+    "is_65_20": false,
+    "rubric": {
+      "A": "Names two ideas from each document with explanation",
+      "B": "Names two correct ideas (equality, liberty, rights, limited govt, self-govt)",
+      "C": "Names one idea or vague concepts",
+      "D": "Cannot name ideas or incorrect"
+    }
   },
   {
     "id": 11,
-    "question": "The words \u201cLife, Liberty, and the pursuit of Happiness\u201d are in what founding document?",
+    "question": "The words “Life, Liberty, and the pursuit of Happiness” are in what founding document?",
     "answers": [
       "Declaration of Independence"
     ],
@@ -214,7 +274,7 @@
   },
   {
     "id": 23,
-    "question": "Who is one of your state\u2019s U.S. senators now?",
+    "question": "Who is one of your state’s U.S. senators now?",
     "answers": [
       "Answers will vary. [District of Columbia residents and residents of U.S. territories should answer that D.C. (or"
     ],
@@ -317,7 +377,7 @@
     "id": 35,
     "question": "Some states have more representatives than other states. Why?",
     "answers": [
-      "(Because of) the state\u2019s population",
+      "(Because of) the state’s population",
       "(Because) they have more people",
       "(Because) some states have more people"
     ],
@@ -421,7 +481,7 @@
   },
   {
     "id": 47,
-    "question": "What does the President\u2019s Cabinet do?",
+    "question": "What does the President’s Cabinet do?",
     "answers": [
       "Advises the President (of the United States)"
     ],
@@ -556,7 +616,7 @@
       "Provide schooling and education",
       "Provide protection (police)",
       "Provide safety (fire departments)",
-      "Give a driver\u2019s license",
+      "Give a driver’s license",
       "Approve zoning and land use"
     ],
     "is_65_20": false
@@ -590,7 +650,7 @@
     "question": "There are four amendments to the U.S. Constitution about who can vote. Describe one of them.",
     "answers": [
       "Citizens eighteen (18) and older (can vote).",
-      "You don\u2019t have to pay (a poll tax) to vote.",
+      "You don’t have to pay (a poll tax) to vote.",
       "Any citizen can vote. (Women and men can vote.)",
       "A male citizen of any race (can vote)."
     ],
@@ -748,7 +808,7 @@
     "answers": [
       "High taxes",
       "Taxation without representation",
-      "British soldiers stayed in Americans\u2019 houses (boarding, quartering)",
+      "British soldiers stayed in Americans’ houses (boarding, quartering)",
       "They did not have self-government",
       "Boston Massacre",
       "Boston Tea Party (Tea Act)",
@@ -852,7 +912,7 @@
     "id": 86,
     "question": "George Washington is famous for many things. Name one.",
     "answers": [
-      "\u201cFather of Our Country\u201d",
+      "“Father of Our Country”",
       "First president of the United States",
       "General of the Continental Army",
       "President of the Constitutional Convention"
@@ -876,7 +936,7 @@
     "id": 88,
     "question": "James Madison is famous for many things. Name one.",
     "answers": [
-      "\u201cFather of the Constitution\u201d",
+      "“Father of the Constitution”",
       "Fourth president of the United States",
       "President during the War of 1812",
       "One of the writers of the Federalist Papers"
@@ -931,7 +991,7 @@
       "Emancipation Proclamation",
       "(Battle of) Vicksburg",
       "(Battle of) Gettysburg",
-      "Sherman\u2019s March",
+      "Sherman’s March",
       "(Surrender at) Appomattox",
       "(Battle of) Antietam/Sharpsburg",
       "Lincoln was assassinated."
@@ -990,7 +1050,7 @@
   },
   {
     "id": 99,
-    "question": "Name one leader of the women\u2019s rights movement in the 1800s.",
+    "question": "Name one leader of the women’s rights movement in the 1800s.",
     "answers": [
       "Susan B. Anthony",
       "Elizabeth Cady Stanton",
@@ -1082,7 +1142,7 @@
   },
   {
     "id": 108,
-    "question": "Who was the United States\u2019 main rival during the Cold War?",
+    "question": "Who was the United States’ main rival during the Cold War?",
     "answers": [
       "Soviet Union",
       "USSR",
@@ -1129,7 +1189,7 @@
     "answers": [
       "Fought for civil rights",
       "Worked for equality for all Americans",
-      "Worked to ensure that people would \u201cnot be judged by the color of their skin, but by the content"
+      "Worked to ensure that people would “not be judged by the color of their skin, but by the content"
     ],
     "is_65_20": true
   },
@@ -1254,7 +1314,7 @@
   },
   {
     "id": 124,
-    "question": "The Nation\u2019s first motto was \u201cE Pluribus Unum.\u201d What does that mean?",
+    "question": "The Nation’s first motto was “E Pluribus Unum.” What does that mean?",
     "answers": [
       "Out of many, one",
       "We all become one"
@@ -1266,7 +1326,7 @@
     "question": "What is Independence Day?",
     "answers": [
       "A holiday to celebrate U.S. independence (from Britain)",
-      "The country\u2019s birthday"
+      "The country’s birthday"
     ],
     "is_65_20": false
   },
@@ -1274,9 +1334,9 @@
     "id": 126,
     "question": "Name three national U.S. holidays.",
     "answers": [
-      "New Year\u2019s Day",
+      "New Year’s Day",
       "Martin Luther King, Jr. Day",
-      "Presidents Day (Washington\u2019s Birthday)",
+      "Presidents Day (Washington’s Birthday)",
       "Memorial Day",
       "Juneteenth",
       "Independence Day",

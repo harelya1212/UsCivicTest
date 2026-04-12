@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,7 +6,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -29,16 +28,65 @@ import DatePicker from 'react-datepicker';
 import * as Notifications from 'expo-notifications';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import './node_modules/react-datepicker/dist/react-datepicker.css';
+// CSS bundled locally to avoid Metro node_modules export-map warning
+import './assets/react-datepicker.min.css';
 
-// Firebase & Monetization Imports
-// Note: Initialize Firebase with your credentials in firebaseConfig.js
+// Shared styles (includes all screen-level and component-level styles)
+import styles from './styles';
+
+// Shared context and state factories
+import {
+  AppDataContext,
+  createDefaultAdRuntime,
+  createDefaultMasteryMap,
+  createDefaultUserProfile,
+  createDefaultSquadSync,
+} from './context/AppDataContext';
+
+// Shared utility functions
+import {
+  getDayKey,
+  daysSince,
+  parseDateSafe,
+  generateStudyPlan,
+  calculateEstimatedRevenue,
+  buildSevenDayRevenueTrend,
+  withAutoStudyPlan,
+  buildCaseProgressStorageKey,
+  buildCaseReminderStorageKey,
+  escapeHtml,
+  buildDefaultCaseProgress,
+} from './utils/helpers';
+
+// Smart Queue algorithm
+import { buildSmartQueue } from './utils/smartQueue';
+
+// Shared constants and data
+import {
+  PAUSED_SESSION_STORAGE_KEY,
+  AD_RUNTIME_STORAGE_KEY,
+  MASTERY_MAP_STORAGE_KEY,
+  USER_PROFILE_STORAGE_KEY,
+  SQUAD_SYNC_STORAGE_KEY,
+  DAILY_FREE_PACK_LIMIT,
+  FREE_PACK_QUESTION_COUNT,
+  FREE_PACK_COOLDOWN_MS,
+  AD_EVENT_NAMES,
+  APP_EVENT_NAMES,
+  CASE_PROGRESS_STAGES,
+  WEEKDAY_OPTIONS,
+  CASE_STAGE_CHECKLISTS,
+  usStates,
+  achievements,
+} from './constants';
+
+// Firebase & Monetization Imports (credentials needed - see firebaseConfig.js)
 // import { watchAuthState, getUserProfile, saveQuizResult, loginUser } from './firebaseServices';
 import { showInterstitialAd, showRewardedAd, AdScheduler, HomeBannerAd } from './adMobService';
-import { 
-  generateQuizQuestion, 
-  getAdaptiveDifficulty, 
-  calculatePerformance, 
+import {
+  generateQuizQuestion,
+  getAdaptiveDifficulty,
+  calculatePerformance,
   getVisualImage,
   getQuestionBank,
   isAnswerCorrect as checkAnswerCorrect,
@@ -51,78 +99,1158 @@ import {
   setStateOfficeholders,
   setStateCapital,
 } from './civicsDynamicData';
+import { logAppAnalyticsEvent } from './analyticsService';
+import { playLogoSwell } from './utils/audioHaptics';
+import {
+  fetchSquadSyncSnapshot,
+  pushSquadSyncSnapshot,
+  enforceServerModerationPolicy,
+  runServerModerationAdminAction,
+} from './firebaseServices';
 // import { PremiumManager, PREMIUM_TIERS, logMonetizationEvent } from './monetizationService';
-// (Commented out until Firebase credentials are added - see setup instructions below)
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const { width, height } = Dimensions.get('window');
-const PAUSED_SESSION_STORAGE_KEY = 'civics.pausedSession.v1';
-const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
-const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
-const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
-const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
-const DAILY_FREE_PACK_LIMIT = 1;
-const FREE_PACK_QUESTION_COUNT = 15;
-const FREE_PACK_COOLDOWN_MS = 60 * 60 * 1000;
 
-const CASE_PROGRESS_STAGES = [
-  'Case Received',
-  'Biometrics Scheduled',
-  'Biometrics Completed',
-  'Interview Scheduled',
-  'Interview Completed',
-  'Oath Scheduled',
-  'Naturalized',
-];
-
-const WEEKDAY_OPTIONS = [
-  { label: 'Sunday', value: 1 },
-  { label: 'Monday', value: 2 },
-  { label: 'Tuesday', value: 3 },
-  { label: 'Wednesday', value: 4 },
-  { label: 'Thursday', value: 5 },
-  { label: 'Friday', value: 6 },
-  { label: 'Saturday', value: 7 },
-];
-
-const CASE_STAGE_CHECKLISTS = {
-  'Case Received': [
-    'Save USCIS online account login details in a secure password manager.',
-    'Keep receipt number copy (paper + screenshot).',
-    'Create a folder for notices and civil documents.',
-  ],
-  'Biometrics Scheduled': [
-    'Bring appointment notice and government-issued photo ID.',
-    'Confirm Application Support Center location and parking/transit.',
-    'Arrive 15-30 minutes early with notice barcode visible.',
-  ],
-  'Biometrics Completed': [
-    'Save proof biometrics were completed.',
-    'Monitor USCIS account weekly for next status.',
-    'Update your address with USCIS if moved.',
-  ],
-  'Interview Scheduled': [
-    'Review N-400 application for consistency and updates.',
-    'Prepare originals of green card, passport, tax and travel records.',
-    'Practice civics questions and reading/writing portions.',
-  ],
-  'Interview Completed': [
-    'Save interview result notice and officer notes.',
-    'If RFE issued, collect requested documents immediately.',
-    'Track oath scheduling notice in USCIS account.',
-  ],
-  'Oath Scheduled': [
-    'Review oath ceremony notice date, time, and location.',
-    'Bring green card and required forms to surrender.',
-    'Prepare name-change or travel documents if needed.',
-  ],
-  'Naturalized': [
-    'Apply for U.S. passport after certificate received.',
-    'Update Social Security citizenship status.',
-    'Update voter registration and state records.',
-  ],
+const OFFER_VARIANT_OPTIONS = {
+  homeSprintOffer: ['control', 'urgency'],
+  homeSprintReward: ['standard', 'extended'],
+  reviewBonusOffer: ['control', 'challenge'],
+  reviewWeakOffer: ['control', 'coach'],
 };
+const OFFER_WINNER_PRIORITY = ['homeSprintReward', 'homeSprintOffer', 'reviewBonusOffer', 'reviewWeakOffer'];
+const OFFER_WINNER_DEPENDENCIES = Object.freeze({
+  homeSprintOffer: 'homeSprintReward',
+});
+const OFFER_WINNER_MIN_ATTEMPTS = 12;
+const OFFER_WINNER_MIN_LIFT_PCT_POINTS = 5;
+const OFFER_WINNER_DECAY_PER_DAY = 0.12;
+const OFFER_WINNER_EXPIRY_THRESHOLD = 0.45;
+const REVENUE_INTELLIGENCE_HOLDOUT_PCT = 20;
+
+const MODERATION_ROLE_LIMITS = Object.freeze({
+  parent: { nudge_send: 20, invite_refresh: 10, goal_update: 30 },
+  admin: { nudge_send: 16, invite_refresh: 8, goal_update: 24 },
+  child: { nudge_send: 4, invite_refresh: 2, goal_update: 6 },
+});
+const MODERATION_MUTE_MS = 10 * 60 * 1000;
+const MODERATION_MUTE_THRESHOLD = 3;
+const MODERATION_ESCALATION_THRESHOLD = 5;
+const COMEBACK_WINDOW_OFFSETS = Object.freeze({ d2: 2, d5: 5, d10: 10 });
+const COMEBACK_REWARD_QUESTIONS = Object.freeze({ d2: 8, d5: 12, d10: 18 });
+
+const INTENT_SEGMENTS = Object.freeze(['high-intent', 'warming', 'low-intent', 'unknown']);
+
+function normalizeIntentSegment(segment = '') {
+  const value = String(segment || '').trim().toLowerCase();
+  if (value === 'high-intent' || value === 'warming' || value === 'low-intent') return value;
+  return 'unknown';
+}
+
+function createEmptyIntentTransitionSummary() {
+  const bySegment = INTENT_SEGMENTS.reduce((acc, segment) => {
+    acc[segment] = 0;
+    return acc;
+  }, {});
+  return {
+    totals: {
+      changed: 0,
+      unchanged: 0,
+      entries: 0,
+    },
+    bySegment,
+    transitions: {},
+  };
+}
+
+function summarizeIntentTransitions(leaderboard = []) {
+  const summary = createEmptyIntentTransitionSummary();
+  (Array.isArray(leaderboard) ? leaderboard : []).forEach((row) => {
+    const currentSegment = normalizeIntentSegment(row?.intentSegment);
+    const previousSegment = normalizeIntentSegment(row?.previousIntentSegment || currentSegment);
+    const key = `${previousSegment}->${currentSegment}`;
+    summary.totals.entries += 1;
+    summary.bySegment[currentSegment] += 1;
+    if (previousSegment === currentSegment) summary.totals.unchanged += 1;
+    else summary.totals.changed += 1;
+    summary.transitions[key] = Number(summary.transitions[key] || 0) + 1;
+  });
+  return summary;
+}
+
+function getOfferFrequencyPolicyForSegment(segment = '') {
+  const normalized = normalizeIntentSegment(segment);
+  if (normalized === 'high-intent') {
+    return {
+      segment: normalized,
+      interstitialDailyLimitMultiplier: 1.25,
+      interstitialCooldownMultiplier: 0.75,
+      resumeLimitMultiplier: 1,
+      quizCompleteLimitMultiplier: 1.25,
+      rewardedDailyLimitMultiplier: 1.25,
+      rewardedCooldownMultiplier: 0.75,
+    };
+  }
+
+  if (normalized === 'low-intent') {
+    return {
+      segment: normalized,
+      interstitialDailyLimitMultiplier: 0.75,
+      interstitialCooldownMultiplier: 1.5,
+      resumeLimitMultiplier: 0.67,
+      quizCompleteLimitMultiplier: 0.75,
+      rewardedDailyLimitMultiplier: 0.75,
+      rewardedCooldownMultiplier: 1.5,
+    };
+  }
+
+  return {
+    segment: normalized,
+    interstitialDailyLimitMultiplier: 1,
+    interstitialCooldownMultiplier: 1,
+    resumeLimitMultiplier: 1,
+    quizCompleteLimitMultiplier: 1,
+    rewardedDailyLimitMultiplier: 1,
+    rewardedCooldownMultiplier: 1,
+  };
+}
+
+function buildPinnedOfferVariants(existing = {}) {
+  return Object.keys(OFFER_VARIANT_OPTIONS).reduce((acc, key) => ({
+    ...acc,
+    [key]: OFFER_VARIANT_OPTIONS[key].includes(existing[key]) ? existing[key] : null,
+  }), {});
+}
+
+function buildOfferVariants(existing = {}) {
+  return Object.keys(OFFER_VARIANT_OPTIONS).reduce((acc, key) => ({
+    ...acc,
+    [key]: OFFER_VARIANT_OPTIONS[key].includes(existing[key]) ? existing[key] : OFFER_VARIANT_OPTIONS[key][0],
+  }), {});
+}
+
+function getBalancedOfferVariant(variantKey, runtime) {
+  const options = OFFER_VARIANT_OPTIONS[variantKey] || ['control'];
+  const stats = runtime?.offerVariantStats?.[variantKey] || {};
+  const hasTraffic = options.some((variantName) => {
+    const variant = stats[variantName] || { attempts: 0, completions: 0 };
+    return (variant.attempts || 0) > 0 || (variant.completions || 0) > 0;
+  });
+
+  if (!hasTraffic) {
+    return runtime?.offerVariants?.[variantKey] || options[0] || 'control';
+  }
+
+  return options.reduce((bestVariantName, variantName) => {
+    if (!bestVariantName) return variantName;
+
+    const bestVariant = stats[bestVariantName] || { attempts: 0, completions: 0 };
+    const currentVariant = stats[variantName] || { attempts: 0, completions: 0 };
+    const bestAttempts = bestVariant.attempts || 0;
+    const currentAttempts = currentVariant.attempts || 0;
+
+    if (currentAttempts !== bestAttempts) {
+      return currentAttempts < bestAttempts ? variantName : bestVariantName;
+    }
+
+    const bestCompletions = bestVariant.completions || 0;
+    const currentCompletions = currentVariant.completions || 0;
+    if (currentCompletions !== bestCompletions) {
+      return currentCompletions < bestCompletions ? variantName : bestVariantName;
+    }
+
+    return variantName < bestVariantName ? variantName : bestVariantName;
+  }, null) || options[0] || 'control';
+}
+
+function normalizeOfferVariantWinners(raw = {}) {
+  const defaults = createDefaultAdRuntime().autoOfferWinners || {};
+  return Object.keys(OFFER_VARIANT_OPTIONS).reduce((acc, variantKey) => {
+    const winner = raw?.[variantKey];
+    acc[variantKey] = winner && typeof winner === 'object'
+      ? {
+          variantKey,
+          variantName: String(winner.variantName || '').trim() || null,
+          baselineVariantName: String(winner.baselineVariantName || '').trim() || null,
+          confidenceStart: Number(winner.confidenceStart || 0),
+          confidenceCurrent: Number(winner.confidenceCurrent || 0),
+          cvrDeltaPctPoints: Number(winner.cvrDeltaPctPoints || 0),
+          relativeLiftPct: Number(winner.relativeLiftPct || 0),
+          attempts: Number(winner.attempts || 0),
+          baselineAttempts: Number(winner.baselineAttempts || 0),
+          assignedAt: winner.assignedAt || null,
+          lastEvaluatedAt: winner.lastEvaluatedAt || null,
+          expiresAt: winner.expiresAt || null,
+          expiredAt: winner.expiredAt || null,
+          active: Boolean(winner.active),
+          reason: String(winner.reason || '').trim() || 'insufficient_signal',
+        }
+      : defaults[variantKey] || null;
+    return acc;
+  }, {});
+}
+
+function hashStringToBucket(value = '') {
+  const input = String(value || '');
+  let hash = 0;
+  for (let index = 0; index < input.length; index += 1) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash) % 100;
+}
+
+function normalizeExperimentCohorts(raw = {}) {
+  const defaults = createDefaultAdRuntime().experimentCohorts || {};
+  const revenueIntelligence = raw?.revenueIntelligence && typeof raw.revenueIntelligence === 'object'
+    ? raw.revenueIntelligence
+    : {};
+  const cohort = String(revenueIntelligence.cohort || '').trim().toLowerCase();
+  const overrideCohort = String(revenueIntelligence.overrideCohort || '').trim().toLowerCase();
+  return {
+    revenueIntelligence: {
+      ...defaults.revenueIntelligence,
+      ...revenueIntelligence,
+      cohort: cohort === 'holdout' || cohort === 'treatment' ? cohort : null,
+      overrideCohort: overrideCohort === 'holdout' || overrideCohort === 'treatment' ? overrideCohort : null,
+      seed: String(revenueIntelligence.seed || '').trim(),
+      bucket: Number.isFinite(Number(revenueIntelligence.bucket)) ? Number(revenueIntelligence.bucket) : null,
+      holdoutPct: Number.isFinite(Number(revenueIntelligence.holdoutPct))
+        ? Number(revenueIntelligence.holdoutPct)
+        : defaults.revenueIntelligence.holdoutPct,
+    },
+  };
+}
+
+function deriveExperimentCohorts(runtime = {}, seed = '', nowMs = Date.now()) {
+  const current = normalizeExperimentCohorts(runtime?.experimentCohorts || {});
+  const safeSeed = String(current?.revenueIntelligence?.seed || seed || '').trim();
+  const holdoutPct = clampNumber(Number(current?.revenueIntelligence?.holdoutPct || REVENUE_INTELLIGENCE_HOLDOUT_PCT), 1, 50);
+  const bucket = safeSeed ? hashStringToBucket(safeSeed) : null;
+  const derivedCohort = bucket === null ? null : (bucket < holdoutPct ? 'holdout' : 'treatment');
+  const overrideCohort = String(current?.revenueIntelligence?.overrideCohort || '').trim().toLowerCase();
+  const cohort = overrideCohort === 'holdout' || overrideCohort === 'treatment'
+    ? overrideCohort
+    : derivedCohort;
+  const previousCohort = String(current?.revenueIntelligence?.cohort || '').trim().toLowerCase();
+  const assignedAt = cohort
+    ? (current?.revenueIntelligence?.assignedAt && previousCohort === cohort
+      ? current.revenueIntelligence.assignedAt
+      : new Date(nowMs).toISOString())
+    : null;
+
+  return {
+    revenueIntelligence: {
+      ...current.revenueIntelligence,
+      cohort,
+      overrideCohort: overrideCohort === 'holdout' || overrideCohort === 'treatment' ? overrideCohort : null,
+      assignedAt,
+      seed: safeSeed,
+      bucket,
+      holdoutPct,
+    },
+  };
+}
+
+function getOfferVariantGroupSnapshot(variantKey, runtime = {}) {
+  const variants = runtime?.offerVariantStats?.[variantKey] || {};
+  const names = Object.keys(variants);
+  const rankedVariants = names
+    .map((variantName) => {
+      const variant = variants[variantName] || { attempts: 0, completions: 0 };
+      const attempts = Number(variant.attempts || 0);
+      const completions = Number(variant.completions || 0);
+      const conversionRateRaw = attempts > 0 ? (completions / attempts) : 0;
+      return {
+        variantName,
+        attempts,
+        completions,
+        conversionRateRaw,
+      };
+    })
+    .sort((a, b) => {
+      if (b.conversionRateRaw !== a.conversionRateRaw) return b.conversionRateRaw - a.conversionRateRaw;
+      if (b.attempts !== a.attempts) return b.attempts - a.attempts;
+      return String(a.variantName || '').localeCompare(String(b.variantName || ''));
+    });
+
+  const leader = rankedVariants[0] || null;
+  const baselineVariant = rankedVariants.find((variant) => variant.variantName === 'control') || rankedVariants[1] || null;
+  const cvrDeltaRaw = leader && baselineVariant
+    ? leader.conversionRateRaw - baselineVariant.conversionRateRaw
+    : 0;
+  const cvrDeltaPctPoints = cvrDeltaRaw * 100;
+  const relativeLiftPct = baselineVariant && baselineVariant.conversionRateRaw > 0
+    ? Math.round((cvrDeltaRaw / baselineVariant.conversionRateRaw) * 100)
+    : 0;
+  const qualifies = Boolean(
+    leader
+    && baselineVariant
+    && cvrDeltaPctPoints >= OFFER_WINNER_MIN_LIFT_PCT_POINTS
+    && cvrDeltaRaw > 0
+    && Number(leader.attempts || 0) >= OFFER_WINNER_MIN_ATTEMPTS
+    && Number(baselineVariant.attempts || 0) >= OFFER_WINNER_MIN_ATTEMPTS
+  );
+
+  return {
+    leader,
+    baselineVariant,
+    cvrDeltaPctPoints: Number(cvrDeltaPctPoints.toFixed(2)),
+    relativeLiftPct,
+    qualifies,
+  };
+}
+
+function getOfferWinnerConfidenceStart(snapshot = {}) {
+  const leaderAttempts = Number(snapshot?.leader?.attempts || 0);
+  const baselineAttempts = Number(snapshot?.baselineVariant?.attempts || 0);
+  const sharedSample = Math.min(leaderAttempts, baselineAttempts);
+  const sampleScore = clampNumber((sharedSample - OFFER_WINNER_MIN_ATTEMPTS) / 24, 0, 1);
+  const liftScore = clampNumber((Number(snapshot?.cvrDeltaPctPoints || 0) - OFFER_WINNER_MIN_LIFT_PCT_POINTS) / 12, 0, 1);
+  return Number(clampNumber(0.55 + (sampleScore * 0.25) + (liftScore * 0.2), 0.55, 0.98).toFixed(3));
+}
+
+function getOfferWinnerDecayDays(assignedAt, nowMs = Date.now()) {
+  const assignedMs = Date.parse(assignedAt || '');
+  if (!Number.isFinite(assignedMs)) return 0;
+  return Math.max(0, Math.floor((nowMs - assignedMs) / (24 * 60 * 60 * 1000)));
+}
+
+function getDecayedOfferWinnerConfidence(confidenceStart = 0, assignedAt, nowMs = Date.now()) {
+  const decayDays = getOfferWinnerDecayDays(assignedAt, nowMs);
+  const confidenceCurrent = Number(
+    clampNumber(Number(confidenceStart || 0) * Math.pow(1 - OFFER_WINNER_DECAY_PER_DAY, decayDays), 0, 1).toFixed(3),
+  );
+  return {
+    decayDays,
+    confidenceCurrent,
+  };
+}
+
+function getOfferWinnerExpiryAt(confidenceStart = 0, assignedAt) {
+  const assignedMs = Date.parse(assignedAt || '');
+  if (!Number.isFinite(assignedMs) || !Number.isFinite(confidenceStart) || confidenceStart <= 0) return null;
+  if (confidenceStart < OFFER_WINNER_EXPIRY_THRESHOLD) return new Date(assignedMs).toISOString();
+  const daysUntilExpiry = Math.max(
+    0,
+    Math.ceil(Math.log(OFFER_WINNER_EXPIRY_THRESHOLD / confidenceStart) / Math.log(1 - OFFER_WINNER_DECAY_PER_DAY)),
+  );
+  return new Date(assignedMs + (daysUntilExpiry * 24 * 60 * 60 * 1000)).toISOString();
+}
+
+function deriveAutoOfferWinners(runtime = {}, nowMs = Date.now()) {
+  const previousWinners = normalizeOfferVariantWinners(runtime?.autoOfferWinners || {});
+  const pinnedVariants = buildPinnedOfferVariants(runtime?.pinnedOfferVariants || {});
+  const nowIso = new Date(nowMs).toISOString();
+
+  const nextWinners = OFFER_WINNER_PRIORITY.reduce((acc, variantKey) => {
+    const previousWinner = previousWinners[variantKey];
+    const dependencyKey = OFFER_WINNER_DEPENDENCIES[variantKey];
+    const dependencySatisfied = !dependencyKey || Boolean(pinnedVariants?.[dependencyKey] || acc?.[dependencyKey]?.active);
+    const snapshot = getOfferVariantGroupSnapshot(variantKey, runtime);
+    const sameWinnerStillLeading = Boolean(
+      previousWinner?.variantName
+      && snapshot?.leader?.variantName
+      && previousWinner.variantName === snapshot.leader.variantName,
+    );
+
+    if (snapshot.qualifies && dependencySatisfied) {
+      const nextConfidenceStart = getOfferWinnerConfidenceStart(snapshot);
+      const assignedAt = sameWinnerStillLeading && previousWinner?.assignedAt
+        ? previousWinner.assignedAt
+        : nowIso;
+      const confidenceStart = sameWinnerStillLeading
+        ? Math.max(Number(previousWinner?.confidenceStart || 0), nextConfidenceStart)
+        : nextConfidenceStart;
+      const decay = getDecayedOfferWinnerConfidence(confidenceStart, assignedAt, nowMs);
+      const active = decay.confidenceCurrent >= OFFER_WINNER_EXPIRY_THRESHOLD;
+
+      acc[variantKey] = {
+        variantKey,
+        variantName: snapshot.leader?.variantName || null,
+        baselineVariantName: snapshot.baselineVariant?.variantName || null,
+        confidenceStart,
+        confidenceCurrent: decay.confidenceCurrent,
+        cvrDeltaPctPoints: Number(snapshot.cvrDeltaPctPoints || 0),
+        relativeLiftPct: Number(snapshot.relativeLiftPct || 0),
+        attempts: Number(snapshot.leader?.attempts || 0),
+        baselineAttempts: Number(snapshot.baselineVariant?.attempts || 0),
+        assignedAt,
+        lastEvaluatedAt: nowIso,
+        expiresAt: getOfferWinnerExpiryAt(confidenceStart, assignedAt),
+        expiredAt: active ? null : nowIso,
+        active,
+        reason: active ? (pinnedVariants?.[variantKey] ? 'admin_pinned_override' : 'eligible') : 'confidence_decay',
+      };
+      return acc;
+    }
+
+    acc[variantKey] = previousWinner && typeof previousWinner === 'object'
+      ? {
+          ...previousWinner,
+          active: false,
+          lastEvaluatedAt: nowIso,
+          expiredAt: previousWinner?.expiredAt || nowIso,
+          reason: dependencySatisfied ? 'insufficient_signal' : 'blocked_by_reward_priority',
+        }
+      : snapshot?.leader
+        ? {
+            variantKey,
+            variantName: snapshot.leader?.variantName || null,
+            baselineVariantName: snapshot.baselineVariant?.variantName || null,
+            confidenceStart: snapshot.qualifies ? getOfferWinnerConfidenceStart(snapshot) : 0,
+            confidenceCurrent: 0,
+            cvrDeltaPctPoints: Number(snapshot.cvrDeltaPctPoints || 0),
+            relativeLiftPct: Number(snapshot.relativeLiftPct || 0),
+            attempts: Number(snapshot.leader?.attempts || 0),
+            baselineAttempts: Number(snapshot.baselineVariant?.attempts || 0),
+            assignedAt: null,
+            lastEvaluatedAt: nowIso,
+            expiresAt: null,
+            expiredAt: null,
+            active: false,
+            reason: dependencySatisfied ? 'insufficient_signal' : 'blocked_by_reward_priority',
+          }
+        : null;
+    return acc;
+  }, {});
+
+  return normalizeOfferVariantWinners(nextWinners);
+}
+
+function buildInviteCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'SQUAD-';
+  for (let i = 0; i < 6; i += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+function normalizeComebackCampaign(raw = {}) {
+  const defaults = createDefaultAdRuntime().comebackCampaign;
+  const windows = raw?.windows && typeof raw.windows === 'object' ? raw.windows : {};
+
+  return {
+    ...defaults,
+    ...(raw || {}),
+    windows: {
+      d2: {
+        ...defaults.windows.d2,
+        ...(windows.d2 || {}),
+        dayOffset: COMEBACK_WINDOW_OFFSETS.d2,
+      },
+      d5: {
+        ...defaults.windows.d5,
+        ...(windows.d5 || {}),
+        dayOffset: COMEBACK_WINDOW_OFFSETS.d5,
+      },
+      d10: {
+        ...defaults.windows.d10,
+        ...(windows.d10 || {}),
+        dayOffset: COMEBACK_WINDOW_OFFSETS.d10,
+      },
+    },
+  };
+}
+
+function getDayKeyDistance(previousDayKey, currentDayKey) {
+  if (!previousDayKey || !currentDayKey) return 0;
+  const previousMs = Date.parse(`${previousDayKey}T00:00:00.000Z`);
+  const currentMs = Date.parse(`${currentDayKey}T00:00:00.000Z`);
+  if (!Number.isFinite(previousMs) || !Number.isFinite(currentMs)) return 0;
+  return Math.max(0, Math.round((currentMs - previousMs) / (24 * 60 * 60 * 1000)));
+}
+
+function deriveComebackCampaign(runtime = {}, nowMs = Date.now()) {
+  const currentDayKey = getDayKey(new Date(nowMs));
+  const campaign = normalizeComebackCampaign(runtime?.comebackCampaign || {});
+  const lastActiveDayKey = String(campaign?.lastActiveDayKey || runtime?.dayKey || '').trim();
+  const inactiveDays = getDayKeyDistance(lastActiveDayKey, currentDayKey);
+  const nextWindows = Object.entries(campaign.windows).reduce((acc, [windowKey, windowValue]) => {
+    acc[windowKey] = {
+      ...windowValue,
+      eligible: false,
+    };
+    return acc;
+  }, {});
+
+  let eligibleWindow = null;
+  let triggeredWindow = null;
+
+  if (lastActiveDayKey && inactiveDays > 0) {
+    Object.entries(COMEBACK_WINDOW_OFFSETS).forEach(([windowKey, dayOffset]) => {
+      if (inactiveDays === dayOffset) {
+        const previousWindow = nextWindows[windowKey];
+        const firstTriggerForToday = previousWindow.lastEligibleDayKey !== currentDayKey;
+        nextWindows[windowKey] = {
+          ...previousWindow,
+          eligible: true,
+          lastEligibleDayKey: currentDayKey,
+          lastTriggeredAt: firstTriggerForToday ? new Date(nowMs).toISOString() : previousWindow.lastTriggeredAt,
+          shownCount: firstTriggerForToday ? Number(previousWindow.shownCount || 0) + 1 : Number(previousWindow.shownCount || 0),
+        };
+        eligibleWindow = windowKey;
+        if (firstTriggerForToday) triggeredWindow = windowKey;
+      }
+    });
+  }
+
+  return {
+    campaign: {
+      ...campaign,
+      lastActiveDayKey: currentDayKey,
+      eligibleWindow,
+      windows: nextWindows,
+    },
+    triggeredWindow,
+    inactiveDays,
+    currentDayKey,
+  };
+}
+
+function buildMemberFromProfile(profile = {}, fallbackName = 'You') {
+  const displayName = String(profile.name || fallbackName).trim() || fallbackName;
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'Y';
+
+  return {
+    id: 'self',
+    name: displayName,
+    role: 'parent',
+    points: 260,
+    level: 3,
+    initials,
+    completed: 5,
+    effortHours: 4.1,
+    accuracy: 76,
+    status: 'active',
+  };
+}
+
+function normalizeSquadMember(member = {}) {
+  const next = { ...(member || {}) };
+  const memberId = String(next.id || '').trim();
+  const role = String(next.role || '').trim().toLowerCase();
+  if (memberId === 'self') {
+    next.role = role || 'parent';
+  } else {
+    next.role = role || 'child';
+  }
+  return next;
+}
+
+function normalizeSquadSync(raw = {}) {
+  const defaults = createDefaultSquadSync();
+  const safeMembers = Array.isArray(raw.members) ? raw.members.map((member) => normalizeSquadMember(member)) : [];
+  const fieldClock = raw?.syncMeta?.fieldClock;
+
+  return {
+    ...defaults,
+    ...(raw || {}),
+    weeklyGoal: {
+      ...defaults.weeklyGoal,
+      ...(raw.weeklyGoal || {}),
+    },
+    weeklyChallenge: {
+      ...defaults.weeklyChallenge,
+      ...(raw.weeklyChallenge || {}),
+    },
+    householdBoard: {
+      ...defaults.householdBoard,
+      ...(raw.householdBoard || {}),
+      items: Array.isArray(raw?.householdBoard?.items)
+        ? raw.householdBoard.items
+        : defaults.householdBoard.items,
+    },
+    streakChain: {
+      ...defaults.streakChain,
+      ...(raw.streakChain || {}),
+    },
+    nudgeCooldownByMember: raw.nudgeCooldownByMember && typeof raw.nudgeCooldownByMember === 'object'
+      ? raw.nudgeCooldownByMember
+      : {},
+    moderation: {
+      ...defaults.moderation,
+      ...(raw.moderation || {}),
+      rateBuckets: raw?.moderation?.rateBuckets && typeof raw.moderation.rateBuckets === 'object'
+        ? raw.moderation.rateBuckets
+        : {},
+      mutedActors: raw?.moderation?.mutedActors && typeof raw.moderation.mutedActors === 'object'
+        ? raw.moderation.mutedActors
+        : {},
+      violationsByActor: raw?.moderation?.violationsByActor && typeof raw.moderation.violationsByActor === 'object'
+        ? raw.moderation.violationsByActor
+        : {},
+      escalationByActor: raw?.moderation?.escalationByActor && typeof raw.moderation.escalationByActor === 'object'
+        ? raw.moderation.escalationByActor
+        : {},
+      auditTrail: Array.isArray(raw?.moderation?.auditTrail)
+        ? raw.moderation.auditTrail
+        : [],
+    },
+    season: {
+      ...defaults.season,
+      ...(raw.season || {}),
+      leaderboard: Array.isArray(raw?.season?.leaderboard)
+        ? raw.season.leaderboard
+        : [],
+      tierSummary: raw?.season?.tierSummary && typeof raw.season.tierSummary === 'object'
+        ? {
+            bronze: Number(raw.season.tierSummary.bronze || 0),
+            silver: Number(raw.season.tierSummary.silver || 0),
+            gold: Number(raw.season.tierSummary.gold || 0),
+            platinum: Number(raw.season.tierSummary.platinum || 0),
+          }
+        : { ...defaults.season.tierSummary },
+      intentTransitionSummary: raw?.season?.intentTransitionSummary && typeof raw.season.intentTransitionSummary === 'object'
+        ? raw.season.intentTransitionSummary
+        : { ...defaults.season.intentTransitionSummary },
+      archived: Array.isArray(raw?.season?.archived)
+        ? raw.season.archived
+        : [],
+    },
+    syncMeta: {
+      ...defaults.syncMeta,
+      ...(raw.syncMeta || {}),
+      fieldClock: fieldClock && typeof fieldClock === 'object' ? fieldClock : {},
+    },
+    members: safeMembers,
+  };
+}
+
+function toEpoch(value) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getUtcWeekWindow(nowMs = Date.now()) {
+  const now = new Date(nowMs);
+  const startOfDayMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const day = now.getUTCDay();
+  const offsetToMonday = (day + 6) % 7;
+  const startMs = startOfDayMs - (offsetToMonday * 24 * 60 * 60 * 1000);
+  const endMs = startMs + (7 * 24 * 60 * 60 * 1000);
+  return {
+    startMs,
+    endMs,
+    weekKey: new Date(startMs).toISOString().slice(0, 10),
+  };
+}
+
+function getSeasonScore(member = {}) {
+  const points = Number(member?.points || 0);
+  const completed = Number(member?.completed || 0);
+  const effortHours = Number(member?.effortHours || 0);
+  const accuracy = Number(member?.accuracy || 0);
+  const level = Number(member?.level || 0);
+
+  return Math.round(
+    points
+    + (completed * 18)
+    + (effortHours * 14)
+    + (accuracy * 6)
+    + (level * 10),
+  );
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getSeasonFairPlay(member = {}) {
+  const completed = Math.max(0, Number(member?.completed || 0));
+  const effortHours = Math.max(0, Number(member?.effortHours || 0));
+  const accuracy = clampNumber(Number(member?.accuracy || 0), 0, 100);
+
+  const accuracyQuality = clampNumber(accuracy / 100, 0.45, 1);
+  const effortPerCompletion = completed > 0 ? (effortHours / completed) : 1;
+  const completionQuality = clampNumber(effortPerCompletion / 0.65, 0.5, 1.1);
+  const completionSpamRatio = completed > 0 ? (completed / Math.max(1, effortHours * 2.5)) : 0;
+  const consistencyQuality = clampNumber(1 - (Math.max(0, completionSpamRatio - 1) * 0.35), 0.55, 1);
+
+  const fairPlayMultiplier = clampNumber(
+    (accuracyQuality * 0.5) + (completionQuality * 0.3) + (consistencyQuality * 0.2),
+    0.55,
+    1.08,
+  );
+
+  return {
+    multiplier: Number(fairPlayMultiplier.toFixed(3)),
+    accuracyQuality,
+    completionQuality,
+    consistencyQuality,
+  };
+}
+
+function getSeasonWeightedScore(member = {}) {
+  const rawScore = getSeasonScore(member);
+  const fairPlay = getSeasonFairPlay(member);
+  const weightedScore = Math.max(0, Math.round(rawScore * fairPlay.multiplier));
+  const fairPlayDelta = weightedScore - rawScore;
+  const fairPlayDeltaPct = rawScore > 0
+    ? Number(((fairPlayDelta / rawScore) * 100).toFixed(2))
+    : 0;
+  return {
+    rawScore,
+    weightedScore,
+    fairPlay,
+    fairPlayDelta,
+    fairPlayDeltaPct,
+  };
+}
+
+function getIntentSegmentAssignment(member = {}, weighted = {}) {
+  const completed = Math.max(0, Number(member?.completed || 0));
+  const effortHours = Math.max(0, Number(member?.effortHours || 0));
+  const accuracy = clampNumber(Number(member?.accuracy || 0), 0, 100);
+  const level = Math.max(0, Number(member?.level || 0));
+  const rawScore = Math.max(0, Number(weighted?.rawScore || getSeasonScore(member)));
+  const weightedScore = Math.max(0, Number(weighted?.weightedScore || rawScore));
+  const fairPlayMultiplier = clampNumber(Number(weighted?.fairPlay?.multiplier || 1), 0.55, 1.08);
+
+  const activitySignal = clampNumber((completed / 10) + (effortHours / 8), 0, 1);
+  const qualitySignal = clampNumber(((accuracy / 100) * 0.6) + (((fairPlayMultiplier - 0.55) / 0.53) * 0.4), 0, 1);
+  const progressionSignal = clampNumber((level / 8) + (weightedScore / 1200), 0, 1);
+  const intentScore = Number((((activitySignal * 0.45) + (qualitySignal * 0.4) + (progressionSignal * 0.15)) * 100).toFixed(1));
+
+  let segment = 'low-intent';
+  if (intentScore >= 72) segment = 'high-intent';
+  else if (intentScore >= 45) segment = 'warming';
+
+  return {
+    segment,
+    intentScore,
+    signals: {
+      activity: Number(activitySignal.toFixed(3)),
+      quality: Number(qualitySignal.toFixed(3)),
+      progression: Number(progressionSignal.toFixed(3)),
+    },
+    inputs: {
+      completed,
+      effortHours: Number(effortHours.toFixed(2)),
+      accuracy: Number(accuracy.toFixed(1)),
+      level,
+      rawScore,
+      weightedScore,
+      fairPlayMultiplier,
+    },
+  };
+}
+
+function getTierFromRank(rankIndex, total) {
+  if (total <= 1) return 'platinum';
+  const percentile = (rankIndex + 1) / total;
+  if (percentile <= 0.1) return 'platinum';
+  if (percentile <= 0.35) return 'gold';
+  if (percentile <= 0.7) return 'silver';
+  return 'bronze';
+}
+
+function buildSeasonLeaderboard(members = []) {
+  const scoreRows = (Array.isArray(members) ? members : [])
+    .map((member) => normalizeSquadMember(member))
+    .filter((member) => String(member?.id || '').trim().length > 0)
+    .map((member) => {
+      const weighted = getSeasonWeightedScore(member);
+      const intent = getIntentSegmentAssignment(member, weighted);
+      return {
+        id: String(member.id),
+        name: String(member.name || member.id || 'Member').trim() || 'Member',
+        role: String(member.role || 'child').trim() || 'child',
+        score: weighted.weightedScore,
+        rawScore: weighted.rawScore,
+        weightedScore: weighted.weightedScore,
+        fairPlayMultiplier: weighted.fairPlay.multiplier,
+        fairPlayDelta: weighted.fairPlayDelta,
+        fairPlayDeltaPct: weighted.fairPlayDeltaPct,
+        qualitySignals: {
+          accuracy: Number(weighted.fairPlay.accuracyQuality.toFixed(3)),
+          completion: Number(weighted.fairPlay.completionQuality.toFixed(3)),
+          consistency: Number(weighted.fairPlay.consistencyQuality.toFixed(3)),
+        },
+        fairPlayWeighting: {
+          rawScore: weighted.rawScore,
+          weightedScore: weighted.weightedScore,
+          delta: weighted.fairPlayDelta,
+          deltaPct: weighted.fairPlayDeltaPct,
+          multiplier: weighted.fairPlay.multiplier,
+          qualitySignals: {
+            accuracy: Number(weighted.fairPlay.accuracyQuality.toFixed(3)),
+            completion: Number(weighted.fairPlay.completionQuality.toFixed(3)),
+            consistency: Number(weighted.fairPlay.consistencyQuality.toFixed(3)),
+          },
+        },
+        intentSegment: intent.segment,
+        intentScore: intent.intentScore,
+        intentSignals: intent.signals,
+        intentInputs: intent.inputs,
+      };
+    });
+
+  const rawRankByMemberId = scoreRows
+    .slice()
+    .sort((a, b) => {
+      if (b.rawScore !== a.rawScore) return b.rawScore - a.rawScore;
+      return a.name.localeCompare(b.name);
+    })
+    .reduce((acc, member, index) => {
+      acc[member.id] = index + 1;
+      return acc;
+    }, {});
+
+  const safeMembers = scoreRows
+    .slice()
+    .sort((a, b) => {
+      if (b.weightedScore !== a.weightedScore) return b.weightedScore - a.weightedScore;
+      if (b.rawScore !== a.rawScore) return b.rawScore - a.rawScore;
+      return a.name.localeCompare(b.name);
+    });
+
+  return safeMembers.map((member, index) => ({
+    ...member,
+    rank: index + 1,
+    rawRank: Number(rawRankByMemberId[member.id] || (index + 1)),
+    rankDelta: Number(rawRankByMemberId[member.id] || (index + 1)) - (index + 1),
+    tier: getTierFromRank(index, safeMembers.length),
+  }));
+}
+
+function summarizeSeasonTiers(leaderboard = []) {
+  return (Array.isArray(leaderboard) ? leaderboard : []).reduce((acc, member) => {
+    const tier = String(member?.tier || '').trim().toLowerCase();
+    if (tier === 'platinum' || tier === 'gold' || tier === 'silver' || tier === 'bronze') {
+      acc[tier] += 1;
+    }
+    return acc;
+  }, {
+    bronze: 0,
+    silver: 0,
+    gold: 0,
+    platinum: 0,
+  });
+}
+
+function deriveSeasonState(state = {}, nowMs = Date.now()) {
+  const defaults = createDefaultSquadSync().season;
+  const currentSeason = {
+    ...defaults,
+    ...(state?.season || {}),
+    leaderboard: Array.isArray(state?.season?.leaderboard) ? state.season.leaderboard : [],
+    tierSummary: state?.season?.tierSummary && typeof state.season.tierSummary === 'object'
+      ? {
+          bronze: Number(state.season.tierSummary.bronze || 0),
+          silver: Number(state.season.tierSummary.silver || 0),
+          gold: Number(state.season.tierSummary.gold || 0),
+          platinum: Number(state.season.tierSummary.platinum || 0),
+        }
+      : { ...defaults.tierSummary },
+    intentTransitionSummary: state?.season?.intentTransitionSummary && typeof state.season.intentTransitionSummary === 'object'
+      ? state.season.intentTransitionSummary
+      : createEmptyIntentTransitionSummary(),
+    archived: Array.isArray(state?.season?.archived) ? state.season.archived : [],
+  };
+
+  const previousByMemberId = (Array.isArray(currentSeason.leaderboard) ? currentSeason.leaderboard : [])
+    .reduce((acc, entry) => {
+      const memberId = String(entry?.id || '').trim();
+      if (!memberId) return acc;
+      acc[memberId] = normalizeIntentSegment(entry?.intentSegment);
+      return acc;
+    }, {});
+
+  const leaderboard = buildSeasonLeaderboard(state?.members || []).map((entry) => {
+    const previousIntentSegment = normalizeIntentSegment(previousByMemberId[entry.id] || entry.intentSegment);
+    const currentIntentSegment = normalizeIntentSegment(entry.intentSegment);
+    return {
+      ...entry,
+      intentSegment: currentIntentSegment,
+      previousIntentSegment,
+      intentTransition: `${previousIntentSegment}->${currentIntentSegment}`,
+      intentTransitionChanged: previousIntentSegment !== currentIntentSegment,
+    };
+  });
+  const tierSummary = summarizeSeasonTiers(leaderboard);
+  const intentTransitionSummary = summarizeIntentTransitions(leaderboard);
+  const { startMs, endMs, weekKey } = getUtcWeekWindow(nowMs);
+  const expectedSeasonId = `season-${weekKey}`;
+
+  const hasWindow = Boolean(currentSeason.startsAt && currentSeason.endsAt);
+  const needsInit = !currentSeason.seasonId || !hasWindow;
+  const needsReset = hasWindow && nowMs >= toEpoch(currentSeason.endsAt);
+
+  let archived = Array.isArray(currentSeason.archived) ? [...currentSeason.archived] : [];
+  let resetCount = Number(currentSeason.resetCount || 0);
+
+  if (needsReset && currentSeason.seasonId) {
+    archived.push({
+      seasonId: currentSeason.seasonId,
+      weekKey: currentSeason.weekKey,
+      startsAt: currentSeason.startsAt,
+      endsAt: currentSeason.endsAt,
+      leaderboard: Array.isArray(currentSeason.leaderboard) ? currentSeason.leaderboard : [],
+      tierSummary: currentSeason.tierSummary && typeof currentSeason.tierSummary === 'object'
+        ? currentSeason.tierSummary
+        : { ...defaults.tierSummary },
+      rolledOverAt: new Date(nowMs).toISOString(),
+    });
+    archived = archived.slice(-12);
+    resetCount += 1;
+  }
+
+  const nextSeason = {
+    ...currentSeason,
+    seasonId: expectedSeasonId,
+    weekKey,
+    startsAt: new Date(startMs).toISOString(),
+    endsAt: new Date(endMs).toISOString(),
+    resetCadence: 'weekly',
+    resetCount,
+    leaderboard,
+    tierSummary,
+    intentTransitionSummary,
+    archived,
+  };
+
+  const changed = JSON.stringify(currentSeason) !== JSON.stringify(nextSeason);
+  return {
+    season: nextSeason,
+    changed,
+    rolledOver: Boolean(needsReset),
+  };
+}
+
+function normalizeRole(value = '') {
+  const role = String(value || '').trim().toLowerCase();
+  if (role === 'parent' || role === 'admin' || role === 'child') return role;
+  return 'child';
+}
+
+function getRoleRateLimit(actorRole, actionType) {
+  const normalizedRole = normalizeRole(actorRole);
+  const limits = MODERATION_ROLE_LIMITS[normalizedRole] || MODERATION_ROLE_LIMITS.child;
+  return Number(limits[actionType] || 6);
+}
+
+function pruneExpiredMutedActors(mutedActors = {}, nowMs = Date.now()) {
+  return Object.entries(mutedActors || {}).reduce((acc, [actorId, value]) => {
+    const untilMs = Number(value?.untilMs || 0);
+    if (untilMs > nowMs) {
+      acc[actorId] = value;
+    }
+    return acc;
+  }, {});
+}
+
+function buildModerationAuditEntry({
+  nowIso,
+  actionType,
+  actorId,
+  actorRole,
+  allowed,
+  reason,
+  limit,
+  count,
+  mutedUntilIso,
+  escalationLevel,
+  targetMemberIds,
+}) {
+  return {
+    id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    at: nowIso,
+    actionType,
+    actorId,
+    actorRole,
+    allowed,
+    reason: reason || 'ok',
+    limit,
+    count,
+    targetMemberIds: Array.isArray(targetMemberIds) ? targetMemberIds : [],
+    mutedUntilIso: mutedUntilIso || null,
+    escalationLevel: Number(escalationLevel || 0),
+  };
+}
+
+function evaluateModerationPolicy(state, params = {}, nowMs = Date.now()) {
+  const nowIso = new Date(nowMs).toISOString();
+  const actionType = String(params.actionType || 'unknown').trim() || 'unknown';
+  const actorId = String(params.actorId || 'self').trim() || 'self';
+  const actorRole = normalizeRole(params.actorRole || 'child');
+  const targetMemberIds = Array.from(new Set((Array.isArray(params.targetMemberIds) ? params.targetMemberIds : [])
+    .map((id) => String(id || '').trim())
+    .filter(Boolean)));
+  const moderation = state.moderation || createDefaultSquadSync().moderation;
+  const hourKey = new Date(nowMs).toISOString().slice(0, 13);
+  const bucketKey = `${actorId}:${actionType}:${hourKey}`;
+  const limit = getRoleRateLimit(actorRole, actionType);
+  const mutedActors = pruneExpiredMutedActors(moderation.mutedActors, nowMs);
+  const existingMute = mutedActors[actorId];
+
+  let allowed = true;
+  let reason = 'ok';
+  let count = Number(moderation.rateBuckets?.[bucketKey] || 0);
+  let mutedUntilIso = null;
+  let escalationLevel = Number(moderation.escalationByActor?.[actorId]?.level || 0);
+
+  const nextModeration = {
+    ...moderation,
+    rateBuckets: {
+      ...(moderation.rateBuckets || {}),
+    },
+    mutedActors: {
+      ...mutedActors,
+    },
+    violationsByActor: {
+      ...(moderation.violationsByActor || {}),
+    },
+    escalationByActor: {
+      ...(moderation.escalationByActor || {}),
+    },
+    auditTrail: Array.isArray(moderation.auditTrail) ? [...moderation.auditTrail] : [],
+  };
+
+  if (existingMute && Number(existingMute.untilMs || 0) > nowMs) {
+    allowed = false;
+    reason = 'temporary_mute';
+    mutedUntilIso = existingMute.untilIso || new Date(existingMute.untilMs).toISOString();
+  } else if (count >= limit) {
+    allowed = false;
+    reason = 'rate_limit';
+    const nextViolations = Number(nextModeration.violationsByActor[actorId] || 0) + 1;
+    nextModeration.violationsByActor[actorId] = nextViolations;
+
+    if (nextViolations >= MODERATION_MUTE_THRESHOLD) {
+      const untilMs = nowMs + MODERATION_MUTE_MS;
+      mutedUntilIso = new Date(untilMs).toISOString();
+      nextModeration.mutedActors[actorId] = {
+        untilMs,
+        untilIso: mutedUntilIso,
+        reason: 'repeated_rate_limit',
+        actionType,
+      };
+      reason = 'temporary_mute';
+    }
+
+    if (nextViolations >= MODERATION_ESCALATION_THRESHOLD) {
+      escalationLevel = Number(nextModeration.escalationByActor[actorId]?.level || 0) + 1;
+      nextModeration.escalationByActor[actorId] = {
+        level: escalationLevel,
+        reason: 'repeated_rate_limit',
+        lastEscalatedAt: nowIso,
+        actionType,
+      };
+    }
+  } else {
+    nextModeration.rateBuckets[bucketKey] = count + 1;
+    count = Number(nextModeration.rateBuckets[bucketKey] || 0);
+  }
+
+  const auditEntry = buildModerationAuditEntry({
+    nowIso,
+    actionType,
+    actorId,
+    actorRole,
+    allowed,
+    reason,
+    limit,
+    count,
+    mutedUntilIso,
+    escalationLevel,
+    targetMemberIds,
+  });
+
+  nextModeration.auditTrail.push(auditEntry);
+  if (nextModeration.auditTrail.length > 120) {
+    nextModeration.auditTrail = nextModeration.auditTrail.slice(-120);
+  }
+
+  return {
+    moderation: nextModeration,
+    decision: {
+      allowed,
+      reason,
+      limit,
+      count,
+      mutedUntilIso,
+      escalationLevel,
+      actorRole,
+    },
+    auditEntry,
+  };
+}
+
+function reconcileSquadSync(localRaw = {}, incomingRaw = {}) {
+  const local = normalizeSquadSync(localRaw);
+  const incoming = normalizeSquadSync(incomingRaw);
+  const merged = {
+    ...local,
+    ...incoming,
+  };
+
+  const fields = [
+    'teamId',
+    'teamName',
+    'inviteCode',
+    'weeklyGoal',
+    'weeklyChallenge',
+    'householdBoard',
+    'streakChain',
+    'nudgeCooldownByMember',
+    'moderation',
+    'season',
+    'members',
+  ];
+
+  const localClock = local.syncMeta?.fieldClock || {};
+  const incomingClock = incoming.syncMeta?.fieldClock || {};
+  const localUpdatedAt = toEpoch(local.updatedAt || local.syncMeta?.lastMutationAt);
+  const incomingUpdatedAt = toEpoch(incoming.updatedAt || incoming.syncMeta?.lastMutationAt);
+
+  fields.forEach((field) => {
+    const left = Number(localClock[field] || 0);
+    const right = Number(incomingClock[field] || 0);
+    if (right > left) {
+      merged[field] = incoming[field];
+      return;
+    }
+    if (left > right) {
+      merged[field] = local[field];
+      return;
+    }
+    merged[field] = incomingUpdatedAt >= localUpdatedAt ? incoming[field] : local[field];
+  });
+
+  const mergedFieldClock = {
+    ...localClock,
+    ...incomingClock,
+  };
+
+  Object.keys(localClock).forEach((field) => {
+    mergedFieldClock[field] = Math.max(Number(localClock[field] || 0), Number(incomingClock[field] || 0));
+  });
+
+  return normalizeSquadSync({
+    ...merged,
+    updatedAt: incomingUpdatedAt >= localUpdatedAt ? incoming.updatedAt : local.updatedAt,
+    syncMeta: {
+      ...merged.syncMeta,
+      revision: Math.max(Number(local.syncMeta?.revision || 0), Number(incoming.syncMeta?.revision || 0)),
+      lastMutationAt: incomingUpdatedAt >= localUpdatedAt
+        ? (incoming.syncMeta?.lastMutationAt || incoming.updatedAt)
+        : (local.syncMeta?.lastMutationAt || local.updatedAt),
+      lastWriterDeviceId: incomingUpdatedAt >= localUpdatedAt
+        ? (incoming.syncMeta?.lastWriterDeviceId || 'local-device')
+        : (local.syncMeta?.lastWriterDeviceId || 'local-device'),
+      fieldClock: mergedFieldClock,
+    },
+  });
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -134,2933 +1262,29 @@ Notifications.setNotificationHandler({
   }),
 });
 
-function buildCaseProgressStorageKey(testDetails) {
-  const raw = `${testDetails?.name || 'default'}_${testDetails?.state || testDetails?.location || 'unknown'}`;
-  const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return `${CASE_PROGRESS_STORAGE_PREFIX}.${normalized || 'default'}`;
-}
 
-function buildCaseReminderStorageKey(testDetails) {
-  const raw = `${testDetails?.name || 'default'}_${testDetails?.state || testDetails?.location || 'unknown'}`;
-  const normalized = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  return `${CASE_REMINDER_STORAGE_PREFIX}.${normalized || 'default'}`;
-}
+// ─── Screens ──────────────────────────────────────────────────────────────────
+import OnboardingScreen from './screens/OnboardingScreen';
+import EditTestDetailsScreen from './screens/EditTestDetailsScreen';
+import HomeScreen from './screens/HomeScreen';
+import ModeSelectorScreen from './screens/ModeSelectorScreen';
+import QuizScreen from './screens/QuizScreen';
+import ReviewScreen from './screens/ReviewScreen';
+import InterviewScreen from './screens/InterviewScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import CaseProgressScreen from './screens/CaseProgressScreen';
+import MasteryMapScreen from './screens/MasteryMapScreen';
+import FamilyScreen from './screens/FamilyScreen';
+import AdminScreen from './screens/AdminScreen';
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function buildDefaultCaseProgress(testDetails) {
-  const today = new Date().toLocaleDateString();
-  return {
-    applicantName: testDetails?.name || 'Applicant',
-    receiptNumber: '',
-    caseType: 'N-400',
-    currentStage: 0,
-    latestStatus: 'Case created in app tracker',
-    lastUpdated: today,
-    notes: '',
-    timeline: [],
-  };
-}
-
-const createDefaultAdRuntime = () => ({
-  dayKey: '',
-  dailyCount: 0,
-  resumeCount: 0,
-  quizCompleteCount: 0,
-  lastShownAt: 0,
-  currentDayInterstitialShown: 0,
-  currentDayRewardedCompleted: 0,
-  freePackDayKey: '',
-  freePackUnlocksToday: 0,
-  freePackCooldownUntil: 0,
-  history: [],
-  analytics: {
-    interstitialAttempts: 0,
-    interstitialShown: 0,
-    interstitialFailed: 0,
-    interstitialSkippedCooldown: 0,
-    interstitialSkippedDailyCap: 0,
-    interstitialSkippedTriggerCap: 0,
-    interstitialResumeShown: 0,
-    interstitialQuizCompleteShown: 0,
-    interstitialGenericShown: 0,
-    rewardedAttempts: 0,
-    rewardedCompleted: 0,
-    rewardedFailedOrClosed: 0,
-    rewardedSprintUnlocks: 0,
-    rewardedBonusUnlocks: 0,
-    rewardedFreePackAttempts: 0,
-    rewardedFreePackUnlocked: 0,
-    rewardedFreePackBlockedDailyLimit: 0,
-    rewardedFreePackBlockedCooldown: 0,
-    rewardedFreePackFailed: 0,
-  },
-});
-
-const createDefaultMasteryMap = () => ({
-  updatedAt: null,
-  totalSessions: 0,
-  totalQuestions: 0,
-  byQuestion: {},
-  topicDaily: {},
-});
-
-function getDayKey(value = new Date()) {
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
-  return date.toISOString().slice(0, 10);
-}
-
-function daysSince(value) {
-  const date = value ? new Date(value) : null;
-  if (!date || Number.isNaN(date.getTime())) return Number.POSITIVE_INFINITY;
-  const now = new Date();
-  const deltaMs = now.getTime() - date.getTime();
-  return Math.floor(deltaMs / (1000 * 60 * 60 * 24));
-}
-
-// Question bank with all 3 test types
-const questionBank = {
-  highschool: [
-    { id: 'HS1', question: 'What is the supreme law of the land?', options: ['The Constitution', 'The President', 'The Senate', 'The Bill of Rights'], answer: 'The Constitution', topic: 'Foundations', hint: 'Think about the document that defines government powers.', dynamic: false, memoryHook: 'The Constitution is the boss document for all laws.', explanation: 'The Constitution defines U.S. government structure and is above all other laws.' },
-    { id: 'HS2', question: 'What is one right or freedom from the First Amendment?', options: ['Free speech', 'Vote-only for women', 'Free health care', 'No taxes'], answer: 'Free speech', topic: 'Rights', hint: 'It begins with F and is how people express opinions.', dynamic: false, memoryHook: 'First Amendment = First freedom (speech, religion, press).', explanation: 'The First Amendment protects free speech, religion, press, assembly, and petition.' },
-    { id: 'HS3', question: 'What is one responsibility of a U.S. citizen?', options: ['Vote', 'Own a car', 'Become rich', 'Travel abroad'], answer: 'Vote', topic: 'Civic Duty', hint: 'You do this in elections.', dynamic: false, memoryHook: 'Voting is civic duty, not optional when adult.', explanation: 'Voting is a function of citizenship; other options are not required responsibilities.' },
-  ],
-  naturalization100: [
-    { id: 'N100_1', question: 'What is the capital of the United States?', options: ['New York', 'Washington, D.C.', 'Los Angeles', 'Chicago'], answer: 'Washington, D.C.', topic: 'Geography', hint: 'It\'s not a state; it is a district.', dynamic: false, memoryHook: 'Washington D.C. is the capital, not a state city.', explanation: 'The capital of the United States is Washington, D.C., established by the Constitution.' },
-    { id: 'N100_2', question: 'Name one branch or part of the government.', options: ['Legislative', 'Banking', 'Retail', 'Education'], answer: 'Legislative', topic: 'Structure', hint: 'It writes laws.', dynamic: false, memoryHook: 'Legislative makes laws, Executive enforces, Judicial judges.', explanation: 'The government has three branches: Legislative (Congress), Executive (President), Judicial (Supreme Court).' },
-  ],
-  naturalization128: [
-    { id: 'N128_1', question: 'What are the two major political parties in the United States?', options: ['Democratic and Republican', 'Libertarian and Green', 'Socialist and Communist', 'Federalist and Anti-Federalist'], answer: 'Democratic and Republican', topic: 'Politics', hint: 'One is blue, one is red.', dynamic: false, memoryHook: 'Blue = Democrats, Red = Republicans.', explanation: 'The two major parties are Democratic and Republican; others are minor parties.' },
-    { id: 'N128_2', question: 'What does the judicial branch do?', options: ['Reviews laws', 'Makes laws', 'Enforces laws', 'Votes for laws'], answer: 'Reviews laws', topic: 'Checks and Balances', hint: 'Judges and courts.', dynamic: true, memoryHook: 'Judicial judges the laws.', explanation: 'The judicial branch interprets and reviews laws to ensure they are constitutional.' },
-  ],
-};
-
-// US States for dropdown
-const usStates = [
-  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
-  'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
-  'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
-  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
-  'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-];
-
-// Achievements system
-const achievements = [
-  { id: 'first_ten', name: 'First Steps', desc: 'Answer 10 questions correctly', icon: '🎓', unlocked: false },
-  { id: 'week_warrior', name: 'Week Warrior', desc: 'Practice 7 days in a row', icon: '⚡', unlocked: false },
-  { id: 'perfect', name: 'Perfect Practice', desc: 'Get 10 questions correct in a row', icon: '🔥', unlocked: false },
-  { id: 'speed_demon', name: 'Speed Demon', desc: 'Answer 20 questions in under 5 minutes', icon: '🚀', unlocked: false },
-  { id: 'sharing_king', name: 'Sharing King', desc: 'Invite 5 friends to practice', icon: '👑', unlocked: false },
-];
-
-export const AppDataContext = createContext({
-  testDetails: null,
-  setTestDetails: () => { },
-  errorBank: [],
-  addErrorItem: () => { },
-  pausedSession: null,
-  savePausedSession: () => { },
-  clearPausedSession: () => { },
-  maybeShowInterstitial: async () => false,
-  adRuntime: createDefaultAdRuntime(),
-  trackAdEvent: () => { },
-  resetAdAnalytics: () => { },
-  unlockDailyFreePack: async () => ({ ok: false }),
-  masteryMap: createDefaultMasteryMap(),
-  recordMasterySession: () => { },
-  resetMasteryMap: () => { },
-});
-
-const weakAreaEstimator = (history) => {
-  const counts = {};
-  for (const record of history) {
-    if (!counts[record.topic]) counts[record.topic] = { total: 0, wrong: 0 };
-    counts[record.topic].total += 1;
-    if (!record.correct) counts[record.topic].wrong += 1;
-  }
-  const weaknesses = Object.entries(counts)
-    .map(([topic, { total, wrong }]) => ({ topic, wrong, total, ratio: wrong / total }))
-    .sort((a, b) => b.ratio - a.ratio);
-  return weaknesses.slice(0, 3);
-};
-
-const QUESTIONS_BY_TEST_TYPE = {
-  highschool: 100,
-  naturalization100: 100,
-  naturalization128: 128,
-};
-
-function parseDateSafe(value) {
-  if (!value) return null;
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-
-  const direct = new Date(value);
-  if (!Number.isNaN(direct.getTime())) return direct;
-
-  const parts = String(value).split('/');
-  if (parts.length === 3) {
-    const [month, day, year] = parts.map((p) => Number(p));
-    if (month && day && year) {
-      const fallback = new Date(year, month - 1, day);
-      if (!Number.isNaN(fallback.getTime())) return fallback;
-    }
-  }
-
-  return null;
-}
-
-function generateStudyPlan(testDetails) {
-  const date = parseDateSafe(testDetails?.testDate);
-  if (!date) return null;
-
-  const now = new Date();
-  const daysUntilTest = Math.max(1, Math.ceil((date - now) / (1000 * 60 * 60 * 24)));
-  const totalQuestions = QUESTIONS_BY_TEST_TYPE[testDetails?.testType] || 128;
-  const questionsPerDay = Math.max(5, Math.ceil(totalQuestions / daysUntilTest));
-  const reviewEvery = daysUntilTest <= 14 ? 2 : 3;
-
-  return {
-    generatedAt: new Date().toISOString(),
-    daysUntilTest,
-    totalQuestions,
-    questionsPerDay,
-    reviewEvery,
-    targetWeeklyQuestions: questionsPerDay * 7,
-    focus: daysUntilTest <= 21 ? 'High intensity review mode' : 'Steady daily practice mode',
-  };
-}
-
-function calculateEstimatedRevenue(interstitialCount, rewardedCount, interstitialEcpm, rewardedEcpm) {
-  return ((interstitialCount || 0) / 1000) * interstitialEcpm + ((rewardedCount || 0) / 1000) * rewardedEcpm;
-}
-
-function buildSevenDayRevenueTrend(history, interstitialEcpm, rewardedEcpm) {
-  const historyMap = new Map((history || []).map((entry) => [entry.dayKey, entry]));
-  const days = [];
-
-  for (let offset = 6; offset >= 0; offset--) {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - offset);
-    const dayKey = date.toISOString().slice(0, 10);
-    const entry = historyMap.get(dayKey) || {
-      dayKey,
-      interstitialShown: 0,
-      rewardedCompleted: 0,
-    };
-    const revenue = calculateEstimatedRevenue(
-      entry.interstitialShown,
-      entry.rewardedCompleted,
-      interstitialEcpm,
-      rewardedEcpm
-    );
-
-    days.push({
-      ...entry,
-      revenue,
-      label: date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3),
-    });
-  }
-
-  return days;
-}
-
-function withAutoStudyPlan(nextDetails, previousDetails = {}) {
-  const merged = {
-    ...previousDetails,
-    ...nextDetails,
-  };
-
-  if (!merged.state && merged.location) {
-    merged.state = merged.location;
-  }
-
-  if (!merged.location && merged.state) {
-    merged.location = merged.state;
-  }
-
-  merged.studyPlan = generateStudyPlan(merged);
-  return merged;
-}
-
-// � ONBOARDING SCREEN - COLLECT USER PREFERENCES
-function OnboardingScreen({ navigation, route }) {
-  const onComplete = route?.params?.onComplete;
-  const [step, setStep] = useState(1); // 1=name, 2=testType, 3=state, 4=date
-  const [name, setName] = useState('');
-  const [testType, setTestType] = useState(null);
-  const [selectedState, setSelectedState] = useState('');
-  const [testDate, setTestDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const testOptions = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫', description: 'U.S. Civics high school curriculum' },
-    { type: 'naturalization100', title: 'Naturalization (100 Questions)', icon: '🏛️', description: 'U.S. Citizenship Test - 100 questions' },
-    { type: 'naturalization128', title: 'Naturalization (128 Questions)', icon: '🇺🇸', description: 'U.S. Citizenship Test - 128 questions' },
-  ];
-
-  const handleContinue = () => {
-    if (step === 1 && !name.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
-    if (step === 2 && !testType) {
-      Alert.alert('Error', 'Please select a test type');
-      return;
-    }
-    if (step === 3 && !selectedState.trim()) {
-      Alert.alert('Error', 'Please select your state');
-      return;
-    }
-    if (step === 4 && !testDate) {
-      Alert.alert('Error', 'Please select your test date');
-      return;
-    }
-
-    if (step === 4) {
-      // Complete onboarding
-      onComplete({ name, testType, state: selectedState, testDate: testDate.toLocaleDateString() });
-    } else {
-      setStep(step + 1);
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Progress */}
-        <View style={styles.onboardingProgress}>
-          <Text style={styles.onboardingProgressText}>Step {step} of 4</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressBarFill, { width: `${(step / 4) * 100}%` }]} />
-          </View>
-        </View>
-
-        {/* STEP 1: NAME */}
-        {step === 1 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>👋</Text>
-            <Text style={styles.onboardingTitle}>Welcome! What's your name?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll personalize your learning experience</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Your Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your full name"
-                value={name}
-                onChangeText={setName}
-                placeholderTextColor="#ccc"
-              />
-            </View>
-          </View>
-        )}
-
-        {/* STEP 2: TEST TYPE */}
-        {step === 2 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📚</Text>
-            <Text style={styles.onboardingTitle}>Which test are you preparing for?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll customize questions based on your test</Text>
-
-            {testOptions.map((option) => (
-              <TouchableOpacity
-                key={option.type}
-                style={[
-                  styles.onboardingOption,
-                  testType === option.type && styles.onboardingOptionSelected,
-                ]}
-                onPress={() => setTestType(option.type)}
-              >
-                <View style={styles.optionIcon}>
-                  <Text style={styles.optionIconText}>{option.icon}</Text>
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>{option.title}</Text>
-                  <Text style={styles.optionDesc}>{option.description}</Text>
-                </View>
-                {testType === option.type && (
-                  <MaterialCommunityIcons name="check-circle" size={24} color="#7C3AED" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* STEP 3: STATE */}
-        {step === 3 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📍</Text>
-            <Text style={styles.onboardingTitle}>Which state will you take the test in?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll tailor questions to your state</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>State</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedState}
-                  onValueChange={(itemValue) => setSelectedState(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select a state" value="" />
-                  {usStates.map(state => <Picker.Item key={state} label={state} value={state} />)}
-                </Picker>
-              </View>
-              <Text style={styles.inputHint}>This helps us tailor questions to your state</Text>
-            </View>
-          </View>
-        )}
-
-        {/* STEP 4: TEST DATE */}
-        {step === 4 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📅</Text>
-            <Text style={styles.onboardingTitle}>When's your test scheduled?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll create a personalized study plan</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Expected Test Date</Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                <Text style={styles.dateText}>{testDate.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-              <Text style={styles.inputHint}>Tap to select date</Text>
-            </View>
-
-            {Platform.OS === 'web' ? (
-              <Modal
-                visible={showDatePicker}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowDatePicker(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Select Test Date</Text>
-                    <DatePicker
-                      selected={testDate}
-                      onChange={(date) => {
-                        setTestDate(date);
-                        setShowDatePicker(false);
-                      }}
-                      inline
-                      minDate={new Date()}
-                      dateFormat="MM/dd/yyyy"
-                    />
-                    <TouchableOpacity
-                      style={styles.modalCloseButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.modalCloseText}>Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
-            ) : (
-              showDatePicker && (
-                <DateTimePicker
-                  value={testDate}
-                  mode="date"
-                  display="default"
-                  minimumDate={new Date()}
-                  onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate) setTestDate(selectedDate);
-                  }}
-                />
-              )
-            )}
-
-            <View style={styles.studyPlanPreview}>
-              <Text style={styles.studyPlanTitle}>📊 Your Study Plan</Text>
-              {testDate && (
-                <Text style={styles.studyPlanText}>
-                  {`You have ~${Math.max(1, Math.floor((testDate - new Date()) / (1000 * 60 * 60 * 24)))} days to prepare`}
-                </Text>
-              )}
-              <Text style={styles.studyPlanSmall}>We'll adjust daily goals based on available time</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.onboardingActions}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => step > 1 && setStep(step - 1)}
-            disabled={step === 1}
-          >
-            <Text style={styles.buttonText}>{step === 1 ? 'Skip' : 'Back'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonPrimary]}
-            onPress={handleContinue}
-          >
-            <Text style={[styles.buttonText, { color: '#fff' }]}>
-              {step === 4 ? 'Complete Setup' : 'Continue'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// ✏️ EDIT TEST DETAILS SCREEN
-function EditTestDetailsScreen({ navigation, testDetails, onSave }) {
-  const [name, setName] = useState(testDetails?.name || '');
-  const [testType, setTestType] = useState(testDetails?.testType || '');
-  const [location, setLocation] = useState(testDetails?.location || '');
-  const [testDate, setTestDate] = useState(testDetails?.testDate || '');
-
-  const testOptions = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫' },
-    { type: 'naturalization100', title: 'Naturalization (100Q)', icon: '🏛️' },
-    { type: 'naturalization128', title: 'Naturalization (128Q)', icon: '🇺🇸' },
-  ];
-
-  const handleSave = () => {
-    if (!name.trim() || !testType || !location.trim() || !testDate) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    onSave({ name, testType, location, testDate });
-    navigation.goBack();
-  };
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.screenHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#7C3AED" />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>Edit Test Details</Text>
-          <View style={styles.spacer} />
-        </View>
-
-        {/* Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Your Name</Text>
-          <TextInput
-            style={styles.textInput}
-            value={name}
-            onChangeText={setName}
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Test Type */}
-        <Text style={styles.sectionLabel}>Test Type</Text>
-        {testOptions.map((option) => (
-          <TouchableOpacity
-            key={option.type}
-            style={[
-              styles.onboardingOption,
-              testType === option.type && styles.onboardingOptionSelected,
-            ]}
-            onPress={() => setTestType(option.type)}
-          >
-            <Text style={{ fontSize: 24, marginRight: 12 }}>{option.icon}</Text>
-            <Text style={styles.optionTitle}>{option.title}</Text>
-            {testType === option.type && (
-              <MaterialCommunityIcons name="check-circle" size={20} color="#7C3AED" />
-            )}
-          </TouchableOpacity>
-        ))}
-
-        {/* Location */}
-        <View style={[styles.inputContainer, { marginTop: 16 }]}>
-          <Text style={styles.inputLabel}>Test Location</Text>
-          <TextInput
-            style={styles.textInput}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="City, State"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Test Date */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Expected Test Date</Text>
-          <TextInput
-            style={styles.textInput}
-            value={testDate}
-            onChangeText={setTestDate}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Save Button */}
-        <TouchableOpacity
-          style={[styles.button, styles.buttonPrimary, { marginTop: 20 }]}
-          onPress={handleSave}
-        >
-          <Text style={[styles.buttonText, { color: '#fff' }]}>Save Changes</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// 🎨 MODERN HOME SCREEN WITH GAMIFICATION
-function HomeScreen({ navigation }) {
-  const { testDetails, pausedSession, clearPausedSession, maybeShowInterstitial, trackAdEvent, adRuntime, unlockDailyFreePack } = useContext(AppDataContext);
-  const studyPlan = testDetails?.studyPlan;
-  const [nowTick, setNowTick] = useState(Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNowTick(Date.now()), 30000);
-    return () => clearInterval(id);
-  }, []);
-
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const freePackUnlockedToday = adRuntime.freePackDayKey === todayKey && (adRuntime.freePackUnlocksToday || 0) >= DAILY_FREE_PACK_LIMIT;
-  const freePackCooldownMs = Math.max(0, (adRuntime.freePackCooldownUntil || 0) - nowTick);
-  const freePackCooldownMinutes = Math.ceil(freePackCooldownMs / (60 * 1000));
-  const cooldownHours = Math.floor(freePackCooldownMs / (60 * 60 * 1000));
-  const cooldownRemainingMinutes = Math.ceil((freePackCooldownMs % (60 * 60 * 1000)) / (60 * 1000));
-  const cooldownHHMM = `${String(cooldownHours).padStart(2, '0')}:${String(Math.max(0, Math.min(59, cooldownRemainingMinutes))).padStart(2, '0')}`;
-
-  const handleDailyFreePackUnlock = async () => {
-    const result = await unlockDailyFreePack();
-
-    if (result.ok) {
-      Alert.alert('Daily Pack Unlocked', `You unlocked ${result.questionCount} free bonus questions.`);
-      clearPausedSession();
-      navigation.navigate('Quiz', {
-        type: testDetails?.testType || 'naturalization128',
-        forceQuestionCount: result.questionCount,
-      });
-      return;
-    }
-
-    if (result.reason === 'daily_limit') {
-      Alert.alert('Daily Limit Reached', 'You already unlocked today\'s free pack. Come back tomorrow!');
-      return;
-    }
-
-    if (result.reason === 'cooldown') {
-      const minutes = Math.max(1, Math.ceil(((result.cooldownUntil || 0) - Date.now()) / (60 * 1000)));
-      Alert.alert('Please Wait', `Try again in about ${minutes} minute(s).`);
-      return;
-    }
-
-    Alert.alert('Ad Unavailable', 'The ad was closed or unavailable. Please try again shortly.');
-  };
-
-  const handleWatchAdForSprint = async () => {
-    trackAdEvent('rewarded_attempt');
-    try {
-      await showRewardedAd();
-      trackAdEvent('rewarded_completed');
-      trackAdEvent('rewarded_sprint_unlock');
-      const baseCount = studyPlan?.questionsPerDay || 10;
-      const sprintCount = Math.min(25, baseCount + 10);
-      Alert.alert('Unlocked', `Sprint mode unlocked: ${sprintCount} questions.`);
-      clearPausedSession();
-      navigation.navigate('Quiz', {
-        type: testDetails?.testType || 'naturalization128',
-        forceQuestionCount: sprintCount,
-      });
-    } catch (error) {
-      trackAdEvent('rewarded_failed_or_closed');
-      console.log('Rewarded ad skipped or failed:', error);
-    }
-  };
-
-  const startFocusPreset = ({ count, label, focusMode = null }) => {
-    clearPausedSession();
-    navigation.navigate('Quiz', {
-      type: testDetails?.testType || 'naturalization128',
-      forceQuestionCount: count,
-      focusMode,
-    });
-    Alert.alert('Focus Session', `${label} started.`);
-  };
-
-  const [user, setUser] = useState({
-    name: testDetails?.name || 'Future Citizen',
-    initials: (testDetails?.name || 'FC').split(' ').map(n => n[0]).join('').toUpperCase(),
-    points: 260,
-    level: 3,
-    streak: 5,
-    avatar: '👤',
-  });
-
-  const [userStats] = useState({
-    questionsAnswered: 47,
-    accuracy: 78,
-    timeSpent: '2h 34m',
-  });
-
-  // Calculate days until test
-  const daysUntilTest = testDetails?.testDate ? Math.max(0, Math.floor((new Date(testDetails.testDate) - new Date()) / (1000 * 60 * 60 * 24))) : null;
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1557804506-669714153f27?w=500&h=500&fit=crop' }}
-        style={styles.headerBg}
-        blurRadius={30}
-      >
-        <View style={styles.headerOverlay} />
-
-        {/* Header with Profile */}
-        <View style={styles.headerTop}>
-          <View style={styles.levelBadge}>
-            <Text style={styles.levelBadgeText}>⭐ {user.points} pts</Text>
-            <Text style={styles.levelBadgeLevel}>Lv {user.level}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.avatarCircle}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <Text style={styles.avatarText}>{user.initials[0]}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Welcome message */}
-        <View style={styles.headerContent}>
-          <Text style={styles.welcomeTitle}>Welcome back, {user.name.split(' ')[0]}</Text>
-          <Text style={styles.welcomeSub}>
-            {testDetails && daysUntilTest !== null && `${daysUntilTest} days until your test`}
-            {!testDetails || daysUntilTest === null ? 'Let\'s start practicing!' : ' • Get studying!'}
-          </Text>
-        </View>
-      </ImageBackground>
-
-      <ScrollView style={styles.scrollContent} contentContainerStyle={{ paddingBottom: 80 }}>
-        {/* Test Details Card */}
-        {testDetails && (
-          <TouchableOpacity
-            style={styles.testDetailsCard}
-            onPress={() => navigation.navigate('EditTestDetails')}
-          >
-            <View style={styles.testDetailsContent}>
-              <View>
-                <Text style={styles.testDetailsLabel}>Test Type</Text>
-                <Text style={styles.testDetailsValue}>
-                  {testDetails.testType === 'highschool' ? '🏫 High School Civics' : testDetails.testType === 'naturalization100' ? '🏛️ Naturalization (100Q)' : '🇺🇸 Naturalization (128Q)'}
-                </Text>
-              </View>
-              <View style={styles.testDetailsSeparator} />
-              <View>
-                <Text style={styles.testDetailsLabel}>Location</Text>
-                <Text style={styles.testDetailsValue}>📍 {testDetails.location}</Text>
-              </View>
-              <View style={styles.testDetailsSeparator} />
-              <View>
-                <Text style={styles.testDetailsLabel}>Test Date</Text>
-                <Text style={styles.testDetailsValue}>📅 {testDetails.testDate}</Text>
-              </View>
-            </View>
-            <MaterialCommunityIcons name="pencil" size={20} color="#7C3AED" />
-          </TouchableOpacity>
-        )}
-
-        {studyPlan && (
-          <View style={styles.studyPlanCard}>
-            <View style={styles.studyPlanHeaderRow}>
-              <MaterialCommunityIcons name="calendar-check" size={20} color="#065F46" />
-              <Text style={styles.studyPlanCardTitle}>Auto Study Plan</Text>
-            </View>
-            <Text style={styles.studyPlanCardLine}>Days left: {studyPlan.daysUntilTest}</Text>
-            <Text style={styles.studyPlanCardLine}>Questions per day: {studyPlan.questionsPerDay}</Text>
-            <Text style={styles.studyPlanCardLine}>Weekly target: {studyPlan.targetWeeklyQuestions}</Text>
-            <Text style={styles.studyPlanCardHint}>Review every {studyPlan.reviewEvery} day(s). {studyPlan.focus}</Text>
-          </View>
-        )}
-
-        <View style={styles.focusPresetCard}>
-          <Text style={styles.focusPresetTitle}>ADHD Focus Presets</Text>
-          <Text style={styles.focusPresetSubtitle}>Pick the energy level you have right now.</Text>
-          <View style={styles.focusPresetRow}>
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 5, label: '3-minute quick reset', focusMode: 'minimal' })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>3 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Quick reset</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 8, label: '7-minute focus sprint', focusMode: 'minimal' })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>7 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Focus sprint</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.focusPresetButton}
-              onPress={() => startFocusPreset({ count: 12, label: '12-minute deep practice', focusMode: null })}
-            >
-              <Text style={styles.focusPresetButtonTitle}>12 min</Text>
-              <Text style={styles.focusPresetButtonMeta}>Deep practice</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Big CTA Button */}
-        <TouchableOpacity
-          style={styles.ctaButton}
-          onPress={() => {
-            clearPausedSession();
-            navigation.navigate('Quiz', { type: testDetails?.testType || 'naturalization128' });
-          }}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="play-circle" size={32} color="#fff" />
-          <View style={{ marginLeft: 12 }}>
-            <Text style={styles.ctaButtonText}>Start Practice Quiz</Text>
-            <Text style={styles.ctaButtonSub}>
-              {testDetails?.testType === 'highschool' ? 'High School Civics' : testDetails?.testType === 'naturalization100' ? 'Naturalization (100Q)' : 'Naturalization (128Q)'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {pausedSession && (
-          <TouchableOpacity
-            style={styles.resumeButton}
-            onPress={async () => {
-              try {
-                await maybeShowInterstitial('resume');
-              } catch (error) {
-                console.log('Resume ad failed, continuing to quiz:', error);
-              } finally {
-                navigation.navigate('Quiz', { type: pausedSession.type, resumeSession: true });
-              }
-            }}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="play-box-multiple-outline" size={24} color="#065F46" />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={styles.resumeButtonTitle}>Resume Paused Session</Text>
-              <Text style={styles.resumeButtonSubtitle}>
-                Continue from question {pausedSession.current + 1}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.rewardedHomeButton} onPress={handleWatchAdForSprint}>
-          <MaterialCommunityIcons name="gift-outline" size={22} color="#fff" />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={styles.rewardedHomeTitle}>Watch Ad: Unlock Sprint Practice</Text>
-            <Text style={styles.rewardedHomeSubtitle}>Get +10 extra questions today at no cost</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.rewardedHomeButton, freePackUnlockedToday && styles.rewardedHomeButtonDisabled]}
-          onPress={handleDailyFreePackUnlock}
-          disabled={freePackUnlockedToday}
-        >
-          <MaterialCommunityIcons name="calendar-star" size={22} color="#fff" />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={styles.rewardedHomeTitle}>Daily Free Pack Unlock</Text>
-            <Text style={styles.rewardedHomeSubtitle}>
-              {freePackUnlockedToday
-                ? 'Already unlocked today - back tomorrow'
-                : freePackCooldownMs > 0
-                  ? `Cooldown active (${freePackCooldownMinutes} min)`
-                  : `Watch ad to unlock ${FREE_PACK_QUESTION_COUNT} bonus questions`}
-            </Text>
-            {freePackCooldownMs > 0 && !freePackUnlockedToday && (
-              <View style={styles.countdownBadge}>
-                <MaterialCommunityIcons name="timer-sand" size={14} color="#4C1D95" />
-                <Text style={styles.countdownBadgeText}>{cooldownHHMM}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* Stats Row - ADHD Friendly (Visual, Colorful) */}
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { borderLeftColor: '#FFB84D' }]}>
-            <MaterialCommunityIcons name="book" size={28} color="#FFB84D" />
-            <Text style={styles.statLabel}>Questions</Text>
-            <Text style={styles.statValue}>{userStats.questionsAnswered}</Text>
-          </View>
-
-          <View style={[styles.statCard, { borderLeftColor: '#7C3AED' }]}>
-            <MaterialCommunityIcons name="target" size={28} color="#7C3AED" />
-            <Text style={styles.statLabel}>Accuracy</Text>
-            <Text style={styles.statValue}>{userStats.accuracy}%</Text>
-          </View>
-
-          <View style={[styles.statCard, { borderLeftColor: '#EC4899' }]}>
-            <MaterialCommunityIcons name="clock" size={28} color="#EC4899" />
-            <Text style={styles.statLabel}>Studied</Text>
-            <Text style={styles.statValue}>{userStats.timeSpent}</Text>
-          </View>
-
-          <View style={[styles.statCard, { borderLeftColor: '#10B981' }]}>
-            <MaterialCommunityIcons name="fire" size={28} color="#10B981" />
-            <Text style={styles.statLabel}>Streak</Text>
-            <Text style={styles.statValue}>{user.streak} days</Text>
-          </View>
-        </View>
-
-        {/* Adaptive Learning Path Card */}
-        <View style={[styles.card, styles.adaptiveCard]}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="brain" size={24} color="#7C3AED" />
-            <Text style={styles.cardTitle}>Your Adaptive Learning Path</Text>
-          </View>
-
-          <View style={styles.progressItem}>
-            <Text style={styles.progressLabel}>Performance Trend</Text>
-            <View style={styles.trendBadge}>
-              <MaterialCommunityIcons name="trending-up" size={16} color="#10B981" />
-              <Text style={styles.trendText}>Stable</Text>
-            </View>
-          </View>
-
-          <View style={[styles.progressItem, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#FFF3E0', paddingTop: 12 }]}>
-            <Text style={styles.progressLabel}>Next Milestone</Text>
-            <Text style={styles.milestoneText}>Complete 50 questions with 80%+ accuracy</Text>
-          </View>
-
-          <Text style={styles.confidenceText}>AI Confidence: 85% • Last updated: 1/22/2026</Text>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Coming Soon', 'Error Bank tracking will be available after you complete a quiz!')}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#EF4444" />
-            <Text style={styles.actionButtonText}>Practice Error Bank</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ModeSelector')}>
-            <MaterialCommunityIcons name="target" size={20} color="#FF9800" />
-            <Text style={styles.actionButtonText}>Practice by Topic</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MasteryMap')}>
-            <MaterialCommunityIcons name="chart-bubble" size={20} color="#0EA5E9" />
-            <Text style={styles.actionButtonText}>Mastery Map & Heatmap</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Family')}>
-            <MaterialCommunityIcons name="people" size={20} color="#9C27B0" />
-            <Text style={styles.actionButtonText}>Family Challenge</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('CaseProgress')}>
-            <MaterialCommunityIcons name="file-document-outline" size={20} color="#2563EB" />
-            <Text style={styles.actionButtonText}>Case Progress Tracker</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Achievements Preview */}
-        <View style={styles.achievementsSection}>
-          <Text style={styles.sectionTitle}>🏆 Achievements</Text>
-          <View style={styles.achievementGrid}>
-            {achievements.slice(0, 3).map((ach) => (
-              <TouchableOpacity key={ach.id} style={styles.achievementBadge} activeOpacity={0.7}>
-                <Text style={styles.achievementEmoji}>{ach.icon}</Text>
-                <Text style={styles.achievementName}>{ach.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <HomeBannerAd />
-      </ScrollView>
-
-      <StatusBar style="light" />
-    </SafeAreaView>
-  );
-}
-
-// 🎯 MODE SELECTOR SCREEN
-const ALL_TOPICS_VALUE = '__all_topics__';
-const ALL_SUBTOPICS_VALUE = '__all_subtopics__';
-
-function getQuestionTopic(question) {
-  return question?.topic || question?.category || 'General';
-}
-
-function getQuestionSubTopic(question) {
-  return question?.subTopic || 'General';
-}
-
-function ModeSelectorScreen({ navigation }) {
-  const { testDetails } = useContext(AppDataContext);
-  const modes = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫', color: '#EC4899' },
-    { type: 'naturalization100', title: 'Naturalization (100Q)', icon: '🏛️', color: '#3B82F6' },
-    { type: 'naturalization128', title: 'Naturalization (128Q)', icon: '🇺🇸', color: '#10B981' },
-  ];
-  const defaultType = testDetails?.testType || 'naturalization128';
-  const [selectedType, setSelectedType] = useState(defaultType);
-  const [selectedTopic, setSelectedTopic] = useState(ALL_TOPICS_VALUE);
-  const [selectedSubTopic, setSelectedSubTopic] = useState(ALL_SUBTOPICS_VALUE);
-
-  const fullPool = getQuestionBank(selectedType);
-  const topicOptions = Array.from(new Set(fullPool.map((question) => getQuestionTopic(question)).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b));
-  const subTopicSourcePool = selectedTopic === ALL_TOPICS_VALUE
-    ? fullPool
-    : fullPool.filter((question) => getQuestionTopic(question) === selectedTopic);
-  const subTopicOptions = Array.from(new Set(subTopicSourcePool.map((question) => getQuestionSubTopic(question)).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b));
-  const filteredPool = fullPool.filter((question) => {
-    const topicMatch = selectedTopic === ALL_TOPICS_VALUE || getQuestionTopic(question) === selectedTopic;
-    const subTopicMatch = selectedSubTopic === ALL_SUBTOPICS_VALUE || getQuestionSubTopic(question) === selectedSubTopic;
-    return topicMatch && subTopicMatch;
-  });
-
-  const handleSelectType = (type) => {
-    setSelectedType(type);
-    setSelectedTopic(ALL_TOPICS_VALUE);
-    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
-  };
-
-  const startPractice = () => {
-    navigation.navigate('Quiz', {
-      type: selectedType,
-      topicFilter: selectedTopic === ALL_TOPICS_VALUE ? null : selectedTopic,
-      subTopicFilter: selectedSubTopic === ALL_SUBTOPICS_VALUE ? null : selectedSubTopic,
-    });
-  };
-
-  useEffect(() => {
-    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
-  }, [selectedTopic]);
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#7C3AED" />
-          <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.pageTitle}>Practice Setup</Text>
-        <Text style={styles.pageSubtitle}>Choose test type, topic, and subtopic before you start</Text>
-
-        {modes.map((mode) => {
-          const isSelected = mode.type === selectedType;
-          return (
-            <TouchableOpacity
-              key={mode.type}
-              style={[styles.modeCard, { borderLeftColor: mode.color, borderLeftWidth: isSelected ? 6 : 3, backgroundColor: isSelected ? '#F3F0FF' : '#fff' }]}
-              onPress={() => handleSelectType(mode.type)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.modeIcon}>
-                <Text style={styles.modeIconText}>{mode.icon}</Text>
-              </View>
-              <View style={styles.modeContent}>
-                <Text style={[styles.modeTitle, isSelected && { color: '#7C3AED' }]}>{mode.title}</Text>
-                <Text style={styles.modeDesc}>{isSelected ? '✅ Selected test type' : 'Tap to select this test'}</Text>
-              </View>
-              <MaterialCommunityIcons name={isSelected ? 'check-circle' : 'chevron-right'} size={24} color={mode.color} />
-            </TouchableOpacity>
-          );
-        })}
-
-        <View style={styles.modeFilterCard}>
-          <Text style={styles.modeFilterTitle}>Filter Questions</Text>
-          <Text style={styles.modeFilterHint}>Use these filters to focus practice on one area.</Text>
-
-          <Text style={styles.modeFilterLabel}>Topic</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={selectedTopic} onValueChange={(value) => setSelectedTopic(value)} style={styles.picker}>
-              <Picker.Item label="All topics" value={ALL_TOPICS_VALUE} />
-              {topicOptions.map((topic) => (
-                <Picker.Item key={topic} label={topic} value={topic} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={[styles.modeFilterLabel, { marginTop: 12 }]}>Subtopic</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={selectedSubTopic} onValueChange={(value) => setSelectedSubTopic(value)} style={styles.picker}>
-              <Picker.Item label="All subtopics" value={ALL_SUBTOPICS_VALUE} />
-              {subTopicOptions.map((subTopic) => (
-                <Picker.Item key={subTopic} label={subTopic} value={subTopic} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={styles.modeFilterSummary}>
-            {filteredPool.length} question{filteredPool.length === 1 ? '' : 's'} match your filters
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.modeStartButton} onPress={startPractice}>
-          <MaterialCommunityIcons name="play-circle" size={20} color="#fff" />
-          <Text style={styles.modeStartButtonText}>Start Practice</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// 🎓 ADHD-FRIENDLY QUIZ SCREEN ✨
-// Slow-paced, visual, with 4 answer options and clear explanations
-function QuizScreen({ route, navigation }) {
-  const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession } = useContext(AppDataContext);
-  const { type, topicFilter, subTopicFilter } = route.params;
-  const requestedQuestionIds = Array.isArray(route?.params?.questionIds)
-    ? route.params.questionIds.map((id) => String(id))
-    : [];
-  const focusModeMinimal = route?.params?.focusMode === 'minimal';
-  const fullPool = getQuestionBank(type); // Use official USCIS questions
-  const activeTopicFilter = topicFilter ? String(topicFilter).trim() : null;
-  const activeSubTopicFilter = subTopicFilter ? String(subTopicFilter).trim() : null;
-
-  const explicitQueuePool = requestedQuestionIds.length
-    ? requestedQuestionIds
-      .map((id) => fullPool.find((question) => String(question.id) === id))
-      .filter(Boolean)
-    : [];
-
-  const filteredPool = fullPool.filter((question) => {
-    const questionTopic = getQuestionTopic(question);
-    const questionSubTopic = getQuestionSubTopic(question);
-    const topicMatch = !activeTopicFilter || questionTopic === activeTopicFilter;
-    const subTopicMatch = !activeSubTopicFilter || questionSubTopic === activeSubTopicFilter;
-    return topicMatch && subTopicMatch;
-  });
-  const effectivePool = explicitQueuePool.length
-    ? explicitQueuePool
-    : filteredPool.length
-      ? filteredPool
-      : fullPool;
-  const forcedQuestionCount = Number(route?.params?.forceQuestionCount || 0);
-  const sessionQuestionCount = testDetails?.studyPlan?.questionsPerDay
-    ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
-    : effectivePool.length;
-  const shouldResumeSession = Boolean(
-    route?.params?.resumeSession &&
-    pausedSession &&
-    pausedSession.type === type &&
-    Array.isArray(pausedSession.pool) &&
-    pausedSession.pool.length > 0
-  );
-  const initialPool = shouldResumeSession
-    ? pausedSession.pool
-    : effectivePool.slice(0, forcedQuestionCount > 0 ? Math.min(effectivePool.length, forcedQuestionCount) : sessionQuestionCount);
-  const initialCurrent = shouldResumeSession ? pausedSession.current || 0 : 0;
-  const initialScore = shouldResumeSession ? pausedSession.score || 0 : 0;
-  const initialHistory = shouldResumeSession ? pausedSession.history || [] : [];
-  const initialDifficulty = shouldResumeSession ? pausedSession.difficulty || 'easy' : 'easy';
-  const initialShowFeedback = shouldResumeSession ? Boolean(pausedSession.showFeedback) : false;
-  const initialSelectedOption = shouldResumeSession ? pausedSession.selectedOption || null : null;
-  const initialFeedbackMessage = shouldResumeSession ? pausedSession.feedbackMessage || '' : '';
-  const initialIsAnswerCorrect = shouldResumeSession ? Boolean(pausedSession.isAnswerCorrect) : false;
-  const initialShowExplanation = shouldResumeSession ? Boolean(pausedSession.showExplanation) : false;
-
-  const [pool] = useState(() => initialPool);
-  
-  const [current, setCurrent] = useState(initialCurrent);
-  const [score, setScore] = useState(initialScore);
-  const [history, setHistory] = useState(initialHistory);
-  const [difficulty, setDifficulty] = useState(initialDifficulty);
-  const [showFeedback, setShowFeedback] = useState(initialShowFeedback);
-  const [selectedOption, setSelectedOption] = useState(initialSelectedOption);
-  const [feedbackMessage, setFeedbackMessage] = useState(initialFeedbackMessage);
-  const [isAnswerCorrect, setIsAnswerCorrect] = useState(initialIsAnswerCorrect);
-  const [showExplanation, setShowExplanation] = useState(initialShowExplanation);
-  // Store generated question in state so options don't reshuffle on every re-render
-  const [currentQuestion, setCurrentQuestion] = useState(() =>
-    shouldResumeSession && pausedSession.currentQuestion
-      ? pausedSession.currentQuestion
-      : pool && pool.length
-        ? generateQuizQuestion(pool[initialCurrent], initialDifficulty, { userState: testDetails?.state })
-        : null
-  );
-  const [justRestoredSession, setJustRestoredSession] = useState(shouldResumeSession);
-
-  // Regenerate question when current index or difficulty changes
-  useEffect(() => {
-    if (justRestoredSession) {
-      setJustRestoredSession(false);
-      return;
-    }
-
-    if (pool && pool.length && pool[current]) {
-      setCurrentQuestion(generateQuizQuestion(pool[current], difficulty, { userState: testDetails?.state }));
-    }
-  }, [current, testDetails?.state, justRestoredSession, pool, difficulty]);
-
-  if (!pool || !pool.length || !currentQuestion) {
-    return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.container}>
-          <Text style={styles.pageTitle}>No questions found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const question = currentQuestion;
-  const progress = ((current + 1) / pool.length) * 100;
-  const acceptedAnswers = [
-    question.answer,
-    ...(Array.isArray(question.alternateAnswers) ? question.alternateAnswers : []),
-  ].filter((item, idx, arr) => {
-    const normalized = String(item || '').trim().toLowerCase();
-    if (!normalized) return false;
-    return arr.findIndex((entry) => String(entry || '').trim().toLowerCase() === normalized) === idx;
-  });
-  const isTwoAnswerQuestion = /name two|two important ideas|name 2|two ideas/i.test(question.question);
-
-  // 📱 ADHD-FRIENDLY: Select answer with visual feedback
-  const handleSelectAnswer = (selectedAnswer) => {
-    if (showFeedback) return; // Prevent double-clicking
-
-    setSelectedOption(selectedAnswer);
-
-    // Check if answer is correct (including alternates)
-    const correct = checkAnswerCorrect(selectedAnswer, question);
-    setIsAnswerCorrect(correct);
-
-    if (correct) {
-      setFeedbackMessage('✅ Correct! Amazing job! 🎉');
-      setScore((prev) => prev + 1);
-    } else {
-      setFeedbackMessage('❌ Good try! Review the correct answer below.');
-    }
-
-    // Update history
-    const newHistory = [
-      ...history,
-      {
-        id: question.id,
-        topic: question.topic || question.category || 'General',
-        subTopic: question.subTopic || 'General',
-        correct,
-        difficulty,
-        answeredAt: new Date().toISOString(),
-      }
-    ];
-    setHistory(newHistory);
-
-    // Show feedback immediately after selection
-    setShowFeedback(true);
-
-    // Calculate performance for next question's difficulty
-    const performance = calculatePerformance(newHistory);
-    const nextDifficulty = getAdaptiveDifficulty(difficulty, performance);
-    setDifficulty(nextDifficulty);
-    // Note: next question is generated on setCurrent in handleNextQuestion
-  };
-
-  // 🎓 Show explanation after reading feedback (ADHD-friendly pacing)
-  const handleShowExplanation = () => {
-    setShowExplanation(true);
-  };
-
-  const handlePauseQuiz = () => {
-    Alert.alert(
-      'Pause Quiz',
-      'Save your exact spot and return Home?',
-      [
-        { text: 'Keep Practicing', style: 'cancel' },
-        {
-          text: 'Save & Go Home',
-          onPress: () => {
-            savePausedSession({
-              type,
-              pool,
-              current,
-              score,
-              history,
-              difficulty,
-              showFeedback,
-              selectedOption,
-              feedbackMessage,
-              isAnswerCorrect,
-              showExplanation,
-              currentQuestion,
-            });
-            navigation.navigate('MainTabs');
-          },
-        },
-      ]
-    );
-  };
-
-  // 📍 ADHD-FRIENDLY: Slower pace - user controls next question
-  const handleNextQuestion = async () => {
-    if (current + 1 >= pool.length) {
-      // Quiz complete
-      const weak = weakAreaEstimator(history);
-      recordMasterySession(history, type);
-      clearPausedSession();
-      await maybeShowInterstitial('quizComplete');
-      navigation.replace('Review', {
-        score,
-        total: pool.length,
-        weak,
-        type,
-      });
-    } else {
-      // Move to next question — generate it with the (possibly updated) difficulty
-      const nextIdx = current + 1;
-      const nextDiff = difficulty; // already updated above via setDifficulty
-      setCurrentQuestion(generateQuizQuestion(pool[nextIdx], nextDiff, { userState: testDetails?.state }));
-      setShowFeedback(false);
-      setSelectedOption(null);
-      setFeedbackMessage('');
-      setIsAnswerCorrect(false);
-      setShowExplanation(false);
-      setCurrent(nextIdx);
-    }
-  };
-
-  const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer);
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      {/* 📊 Progress Bar */}
-      <View style={styles.quizHeader}>
-        <View style={styles.quizTopActions}>
-          <TouchableOpacity style={styles.quizActionButton} onPress={handlePauseQuiz}>
-            <MaterialCommunityIcons name="pause-circle-outline" size={20} color="#7C3AED" />
-            <Text style={styles.quizActionText}>Pause</Text>
-          </TouchableOpacity>
-          {!focusModeMinimal && (
-            <TouchableOpacity style={styles.quizActionButton} onPress={() => navigation.navigate('MainTabs')}>
-              <MaterialCommunityIcons name="home-outline" size={20} color="#7C3AED" />
-              <Text style={styles.quizActionText}>Home</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
-        </View>
-        <Text style={styles.progressText}>
-          Question {current + 1} of {pool.length}
-        </Text>
-        {explicitQueuePool.length > 0 && (
-          <View style={styles.smartQueueBadge}>
-            <MaterialCommunityIcons name="brain" size={14} color="#0C4A6E" />
-            <Text style={styles.smartQueueBadgeText}>Smart Queue: mixed weak + due topics</Text>
-          </View>
-        )}
-        {focusModeMinimal && (
-          <View style={styles.focusModeBadge}>
-            <MaterialCommunityIcons name="target-variant" size={14} color="#3F6212" />
-            <Text style={styles.focusModeBadgeText}>Focus Mode: minimal distractions</Text>
-          </View>
-        )}
-      </View>
-
-      <ScrollView 
-        style={styles.quizContent} 
-        contentContainerStyle={styles.quizContainer}
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={true}
-      >
-        {/* 🎯 Question */}
-        <View style={styles.questionCard}>
-          {/* Visual memory hook — always visible before answering */}
-          {visualImageUrl ? (
-            <Image
-              source={{ uri: visualImageUrl }}
-              style={styles.questionImage}
-              resizeMode="cover"
-            />
-          ) : null}
-          <View style={{ padding: 20, paddingTop: visualImageUrl ? 16 : 20 }}>
-            <Text style={[styles.questionText, { marginTop: 0 }]}>
-              {question.question}
-            </Text>
-            {isTwoAnswerQuestion && (
-              <Text style={styles.multiAnswerHint}>
-                In this quiz, choose one valid idea. In the interview, give any two accepted ideas.
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* 🔘 4-Answer Options (ADHD-Friendly: Large Buttons) */}
-        <View style={styles.optionsContainer}>
-          {question.options && question.options.map((option, idx) => {
-            const isSelected = selectedOption === option;
-            const optionIsCorrect = option === question.answer;
-            const showCorrect = showFeedback && optionIsCorrect;
-            const showWrong = showFeedback && isSelected && !optionIsCorrect;
-
-            return (
-              <TouchableOpacity
-                key={idx}
-                disabled={showFeedback}
-                onPress={() => handleSelectAnswer(option)}
-                activeOpacity={0.7}
-                style={[
-                  styles.adhd_optionButton,
-                  showFeedback && showCorrect && styles.adhd_optionCorrect,
-                  showFeedback && showWrong && styles.adhd_optionWrong,
-                  isSelected && !showFeedback && styles.adhd_optionSelected,
-                ]}
-              >
-                {/* Visual Indicators */}
-                <View
-                  style={[
-                    styles.optionDot,
-                    showFeedback && showCorrect && styles.dotCorrect,
-                    showFeedback && showWrong && styles.dotWrong,
-                  ]}
-                />
-
-                {/* Option Text */}
-                <Text
-                  style={[
-                    styles.adhd_optionText,
-                    showFeedback && showCorrect && styles.adhd_textCorrect,
-                    showFeedback && showWrong && styles.adhd_textWrong,
-                  ]}
-                >
-                  {option}
-                </Text>
-
-                {/* Check/X Icons */}
-                {showFeedback && showCorrect && (
-                  <MaterialCommunityIcons
-                    name="check-circle"
-                    size={28}
-                    color="#10B981"
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
-                {showFeedback && showWrong && (
-                  <MaterialCommunityIcons
-                    name="close-circle"
-                    size={28}
-                    color="#EF4444"
-                    style={{ marginLeft: 8 }}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* 💬 Feedback Section (After answer selected) */}
-        {showFeedback && (
-          <Animated.View style={[styles.adhd_feedbackBox, { opacity: 1 }]}>
-            {/* Emoji + Message */}
-            <View style={styles.feedbackHeader}>
-              <Text style={styles.feedbackEmoji}>
-                {isAnswerCorrect ? '🎉' : '📚'}
-              </Text>
-              <Text style={[styles.feedbackMessage, isAnswerCorrect ? styles.feedbackSuccess : styles.feedbackInfo]}>
-                {feedbackMessage}
-              </Text>
-            </View>
-
-            {/* Official Correct Answer - Always visible after answer */}
-            <View style={styles.correctAnswerBox}>
-              <Text style={styles.correctAnswerLabel}>
-                {isTwoAnswerQuestion ? '✅ Accepted Answers:' : '✅ The Official Correct Answer:'}
-              </Text>
-              <Text style={styles.correctAnswerText}>{question.answer}</Text>
-
-              {acceptedAnswers.length > 1 && (
-                <View style={styles.alternateAnswersBox}>
-                  <Text style={styles.alternateAnswersLabel}>
-                    {isTwoAnswerQuestion ? 'Give any two of these:' : 'Also accepted:'}
-                  </Text>
-                  {acceptedAnswers.map((alt, idx) => (
-                    <Text key={idx} style={styles.alternateAnswerItem}>• {alt}</Text>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {/* Visual Explanation - Reveal on demand (ADHD pacing) */}
-            {!showExplanation && (
-              <TouchableOpacity
-                style={styles.adhd_explanationButton}
-                onPress={handleShowExplanation}
-              >
-                <MaterialCommunityIcons name="lightbulb-on" size={20} color="#fff" />
-                <Text style={styles.adhd_explanationButtonText}>
-                  � Why This Answer?
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Memory tip placeholder (replaces duplicate image box) */}
-            {showExplanation && (
-              <View style={styles.adhd_explanationBox}>
-                <Text style={styles.adhd_explanationText}>
-                  {question.subTopic ? `📌 Topic: ${question.topic} → ${question.subTopic}` : ''}
-                </Text>
-              </View>
-            )}
-
-            {/* Continue Button - User controls pace */}
-            <TouchableOpacity
-              style={styles.adhd_continueButton}
-              onPress={handleNextQuestion}
-            >
-              <Text style={styles.adhd_continueButtonText}>
-                {current + 1 >= pool.length ? '📊 See Results' : '➡️ Next Question'}
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-
-        {/* Helper text when no answer selected yet */}
-        {!showFeedback && !focusModeMinimal && (
-          <View style={styles.helperTextBox}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#6B7280" />
-            <Text style={styles.helperText}>
-              Take your time. There's no rush. Choose the best answer. ✨
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-
-      <StatusBar style="dark" />
-    </SafeAreaView>
-  );
-}
-
-// 🎉 RESULTS SCREEN WITH CELEBRATION
-function ReviewScreen({ route, navigation }) {
-  const { trackAdEvent } = useContext(AppDataContext);
-  const { score, total, type, weak } = route.params;
-  const percentage = Math.round((score / total) * 100);
-  const [showShare, setShowShare] = useState(false);
-  const [bonusQuestionsUnlocked, setBonusQuestionsUnlocked] = useState(false);
-
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `I just scored ${percentage}% on the US Civic ${type} test! Challenge me on Civics Coach! 🇺🇸`,
-        url: 'https://civics-coach.app',
-        title: 'Civics Coach Challenge',
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const watchAdForBonusQuestions = async () => {
-    trackAdEvent('rewarded_attempt');
-    try {
-      await showRewardedAd();
-      trackAdEvent('rewarded_completed');
-      trackAdEvent('rewarded_bonus_unlock');
-      setBonusQuestionsUnlocked(true);
-      // Here you could navigate to a bonus quiz or unlock additional questions
-      alert('Bonus questions unlocked! Keep practicing! 🎉');
-    } catch (error) {
-      trackAdEvent('rewarded_failed_or_closed');
-      console.log('User cancelled ad or ad failed');
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.reviewContainer}>
-        <View style={styles.celebrationBox}>
-          <Text style={styles.celebrationEmoji}>{percentage >= 80 ? '🎉' : percentage >= 60 ? '👏' : '💪'}</Text>
-          <Text style={styles.scoreTitle}>Quiz Complete!</Text>
-          <Text style={styles.scoreValue}>{score}/{total}</Text>
-          <Text style={styles.scorePercent}>{percentage}%</Text>
-
-          {percentage >= 80 && <Text style={styles.praises}>Excellent work! You're crushing it!</Text>}
-          {percentage >= 60 && percentage < 80 && <Text style={styles.praises}>Great effort! Keep practicing!</Text>}
-          {percentage < 60 && <Text style={styles.praises}>Don't give up! Review weak areas and try again!</Text>}
-        </View>
-
-        {weak.length > 0 && (
-          <View style={[styles.card, styles.weakCard]}>
-            <Text style={styles.cardTitle}>📊 Focus Areas for Next Time</Text>
-            {weak.map((item) => (
-              <View key={item.topic} style={styles.weakItem}>
-                <Text style={styles.weakTopic}>{item.topic}</Text>
-                <View style={styles.weakBar}>
-                  <View style={[styles.weakBarFill, { width: `${item.ratio * 100}%` }]} />
-                </View>
-                <Text style={styles.weakPercent}>{(item.ratio * 100).toFixed(0)}% needs work</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {!bonusQuestionsUnlocked && (
-          <View style={[styles.card, styles.bonusCard]}>
-            <Text style={styles.cardTitle}>🎁 Want More Practice?</Text>
-            <Text style={styles.bonusText}>Watch a quick ad to unlock 5 bonus questions!</Text>
-            <TouchableOpacity
-              style={styles.rewardedAdButton}
-              onPress={watchAdForBonusQuestions}
-            >
-              <MaterialCommunityIcons name="play-circle" size={20} color="#fff" />
-              <Text style={styles.rewardedAdText}>Watch Ad for Bonus Questions</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {bonusQuestionsUnlocked && (
-          <View style={[styles.card, styles.bonusCard]}>
-            <Text style={styles.cardTitle}>🎉 Bonus Questions Unlocked!</Text>
-            <Text style={styles.bonusText}>Great job! Keep practicing to master the material.</Text>
-          </View>
-        )}
-
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.buttonText}>Back Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonPrimary]}
-            onPress={handleShare}
-          >
-            <MaterialCommunityIcons name="share-variant" size={20} color="#fff" />
-            <Text style={[styles.buttonText, { color: '#fff', marginLeft: 8 }]}>Share</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// 👤 PROFILE SCREEN
-function ProfileScreen({ navigation }) {
-  const { testDetails } = useContext(AppDataContext);
-
-  const [user, setUser] = useState({
-    name: testDetails?.name || 'Future Citizen',
-    email: 'user@example.com',
-    points: 260,
-    level: 3,
-    avatar: '👤',
-  });
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Your Profile</Text>
-
-        <View style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>{user.avatar}</Text>
-          </View>
-          <Text style={styles.profileName}>{user.name}</Text>
-          <Text style={styles.profileEmail}>{user.email}</Text>
-
-          <View style={styles.profileStats}>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>{user.points}</Text>
-              <Text style={styles.profileStatLabel}>Points</Text>
-            </View>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>{user.level}</Text>
-              <Text style={styles.profileStatLabel}>Level</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Test Details Section */}
-        {testDetails && (
-          <>
-            <Text style={[styles.pageTitle, { marginTop: 20, fontSize: 18 }]}>Test Details</Text>
-            <View style={styles.profileCard}>
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Type</Text>
-                <Text style={styles.testDetailValue}>
-                  {testDetails.testType === 'highschool' ? '🏫 High School Civics' : testDetails.testType === 'naturalization100' ? '🏛️ Naturalization (100Q)' : '🇺🇸 Naturalization (128Q)'}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Location</Text>
-                <Text style={styles.testDetailValue}>📍 {testDetails.state}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Date</Text>
-                <Text style={styles.testDetailValue}>📅 {testDetails.testDate}</Text>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.editButton, { marginTop: 16 }]}
-                onPress={() => navigation.navigate('EditTestDetails')}
-              >
-                <MaterialCommunityIcons name="pencil" size={20} color="#fff" />
-                <Text style={styles.editButtonText}>Edit Test Details</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function CaseProgressScreen({ navigation }) {
-  const { testDetails } = useContext(AppDataContext);
-  const storageKey = buildCaseProgressStorageKey(testDetails);
-  const reminderStorageKey = buildCaseReminderStorageKey(testDetails);
-  const [loading, setLoading] = useState(true);
-  const [savedCase, setSavedCase] = useState(null);
-  const [receiptNumber, setReceiptNumber] = useState('');
-  const [caseType, setCaseType] = useState('N-400');
-  const [currentStage, setCurrentStage] = useState(0);
-  const [latestStatus, setLatestStatus] = useState('');
-  const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleDateString());
-  const [notes, setNotes] = useState('');
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderWeekday, setReminderWeekday] = useState(2);
-  const [reminderNotificationId, setReminderNotificationId] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadCaseProgress = async () => {
-      try {
-        const raw = await AsyncStorage.getItem(storageKey);
-        if (!mounted) return;
-
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setSavedCase(parsed);
-          setReceiptNumber(parsed.receiptNumber || '');
-          setCaseType(parsed.caseType || 'N-400');
-          setCurrentStage(Math.max(0, Math.min(CASE_PROGRESS_STAGES.length - 1, Number(parsed.currentStage) || 0)));
-          setLatestStatus(parsed.latestStatus || '');
-          setLastUpdated(parsed.lastUpdated || new Date().toLocaleDateString());
-          setNotes(parsed.notes || '');
-        } else {
-          const fallback = buildDefaultCaseProgress(testDetails);
-          setSavedCase(fallback);
-          setReceiptNumber(fallback.receiptNumber);
-          setCaseType(fallback.caseType);
-          setCurrentStage(fallback.currentStage);
-          setLatestStatus(fallback.latestStatus);
-          setLastUpdated(fallback.lastUpdated);
-          setNotes(fallback.notes);
-        }
-
-        const reminderRaw = await AsyncStorage.getItem(reminderStorageKey);
-        if (reminderRaw) {
-          const reminder = JSON.parse(reminderRaw);
-          setReminderEnabled(Boolean(reminder.enabled));
-          setReminderWeekday(Number(reminder.weekday) || 2);
-          setReminderNotificationId(reminder.notificationId || null);
-        }
-      } catch (error) {
-        console.log('Failed to load case progress:', error);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadCaseProgress();
-    return () => {
-      mounted = false;
-    };
-  }, [storageKey, reminderStorageKey, testDetails]);
-
-  const progressPct = Math.round(((currentStage + 1) / CASE_PROGRESS_STAGES.length) * 100);
-  const currentStageLabel = CASE_PROGRESS_STAGES[currentStage] || CASE_PROGRESS_STAGES[0];
-  const stageChecklist = CASE_STAGE_CHECKLISTS[currentStageLabel] || [];
-
-  const persistReminderSettings = async (nextReminder) => {
-    try {
-      await AsyncStorage.setItem(reminderStorageKey, JSON.stringify(nextReminder));
-    } catch (error) {
-      console.log('Failed to persist reminder settings:', error);
-    }
-  };
-
-  const saveCaseProgress = async () => {
-    if (!receiptNumber.trim()) {
-      Alert.alert('Missing Receipt Number', 'Please enter your USCIS receipt number before saving.');
-      return;
-    }
-
-    const nowStamp = new Date().toLocaleDateString();
-    const normalizedDate = lastUpdated.trim() || nowStamp;
-    const stageLabel = currentStageLabel;
-    const statusLabel = latestStatus.trim() || stageLabel;
-    const previousTimeline = Array.isArray(savedCase?.timeline) ? savedCase.timeline : [];
-    const changed = !savedCase
-      || savedCase.currentStage !== currentStage
-      || String(savedCase.latestStatus || '') !== statusLabel
-      || String(savedCase.lastUpdated || '') !== normalizedDate;
-
-    const timeline = changed
-      ? [
-          {
-            id: `${Date.now()}`,
-            date: normalizedDate,
-            stage: stageLabel,
-            status: statusLabel,
-          },
-          ...previousTimeline,
-        ].slice(0, 30)
-      : previousTimeline;
-
-    const payload = {
-      applicantName: testDetails?.name || 'Applicant',
-      receiptNumber: receiptNumber.trim(),
-      caseType: caseType.trim() || 'N-400',
-      currentStage,
-      latestStatus: statusLabel,
-      lastUpdated: normalizedDate,
-      notes,
-      timeline,
-    };
-
-    try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(payload));
-      setSavedCase(payload);
-      Alert.alert('Saved', 'Case progress was saved for this user profile.');
-    } catch (error) {
-      console.log('Failed to save case progress:', error);
-      Alert.alert('Save Failed', 'Please try again.');
-    }
-  };
-
-  const clearCaseProgress = async () => {
-    Alert.alert('Reset Case Progress', 'This will remove saved case progress for this profile.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: async () => {
-          const fallback = buildDefaultCaseProgress(testDetails);
-          try {
-            await AsyncStorage.removeItem(storageKey);
-            setSavedCase(fallback);
-            setReceiptNumber(fallback.receiptNumber);
-            setCaseType(fallback.caseType);
-            setCurrentStage(fallback.currentStage);
-            setLatestStatus(fallback.latestStatus);
-            setLastUpdated(fallback.lastUpdated);
-            setNotes(fallback.notes);
-          } catch (error) {
-            console.log('Failed to clear case progress:', error);
-          }
-        },
-      },
-    ]);
-  };
-
-  const enableWeeklyReminder = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Not Supported on Web', 'Push reminders are available on iOS/Android builds.');
-      return;
-    }
-
-    try {
-      const existingPermission = await Notifications.getPermissionsAsync();
-      let finalStatus = existingPermission.status;
-      if (finalStatus !== 'granted') {
-        const requestPermission = await Notifications.requestPermissionsAsync();
-        finalStatus = requestPermission.status;
-      }
-
-      if (finalStatus !== 'granted') {
-        Alert.alert('Permission Needed', 'Enable notifications to receive weekly USCIS check reminders.');
-        return;
-      }
-
-      if (reminderNotificationId) {
-        await Notifications.cancelScheduledNotificationAsync(reminderNotificationId);
-      }
-
-      const identifier = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'USCIS Weekly Check-In',
-          body: 'Open your USCIS account and update your case tracker.',
-          data: { screen: 'CaseProgress' },
-        },
-        trigger: {
-          weekday: reminderWeekday,
-          hour: 9,
-          minute: 0,
-          repeats: true,
-        },
-      });
-
-      setReminderEnabled(true);
-      setReminderNotificationId(identifier);
-      await persistReminderSettings({
-        enabled: true,
-        weekday: reminderWeekday,
-        notificationId: identifier,
-      });
-
-      const label = WEEKDAY_OPTIONS.find((d) => d.value === reminderWeekday)?.label || 'selected day';
-      Alert.alert('Reminder Enabled', `Weekly reminder set for ${label} at 9:00 AM.`);
-    } catch (error) {
-      console.log('Failed to enable weekly reminder:', error);
-      Alert.alert('Reminder Error', 'Could not schedule weekly reminder.');
-    }
-  };
-
-  const disableWeeklyReminder = async () => {
-    try {
-      if (reminderNotificationId) {
-        await Notifications.cancelScheduledNotificationAsync(reminderNotificationId);
-      }
-      setReminderEnabled(false);
-      setReminderNotificationId(null);
-      await persistReminderSettings({
-        enabled: false,
-        weekday: reminderWeekday,
-        notificationId: null,
-      });
-      Alert.alert('Reminder Disabled', 'Weekly USCIS reminder has been turned off.');
-    } catch (error) {
-      console.log('Failed to disable weekly reminder:', error);
-      Alert.alert('Reminder Error', 'Could not disable reminder.');
-    }
-  };
-
-  const addChecklistToNotes = () => {
-    if (!stageChecklist.length) return;
-    const checklistText = [`${currentStageLabel} checklist:`]
-      .concat(stageChecklist.map((item) => `- ${item}`))
-      .join('\n');
-    const nextNotes = notes?.trim()
-      ? `${notes.trim()}\n\n${checklistText}`
-      : checklistText;
-    setNotes(nextNotes);
-  };
-
-  const buildTimelineTextSnapshot = () => {
-    const timeline = savedCase?.timeline || [];
-    const header = [
-      `USCIS Case Progress Snapshot`,
-      `Applicant: ${testDetails?.name || 'Applicant'}`,
-      `Receipt Number: ${receiptNumber || 'N/A'}`,
-      `Case Type: ${caseType || 'N/A'}`,
-      `Current Stage: ${currentStageLabel}`,
-      `Latest Status: ${latestStatus || 'N/A'}`,
-      `Last Updated: ${lastUpdated || 'N/A'}`,
-      '',
-      'Timeline',
-    ];
-
-    const timelineLines = timeline.length
-      ? timeline.map((event, idx) => `${idx + 1}. ${event.date} | ${event.stage} | ${event.status}`)
-      : ['No timeline updates saved yet.'];
-
-    const checklistLines = [
-      '',
-      `${currentStageLabel} Document Checklist`,
-      ...(stageChecklist.length ? stageChecklist.map((item, idx) => `${idx + 1}. ${item}`) : ['No checklist template available.']),
-    ];
-
-    return header.concat(timelineLines).concat(checklistLines).join('\n');
-  };
-
-  const shareTextSnapshot = async () => {
-    try {
-      await Share.share({
-        title: 'USCIS Case Snapshot',
-        message: buildTimelineTextSnapshot(),
-      });
-    } catch (error) {
-      console.log('Failed to share timeline text snapshot:', error);
-      Alert.alert('Share Error', 'Could not share text snapshot.');
-    }
-  };
-
-  const sharePdfSnapshot = async () => {
-    try {
-      const timeline = savedCase?.timeline || [];
-      const timelineRows = timeline.length
-        ? timeline.map((event) => `
-          <tr>
-            <td>${escapeHtml(event.date)}</td>
-            <td>${escapeHtml(event.stage)}</td>
-            <td>${escapeHtml(event.status)}</td>
-          </tr>
-        `).join('')
-        : '<tr><td colspan="3">No timeline updates saved yet.</td></tr>';
-      const checklistRows = stageChecklist.length
-        ? stageChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-        : '<li>No checklist template available.</li>';
-
-      const html = `
-        <html>
-          <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 20px; color: #111827;">
-            <h1>USCIS Case Progress Snapshot</h1>
-            <p><strong>Applicant:</strong> ${escapeHtml(testDetails?.name || 'Applicant')}</p>
-            <p><strong>Receipt Number:</strong> ${escapeHtml(receiptNumber || 'N/A')}</p>
-            <p><strong>Case Type:</strong> ${escapeHtml(caseType || 'N/A')}</p>
-            <p><strong>Current Stage:</strong> ${escapeHtml(currentStageLabel)}</p>
-            <p><strong>Latest Status:</strong> ${escapeHtml(latestStatus || 'N/A')}</p>
-            <p><strong>Last Updated:</strong> ${escapeHtml(lastUpdated || 'N/A')}</p>
-            <h2>Timeline</h2>
-            <table style="width:100%; border-collapse: collapse;" border="1" cellspacing="0" cellpadding="8">
-              <thead>
-                <tr>
-                  <th align="left">Date</th>
-                  <th align="left">Stage</th>
-                  <th align="left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${timelineRows}
-              </tbody>
-            </table>
-            <h2 style="margin-top: 18px;">${escapeHtml(currentStageLabel)} Checklist</h2>
-            <ul>${checklistRows}</ul>
-          </body>
-        </html>
-      `;
-
-      const { uri } = await Print.printToFileAsync({ html });
-      const shareAvailable = await Sharing.isAvailableAsync();
-      if (!shareAvailable) {
-        await Share.share({ message: `PDF created at: ${uri}` });
-        return;
-      }
-
-      await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Share USCIS Case Snapshot PDF',
-      });
-    } catch (error) {
-      console.log('Failed to share PDF snapshot:', error);
-      Alert.alert('Export Error', 'Could not export PDF snapshot.');
-    }
-  };
-
-  const openUSCISPortal = async () => {
-    const url = 'https://myaccount.uscis.gov/sign-in';
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (!canOpen) {
-        Alert.alert('Unable to Open Link', 'Please open USCIS manually in your browser.');
-        return;
-      }
-      await Linking.openURL(url);
-    } catch (error) {
-      console.log('Unable to open USCIS link:', error);
-      Alert.alert('Unable to Open Link', 'Please open USCIS manually in your browser.');
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.container}>
-          <Text style={styles.pageTitle}>Case Progress</Text>
-          <Text style={styles.pageSubtitle}>Loading your case tracker...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#7C3AED" />
-          <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.pageTitle}>Case Progress Tracker</Text>
-        <Text style={styles.pageSubtitle}>Track your USCIS timeline and sync updates after checking your official account.</Text>
-
-        <View style={styles.caseCard}>
-          <View style={styles.caseHeaderRow}>
-            <Text style={styles.caseTitle}>{testDetails?.name || 'Applicant'}</Text>
-            <Text style={styles.casePct}>{progressPct}%</Text>
-          </View>
-
-          <View style={styles.caseProgressTrack}>
-            <View style={[styles.caseProgressFill, { width: `${progressPct}%` }]} />
-          </View>
-
-          <Text style={styles.caseSubtext}>Stage: {currentStageLabel}</Text>
-
-          <TouchableOpacity style={styles.casePortalButton} onPress={openUSCISPortal}>
-            <MaterialCommunityIcons name="open-in-new" size={18} color="#fff" />
-            <Text style={styles.casePortalButtonText}>Open USCIS Account</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.caseCard}>
-          <Text style={styles.caseTitle}>Weekly Reminder</Text>
-          <Text style={styles.caseSubtext}>Set a weekly push reminder to check USCIS status and update this tracker.</Text>
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Reminder Day</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={reminderWeekday} onValueChange={(value) => setReminderWeekday(Number(value) || 2)} style={styles.picker}>
-              {WEEKDAY_OPTIONS.map((day) => (
-                <Picker.Item key={day.value} label={day.label} value={day.value} />
-              ))}
-            </Picker>
-          </View>
-
-          <View style={styles.caseActionRow}>
-            <TouchableOpacity style={styles.caseSaveButton} onPress={enableWeeklyReminder}>
-              <MaterialCommunityIcons name="bell-ring-outline" size={18} color="#fff" />
-              <Text style={styles.caseSaveButtonText}>Enable Weekly Reminder</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.caseResetButton} onPress={disableWeeklyReminder}>
-              <MaterialCommunityIcons name="bell-off-outline" size={18} color="#7C3AED" />
-              <Text style={styles.caseResetButtonText}>Disable</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.caseSubtext}>
-            Reminder status: {reminderEnabled ? 'Enabled' : 'Disabled'}
-          </Text>
-        </View>
-
-        <View style={styles.caseCard}>
-          <Text style={styles.caseLabel}>Receipt Number</Text>
-          <TextInput
-            style={styles.textInput}
-            value={receiptNumber}
-            onChangeText={setReceiptNumber}
-            placeholder="Example: IOE1234567890"
-            autoCapitalize="characters"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Case Type</Text>
-          <TextInput
-            style={styles.textInput}
-            value={caseType}
-            onChangeText={setCaseType}
-            placeholder="N-400"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Current Stage</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={currentStage} onValueChange={(value) => setCurrentStage(Number(value) || 0)} style={styles.picker}>
-              {CASE_PROGRESS_STAGES.map((stage, idx) => (
-                <Picker.Item key={stage} label={`${idx + 1}. ${stage}`} value={idx} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Latest USCIS Status</Text>
-          <TextInput
-            style={styles.textInput}
-            value={latestStatus}
-            onChangeText={setLatestStatus}
-            placeholder="Ex: Interview was scheduled"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Last Updated (MM/DD/YYYY)</Text>
-          <TextInput
-            style={styles.textInput}
-            value={lastUpdated}
-            onChangeText={setLastUpdated}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text style={[styles.caseLabel, { marginTop: 12 }]}>Notes</Text>
-          <TextInput
-            style={[styles.textInput, { minHeight: 90, textAlignVertical: 'top' }]}
-            multiline
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Interview prep notes, document checklist, reminders..."
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <View style={styles.caseActionRow}>
-            <TouchableOpacity style={styles.caseSaveButton} onPress={saveCaseProgress}>
-              <MaterialCommunityIcons name="content-save" size={18} color="#fff" />
-              <Text style={styles.caseSaveButtonText}>Save Progress</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.caseResetButton} onPress={clearCaseProgress}>
-              <MaterialCommunityIcons name="trash-can-outline" size={18} color="#7C3AED" />
-              <Text style={styles.caseResetButtonText}>Reset</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.caseCard}>
-          <Text style={styles.caseTitle}>Document Checklist Template</Text>
-          <Text style={styles.caseSubtext}>Recommended docs/tasks for stage: {currentStageLabel}</Text>
-          {stageChecklist.map((item, idx) => (
-            <View key={`${currentStageLabel}-${idx}`} style={styles.caseChecklistItem}>
-              <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={16} color="#2563EB" />
-              <Text style={styles.caseChecklistText}>{item}</Text>
-            </View>
-          ))}
-
-          <TouchableOpacity style={styles.caseSecondaryButton} onPress={addChecklistToNotes}>
-            <MaterialCommunityIcons name="note-plus-outline" size={18} color="#1F2937" />
-            <Text style={styles.caseSecondaryButtonText}>Add Checklist To Notes</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.caseCard}>
-          <Text style={styles.caseTitle}>Timeline</Text>
-          {(savedCase?.timeline || []).length === 0 ? (
-            <Text style={styles.caseSubtext}>No updates yet. Save your first status update to start timeline tracking.</Text>
-          ) : (
-            (savedCase?.timeline || []).map((event) => (
-              <View key={event.id} style={styles.caseTimelineItem}>
-                <View style={styles.caseTimelineDot} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.caseTimelineStage}>{event.stage}</Text>
-                  <Text style={styles.caseTimelineStatus}>{event.status}</Text>
-                  <Text style={styles.caseTimelineDate}>{event.date}</Text>
-                </View>
-              </View>
-            ))
-          )}
-
-          <View style={styles.caseActionRow}>
-            <TouchableOpacity style={styles.caseSaveButton} onPress={shareTextSnapshot}>
-              <MaterialCommunityIcons name="share-variant-outline" size={18} color="#fff" />
-              <Text style={styles.caseSaveButtonText}>Share Text Snapshot</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.caseResetButton} onPress={sharePdfSnapshot}>
-              <MaterialCommunityIcons name="file-pdf-box" size={18} color="#7C3AED" />
-              <Text style={styles.caseResetButtonText}>Export PDF</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function MasteryMapScreen({ navigation }) {
-  const { masteryMap, resetMasteryMap, testDetails } = useContext(AppDataContext);
-  const entries = Object.entries(masteryMap?.byQuestion || {}).map(([id, value]) => ({ id, ...value }));
-
-  const topicAccumulator = {};
-  const subTopicAccumulator = {};
-
-  for (const entry of entries) {
-    const topic = entry.topic || 'General';
-    const subTopic = entry.subTopic || 'General';
-    if (!topicAccumulator[topic]) topicAccumulator[topic] = { attempts: 0, correct: 0, questions: 0 };
-    topicAccumulator[topic].attempts += entry.attempts || 0;
-    topicAccumulator[topic].correct += entry.correct || 0;
-    topicAccumulator[topic].questions += 1;
-
-    const key = `${topic}__${subTopic}`;
-    if (!subTopicAccumulator[key]) {
-      subTopicAccumulator[key] = {
-        topic,
-        subTopic,
-        attempts: 0,
-        correct: 0,
-        questions: 0,
-      };
-    }
-    subTopicAccumulator[key].attempts += entry.attempts || 0;
-    subTopicAccumulator[key].correct += entry.correct || 0;
-    subTopicAccumulator[key].questions += 1;
-  }
-
-  const topicStats = Object.entries(topicAccumulator)
-    .map(([topic, stat]) => ({
-      topic,
-      attempts: stat.attempts,
-      correct: stat.correct,
-      questions: stat.questions,
-      accuracy: stat.attempts ? Math.round((stat.correct / stat.attempts) * 100) : 0,
-    }))
-    .sort((a, b) => b.attempts - a.attempts);
-
-  const subTopicStats = Object.values(subTopicAccumulator)
-    .map((stat) => ({
-      ...stat,
-      accuracy: stat.attempts ? Math.round((stat.correct / stat.attempts) * 100) : 0,
-    }))
-    .sort((a, b) => {
-      if (a.accuracy === b.accuracy) return b.attempts - a.attempts;
-      return a.accuracy - b.accuracy;
-    });
-
-  const computeDueDays = (entry) => {
-    const attempts = entry?.attempts || 0;
-    const accuracy = attempts ? Math.round(((entry?.correct || 0) / attempts) * 100) : 0;
-    if (attempts <= 1) return 1;
-    if (accuracy < 60) return 1;
-    if (accuracy < 75) return 2;
-    if (accuracy < 90) return 4;
-    return 7;
-  };
-
-  const dueQuestions = entries.filter((entry) => {
-    const dueDays = computeDueDays(entry);
-    const since = daysSince(entry.lastSeen);
-    return since >= dueDays;
-  });
-
-  const dueByTopic = dueQuestions.reduce((acc, entry) => {
-    const topic = entry.topic || 'General';
-    if (!acc[topic]) acc[topic] = { topic, due: 0, attempts: 0, correct: 0 };
-    acc[topic].due += 1;
-    acc[topic].attempts += entry.attempts || 0;
-    acc[topic].correct += entry.correct || 0;
-    return acc;
-  }, {});
-
-  const dueTopicStats = Object.values(dueByTopic)
-    .map((item) => ({
-      ...item,
-      accuracy: item.attempts ? Math.round((item.correct / item.attempts) * 100) : 0,
-    }))
-    .sort((a, b) => b.due - a.due);
-
-  const recommendations = topicStats
-    .map((topic) => {
-      const due = dueByTopic[topic.topic]?.due || 0;
-      const score = ((100 - topic.accuracy) * 1.5) + due * 5 + Math.min(20, topic.attempts * 0.25);
-      return {
-        ...topic,
-        due,
-        score,
-      };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4);
-
-  const topicDaily = masteryMap?.topicDaily || {};
-  const buildWindow = (offsetStart, offsetEnd) => {
-    const keys = [];
-    for (let i = offsetStart; i <= offsetEnd; i++) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      keys.push(getDayKey(d));
-    }
-    return keys;
-  };
-  const currentWeekKeys = buildWindow(0, 6);
-  const previousWeekKeys = buildWindow(7, 13);
-
-  const trendRows = topicStats.map((topic) => {
-    const map = topicDaily[topic.topic] || {};
-    const aggregate = (keys) => keys.reduce((acc, key) => {
-      const day = map[key] || { attempts: 0, correct: 0 };
-      acc.attempts += day.attempts || 0;
-      acc.correct += day.correct || 0;
-      return acc;
-    }, { attempts: 0, correct: 0 });
-
-    const current = aggregate(currentWeekKeys);
-    const previous = aggregate(previousWeekKeys);
-    const currentAcc = current.attempts ? Math.round((current.correct / current.attempts) * 100) : 0;
-    const previousAcc = previous.attempts ? Math.round((previous.correct / previous.attempts) * 100) : 0;
-    const delta = currentAcc - previousAcc;
-    const trend = current.attempts === 0
-      ? 'no-data'
-      : delta >= 5
-        ? 'improving'
-        : delta <= -5
-          ? 'declining'
-          : 'stagnant';
-
-    return {
-      topic: topic.topic,
-      currentAcc,
-      previousAcc,
-      currentAttempts: current.attempts,
-      previousAttempts: previous.attempts,
-      delta,
-      trend,
-    };
-  }).sort((a, b) => {
-    if (a.trend === b.trend) return a.topic.localeCompare(b.topic);
-    const order = { declining: 0, stagnant: 1, improving: 2, 'no-data': 3 };
-    return (order[a.trend] ?? 9) - (order[b.trend] ?? 9);
-  });
-
-  const getHeatStyle = (accuracy, attempts) => {
-    if (!attempts) return { backgroundColor: '#E5E7EB', borderColor: '#D1D5DB', textColor: '#374151' };
-    if (accuracy < 60) return { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', textColor: '#991B1B' };
-    if (accuracy < 75) return { backgroundColor: '#FFEDD5', borderColor: '#FDBA74', textColor: '#9A3412' };
-    if (accuracy < 90) return { backgroundColor: '#FEF3C7', borderColor: '#FCD34D', textColor: '#92400E' };
-    return { backgroundColor: '#DCFCE7', borderColor: '#86EFAC', textColor: '#166534' };
-  };
-
-  const weakFocus = subTopicStats.slice(0, 5);
-  const totalAttempts = masteryMap?.totalQuestions || 0;
-  const launchType = testDetails?.testType || 'naturalization128';
-
-  const smartQueueQuestionIds = (() => {
-    const withPriority = entries.map((entry) => {
-      const attempts = entry.attempts || 0;
-      const accuracy = attempts ? Math.round((entry.correct / attempts) * 100) : 0;
-      const since = daysSince(entry.lastSeen);
-      const dueDays = computeDueDays(entry);
-      const dueBoost = since >= dueDays ? 30 : 0;
-      const priority = (100 - accuracy) * 1.4 + Math.min(25, since) + dueBoost;
-      return {
-        id: String(entry.id),
-        priority,
-      };
-    });
-
-    const sorted = withPriority
-      .sort((a, b) => b.priority - a.priority)
-      .map((item) => item.id);
-    return sorted.slice(0, 8);
-  })();
-
-  const startRecommendation = (topicName) => {
-    navigation.navigate('Quiz', {
-      type: launchType,
-      topicFilter: topicName,
-      subTopicFilter: null,
-      forceQuestionCount: 8,
-    });
-  };
-
-  const startSmartQueue = (focusMode = null) => {
-    if (!smartQueueQuestionIds.length) {
-      Alert.alert('No Smart Queue Yet', 'Complete at least one quiz so Smart Queue can pick weak/due questions.');
-      return;
-    }
-
-    navigation.navigate('Quiz', {
-      type: launchType,
-      questionIds: smartQueueQuestionIds,
-      forceQuestionCount: 8,
-      focusMode,
-    });
-  };
-
-  const getTrendBadgeStyle = (trend) => {
-    if (trend === 'improving') return { bg: '#DCFCE7', color: '#166534', label: 'Improving' };
-    if (trend === 'declining') return { bg: '#FEE2E2', color: '#991B1B', label: 'Declining' };
-    if (trend === 'stagnant') return { bg: '#FEF3C7', color: '#92400E', label: 'Stagnant' };
-    return { bg: '#E5E7EB', color: '#374151', label: 'No Data' };
-  };
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#7C3AED" />
-          <Text style={{ color: '#7C3AED', fontWeight: '600', marginLeft: 4 }}>Back</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.pageTitle}>Mastery Map</Text>
-        <Text style={styles.pageSubtitle}>Topic confidence and subtopic heatmap from your real quiz history.</Text>
-
-        <View style={styles.masteryOverviewCard}>
-          <View style={styles.masteryOverviewRow}>
-            <View style={styles.masteryMetric}>
-              <Text style={styles.masteryMetricValue}>{masteryMap?.totalSessions || 0}</Text>
-              <Text style={styles.masteryMetricLabel}>Sessions</Text>
-            </View>
-            <View style={styles.masteryMetric}>
-              <Text style={styles.masteryMetricValue}>{totalAttempts}</Text>
-              <Text style={styles.masteryMetricLabel}>Attempts</Text>
-            </View>
-            <View style={styles.masteryMetric}>
-              <Text style={styles.masteryMetricValue}>{entries.length}</Text>
-              <Text style={styles.masteryMetricLabel}>Questions Tracked</Text>
-            </View>
-          </View>
-          <Text style={styles.masteryUpdatedText}>
-            {masteryMap?.updatedAt ? `Updated ${new Date(masteryMap.updatedAt).toLocaleString()}` : 'No attempts tracked yet'}
-          </Text>
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Smart Queue</Text>
-          <Text style={styles.masteryEmptyText}>Auto-mixes your weakest and due-for-review questions into an 8-question pack.</Text>
-          <View style={styles.masterySmartQueueActions}>
-            <TouchableOpacity style={styles.masteryActionButtonLarge} onPress={() => startSmartQueue(null)}>
-              <MaterialCommunityIcons name="brain" size={16} color="#fff" />
-              <Text style={styles.masteryActionButtonText}>Start Smart Queue (8)</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.masteryActionButtonGhost} onPress={() => startSmartQueue('minimal')}>
-              <MaterialCommunityIcons name="target-variant" size={16} color="#0C4A6E" />
-              <Text style={styles.masteryActionButtonGhostText}>Focus Smart Queue</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Due For Review</Text>
-          {dueTopicStats.length === 0 ? (
-            <Text style={styles.masteryEmptyText}>Nothing due yet. Keep practicing to seed spaced repetition.</Text>
-          ) : (
-            dueTopicStats.map((item) => (
-              <View key={`due-${item.topic}`} style={styles.masteryDueRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.masteryDueTitle}>{item.topic}</Text>
-                  <Text style={styles.masteryDueMeta}>{item.due} due • {item.accuracy}% lifetime accuracy</Text>
-                </View>
-                <TouchableOpacity style={styles.masteryActionButton} onPress={() => startRecommendation(item.topic)}>
-                  <Text style={styles.masteryActionButtonText}>Do 8 Now</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Topic Recommendations</Text>
-          {!recommendations.length ? (
-            <Text style={styles.masteryEmptyText}>No recommendations yet. Complete one quiz session.</Text>
-          ) : (
-            recommendations.map((topic) => (
-              <View key={`rec-${topic.topic}`} style={styles.masteryRecommendationRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.masteryTopicTitle}>{topic.topic}</Text>
-                  <Text style={styles.masteryRecommendationMeta}>Recommended: do 8 questions now • {topic.accuracy}% accuracy • {topic.due} due</Text>
-                </View>
-                <TouchableOpacity style={styles.masteryActionButton} onPress={() => startRecommendation(topic.topic)}>
-                  <Text style={styles.masteryActionButtonText}>Start 8</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Weekly Trend By Topic</Text>
-          {!trendRows.length ? (
-            <Text style={styles.masteryEmptyText}>No trend data yet.</Text>
-          ) : (
-            trendRows.map((row) => {
-              const badge = getTrendBadgeStyle(row.trend);
-              return (
-                <View key={`trend-${row.topic}`} style={styles.masteryTrendRow}>
-                  <View style={styles.masteryTrendHeader}>
-                    <Text style={styles.masteryTopicTitle}>{row.topic}</Text>
-                    <View style={[styles.masteryTrendBadge, { backgroundColor: badge.bg }]}>
-                      <Text style={[styles.masteryTrendBadgeText, { color: badge.color }]}>{badge.label}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.masteryTrendMeta}>
-                    This week: {row.currentAcc}% ({row.currentAttempts} attempts) • Last week: {row.previousAcc}% ({row.previousAttempts} attempts)
-                  </Text>
-                  <View style={styles.masteryTrendBars}>
-                    <View style={styles.masteryTrendBarBlock}>
-                      <Text style={styles.masteryTrendBarLabel}>Last</Text>
-                      <View style={styles.masteryBarTrack}>
-                        <View style={[styles.masteryBarFill, { width: `${Math.max(2, row.previousAcc)}%`, backgroundColor: '#94A3B8' }]} />
-                      </View>
-                    </View>
-                    <View style={styles.masteryTrendBarBlock}>
-                      <Text style={styles.masteryTrendBarLabel}>Now</Text>
-                      <View style={styles.masteryBarTrack}>
-                        <View style={[styles.masteryBarFill, { width: `${Math.max(2, row.currentAcc)}%`, backgroundColor: '#0EA5E9' }]} />
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Topic Confidence</Text>
-          {!topicStats.length ? (
-            <Text style={styles.masteryEmptyText}>Take one quiz to generate your mastery map.</Text>
-          ) : (
-            topicStats.map((topic) => {
-              const pct = Math.max(5, topic.accuracy);
-              return (
-                <View key={topic.topic} style={styles.masteryTopicRow}>
-                  <View style={styles.masteryTopicHeader}>
-                    <Text style={styles.masteryTopicTitle}>{topic.topic}</Text>
-                    <Text style={styles.masteryTopicMeta}>{topic.accuracy}% • {topic.attempts} attempts</Text>
-                  </View>
-                  <View style={styles.masteryBarTrack}>
-                    <View style={[styles.masteryBarFill, { width: `${pct}%` }]} />
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Focus Now (Weakest Subtopics)</Text>
-          {!weakFocus.length ? (
-            <Text style={styles.masteryEmptyText}>No subtopic data yet.</Text>
-          ) : (
-            weakFocus.map((item, idx) => {
-              const heat = getHeatStyle(item.accuracy, item.attempts);
-              return (
-                <View key={`${item.topic}-${item.subTopic}-${idx}`} style={[styles.masteryHeatItem, { backgroundColor: heat.backgroundColor, borderColor: heat.borderColor }]}>
-                  <Text style={[styles.masteryHeatTitle, { color: heat.textColor }]}>{item.topic} → {item.subTopic}</Text>
-                  <Text style={[styles.masteryHeatMeta, { color: heat.textColor }]}>{item.accuracy}% accuracy • {item.attempts} attempts</Text>
-                </View>
-              );
-            })
-          )}
-        </View>
-
-        <View style={styles.masteryCard}>
-          <Text style={styles.masteryCardTitle}>Subtopic Heatmap</Text>
-          {!subTopicStats.length ? (
-            <Text style={styles.masteryEmptyText}>No heatmap yet. Complete a quiz first.</Text>
-          ) : (
-            <View style={styles.masteryHeatmapWrap}>
-              {subTopicStats.map((item, idx) => {
-                const heat = getHeatStyle(item.accuracy, item.attempts);
-                return (
-                  <View
-                    key={`${item.topic}-${item.subTopic}-${idx}`}
-                    style={[styles.masteryHeatTile, { backgroundColor: heat.backgroundColor, borderColor: heat.borderColor }]}
-                  >
-                    <Text style={[styles.masteryHeatTilePct, { color: heat.textColor }]}>{item.attempts ? `${item.accuracy}%` : 'N/A'}</Text>
-                    <Text style={[styles.masteryHeatTileName, { color: heat.textColor }]} numberOfLines={2}>{item.subTopic}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
-
-        <TouchableOpacity style={styles.masteryResetButton} onPress={resetMasteryMap}>
-          <MaterialCommunityIcons name="refresh" size={18} color="#7C3AED" />
-          <Text style={styles.masteryResetButtonText}>Reset Mastery Analytics</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// 👨‍👩‍👧‍👦 FAMILY DASHBOARD
-function FamilyScreen({ navigation }) {
-  const [family] = useState([
-    { id: 1, name: 'Mom', points: 450, level: 5, initials: 'M', completed: 8 },
-    { id: 2, name: 'You', points: 260, level: 3, initials: 'Y', completed: 5 },
-    { id: 3, name: 'Brother', points: 320, level: 4, initials: 'B', completed: 6 },
-  ]);
-
-  const inviteFamilyMembers = async () => {
-    try {
-      await Share.share({
-        message:
-          'Join my family in Civics Coach so we can practice together and track our progress!',
-      });
-    } catch (error) {
-      Alert.alert('Unable to Share', 'Please try again in a moment.');
-    }
-  };
-
-  const sorted = [...family].sort((a, b) => b.points - a.points);
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Family Dashboard</Text>
-        <Text style={styles.pageSubtitle}>Compete and learn together!</Text>
-
-        {sorted.map((member, idx) => (
-          <View key={member.id} style={[styles.familyCard, idx === 0 && styles.familyCardLeader]}>
-            <View style={styles.familyRank}>
-              <Text style={styles.familyRankText}>#{idx + 1}</Text>
-            </View>
-
-            <View style={styles.familyAvatar}>
-              <Text style={styles.familyAvatarText}>{member.initials[0]}</Text>
-            </View>
-
-            <View style={styles.familyInfo}>
-              <Text style={styles.familyName}>{member.name}</Text>
-              <Text style={styles.familyStats}>{member.completed} quizzes • Lv {member.level}</Text>
-            </View>
-
-            <View style={styles.familyPoints}>
-              <Text style={styles.familyPointsValue}>{member.points}</Text>
-              <Text style={styles.familyPointsLabel}>pts</Text>
-            </View>
-          </View>
-        ))}
-
-        <TouchableOpacity
-          style={[styles.button, styles.buttonPrimary, { marginTop: 20 }]}
-          onPress={inviteFamilyMembers}
-        >
-          <MaterialCommunityIcons name="plus-circle" size={20} color="#fff" />
-          <Text style={[styles.buttonText, { color: '#fff', marginLeft: 8 }]}>Invite Family Members</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function AdminScreen() {
-  const { testDetails, adRuntime, resetAdAnalytics } = useContext(AppDataContext);
-  const [stateName, setStateName] = useState(testDetails?.state || 'California');
-  const [president, setPresident] = useState(DYNAMIC_CIVICS_DATA.federal.president);
-  const [vicePresident, setVicePresident] = useState(DYNAMIC_CIVICS_DATA.federal.vicePresident);
-  const [speakerOfHouse, setSpeakerOfHouse] = useState(DYNAMIC_CIVICS_DATA.federal.speakerOfHouse);
-  const [chiefJustice, setChiefJustice] = useState(DYNAMIC_CIVICS_DATA.federal.chiefJustice);
-  const [governor, setGovernor] = useState('');
-  const [senatorOne, setSenatorOne] = useState('');
-  const [senatorTwo, setSenatorTwo] = useState('');
-  const [capital, setCapitalValue] = useState('');
-  const [interstitialEcpm, setInterstitialEcpm] = useState('4.00');
-  const [rewardedEcpm, setRewardedEcpm] = useState('12.00');
-  const [showMonthlyProjection, setShowMonthlyProjection] = useState(true);
-
-  const interstitialShown = adRuntime.analytics?.interstitialShown || 0;
-  const rewardedCompleted = adRuntime.analytics?.rewardedCompleted || 0;
-
-  const interstitialEcpmValue = Math.max(0, Number.parseFloat(interstitialEcpm) || 0);
-  const rewardedEcpmValue = Math.max(0, Number.parseFloat(rewardedEcpm) || 0);
-  const estimatedInterstitialRevenue = (interstitialShown / 1000) * interstitialEcpmValue;
-  const estimatedRewardedRevenue = (rewardedCompleted / 1000) * rewardedEcpmValue;
-  const estimatedDailyRevenue = estimatedInterstitialRevenue + estimatedRewardedRevenue;
-  const trendDays = buildSevenDayRevenueTrend(adRuntime.history, interstitialEcpmValue, rewardedEcpmValue);
-  const maxTrendRevenue = Math.max(...trendDays.map((day) => day.revenue), 0.01);
-  const lowMultiplier = 0.75;
-  const highMultiplier = 1.25;
-  const dailyLow = estimatedDailyRevenue * lowMultiplier;
-  const dailyHigh = estimatedDailyRevenue * highMultiplier;
-  const monthlyBase = estimatedDailyRevenue * 30;
-  const monthlyLow = dailyLow * 30;
-  const monthlyHigh = dailyHigh * 30;
-
-  useEffect(() => {
-    const office = DYNAMIC_CIVICS_DATA.stateOfficeholders[stateName] || {};
-    setGovernor(office.governor || '');
-    setSenatorOne((office.senators && office.senators[0]) || '');
-    setSenatorTwo((office.senators && office.senators[1]) || '');
-    setCapitalValue(STATE_CAPITALS[stateName] || '');
-  }, [stateName]);
-
-  const saveFederalOfficials = () => {
-    if (!president.trim() || !vicePresident.trim() || !speakerOfHouse.trim() || !chiefJustice.trim()) {
-      Alert.alert('Error', 'Please fill all federal official fields.');
-      return;
-    }
-
-    setDynamicFederalAnswers({
-      president: president.trim(),
-      vicePresident: vicePresident.trim(),
-      speakerOfHouse: speakerOfHouse.trim(),
-      chiefJustice: chiefJustice.trim(),
-    });
-
-    Alert.alert('Saved', 'Federal officials updated successfully.');
-  };
-
-  const saveStateOfficials = () => {
-    if (!stateName || !governor.trim() || !senatorOne.trim() || !senatorTwo.trim() || !capital.trim()) {
-      Alert.alert('Error', 'Please fill state, governor, two senators, and capital.');
-      return;
-    }
-
-    setStateOfficeholders(stateName, {
-      governor: governor.trim(),
-      senators: [senatorOne.trim(), senatorTwo.trim()],
-    });
-    setStateCapital(stateName, capital.trim());
-
-    Alert.alert('Saved', `Updated ${stateName} officials and capital.`);
-  };
-
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Admin: Update Officials</Text>
-        <Text style={styles.pageSubtitle}>Last verified: {DYNAMIC_CIVICS_DATA.lastVerified}</Text>
-
-        <View style={styles.adminCard}>
-          <Text style={styles.adminCardTitle}>Federal Officials</Text>
-
-          <Text style={styles.inputLabel}>President</Text>
-          <TextInput style={styles.textInput} value={president} onChangeText={setPresident} />
-
-          <Text style={styles.inputLabel}>Vice President</Text>
-          <TextInput style={styles.textInput} value={vicePresident} onChangeText={setVicePresident} />
-
-          <Text style={styles.inputLabel}>Speaker of the House</Text>
-          <TextInput style={styles.textInput} value={speakerOfHouse} onChangeText={setSpeakerOfHouse} />
-
-          <Text style={styles.inputLabel}>Chief Justice</Text>
-          <TextInput style={styles.textInput} value={chiefJustice} onChangeText={setChiefJustice} />
-
-          <TouchableOpacity style={[styles.button, styles.buttonPrimary, { marginTop: 12 }]} onPress={saveFederalOfficials}>
-            <Text style={[styles.buttonText, { color: '#fff' }]}>Save Federal Updates</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.adminCard}>
-          <Text style={styles.adminCardTitle}>State Officials + Capital</Text>
-
-          <Text style={styles.inputLabel}>State</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={stateName} onValueChange={(value) => setStateName(value)} style={styles.picker}>
-              {usStates.map((state) => (
-                <Picker.Item key={state} label={state} value={state} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={styles.inputLabel}>Governor</Text>
-          <TextInput style={styles.textInput} value={governor} onChangeText={setGovernor} />
-
-          <Text style={styles.inputLabel}>U.S. Senator 1</Text>
-          <TextInput style={styles.textInput} value={senatorOne} onChangeText={setSenatorOne} />
-
-          <Text style={styles.inputLabel}>U.S. Senator 2</Text>
-          <TextInput style={styles.textInput} value={senatorTwo} onChangeText={setSenatorTwo} />
-
-          <Text style={styles.inputLabel}>State Capital</Text>
-          <TextInput style={styles.textInput} value={capital} onChangeText={setCapitalValue} />
-
-          <TouchableOpacity style={[styles.button, styles.buttonPrimary, { marginTop: 12 }]} onPress={saveStateOfficials}>
-            <Text style={[styles.buttonText, { color: '#fff' }]}>Save State Updates</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.adminCard}>
-          <Text style={styles.adminCardTitle}>Revenue Estimate (Daily)</Text>
-
-          <Text style={styles.inputLabel}>Interstitial eCPM (USD)</Text>
-          <TextInput
-            style={styles.textInput}
-            value={interstitialEcpm}
-            onChangeText={setInterstitialEcpm}
-            keyboardType="numeric"
-            placeholder="4.00"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <Text style={[styles.inputLabel, { marginTop: 10 }]}>Rewarded eCPM (USD)</Text>
-          <TextInput
-            style={styles.textInput}
-            value={rewardedEcpm}
-            onChangeText={setRewardedEcpm}
-            keyboardType="numeric"
-            placeholder="12.00"
-            placeholderTextColor="#9CA3AF"
-          />
-
-          <View style={styles.revenueSummaryBox}>
-            <Text style={styles.analyticsLine}>Interstitial impressions: {interstitialShown}</Text>
-            <Text style={styles.analyticsLine}>Rewarded completions: {rewardedCompleted}</Text>
-            <Text style={styles.revenueLine}>Interstitial est.: ${estimatedInterstitialRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueLine}>Rewarded est.: ${estimatedRewardedRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueTotal}>Estimated Daily Revenue: ${estimatedDailyRevenue.toFixed(2)}</Text>
-            <Text style={styles.revenueBandLine}>
-              Confidence Band (daily): Low ${dailyLow.toFixed(2)} | Base ${estimatedDailyRevenue.toFixed(2)} | High ${dailyHigh.toFixed(2)}
-            </Text>
-
-            <TouchableOpacity
-              style={styles.monthlyToggleButton}
-              onPress={() => setShowMonthlyProjection((prev) => !prev)}
-            >
-              <MaterialCommunityIcons
-                name={showMonthlyProjection ? 'chevron-down' : 'chevron-right'}
-                size={18}
-                color="#6D28D9"
-              />
-              <Text style={styles.monthlyToggleText}>Monthly projection (optional)</Text>
-            </TouchableOpacity>
-
-            {showMonthlyProjection && (
-              <Text style={styles.revenueBandLine}>
-                Confidence Band (30-day): Low ${monthlyLow.toFixed(2)} | Base ${monthlyBase.toFixed(2)} | High ${monthlyHigh.toFixed(2)}
-              </Text>
-            )}
-            <Text style={styles.revenueHint}>Rough model: revenue = impressions / 1000 x eCPM</Text>
-          </View>
-        </View>
-
-        <View style={styles.adminCard}>
-          <Text style={styles.adminCardTitle}>7-Day Revenue Trend</Text>
-          <View style={styles.trendChartRow}>
-            {trendDays.map((day) => {
-              const barHeight = Math.max(8, Math.round((day.revenue / maxTrendRevenue) * 90));
-              return (
-                <View key={day.dayKey} style={styles.trendBarColumn}>
-                  <Text style={styles.trendValueLabel}>${day.revenue.toFixed(2)}</Text>
-                  <View style={styles.trendBarTrack}>
-                    <View style={[styles.trendBarFill, { height: barHeight }]} />
-                  </View>
-                  <Text style={styles.trendBarLabel}>{day.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-          <Text style={styles.revenueHint}>Based on stored daily ad counts and your current eCPM assumptions.</Text>
-        </View>
-
-        <View style={styles.adminCard}>
-          <Text style={styles.adminCardTitle}>Ad Analytics (Lightweight)</Text>
-          <Text style={styles.analyticsLine}>Today key: {adRuntime.dayKey || 'N/A'}</Text>
-          <Text style={styles.analyticsLine}>Interstitial attempts: {adRuntime.analytics?.interstitialAttempts || 0}</Text>
-          <Text style={styles.analyticsLine}>Interstitial shown: {adRuntime.analytics?.interstitialShown || 0}</Text>
-          <Text style={styles.analyticsLine}>Shown from Resume: {adRuntime.analytics?.interstitialResumeShown || 0}</Text>
-          <Text style={styles.analyticsLine}>Shown from Quiz Complete: {adRuntime.analytics?.interstitialQuizCompleteShown || 0}</Text>
-          <Text style={styles.analyticsLine}>Skipped (cooldown): {adRuntime.analytics?.interstitialSkippedCooldown || 0}</Text>
-          <Text style={styles.analyticsLine}>Skipped (daily cap): {adRuntime.analytics?.interstitialSkippedDailyCap || 0}</Text>
-          <Text style={styles.analyticsLine}>Skipped (trigger cap): {adRuntime.analytics?.interstitialSkippedTriggerCap || 0}</Text>
-          <Text style={styles.analyticsLine}>Interstitial failures: {adRuntime.analytics?.interstitialFailed || 0}</Text>
-          <Text style={styles.analyticsLine}>Rewarded attempts: {adRuntime.analytics?.rewardedAttempts || 0}</Text>
-          <Text style={styles.analyticsLine}>Rewarded completed: {adRuntime.analytics?.rewardedCompleted || 0}</Text>
-          <Text style={styles.analyticsLine}>Rewarded failed/closed: {adRuntime.analytics?.rewardedFailedOrClosed || 0}</Text>
-          <Text style={styles.analyticsLine}>Sprint unlocks: {adRuntime.analytics?.rewardedSprintUnlocks || 0}</Text>
-          <Text style={styles.analyticsLine}>Bonus unlocks: {adRuntime.analytics?.rewardedBonusUnlocks || 0}</Text>
-          <Text style={styles.analyticsLine}>Daily free-pack attempts: {adRuntime.analytics?.rewardedFreePackAttempts || 0}</Text>
-          <Text style={styles.analyticsLine}>Daily free-pack unlocked: {adRuntime.analytics?.rewardedFreePackUnlocked || 0}</Text>
-          <Text style={styles.analyticsLine}>Daily free-pack blocked (daily): {adRuntime.analytics?.rewardedFreePackBlockedDailyLimit || 0}</Text>
-          <Text style={styles.analyticsLine}>Daily free-pack blocked (cooldown): {adRuntime.analytics?.rewardedFreePackBlockedCooldown || 0}</Text>
-          <Text style={styles.analyticsLine}>Daily free-pack ad failed: {adRuntime.analytics?.rewardedFreePackFailed || 0}</Text>
-
-          <TouchableOpacity style={[styles.button, styles.buttonSecondary, { marginTop: 12 }]} onPress={resetAdAnalytics}>
-            <Text style={styles.buttonText}>Reset Analytics Counters</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-// TAB NAVIGATOR
 function TabNavigator({ testDetails, onEditTestDetails }) {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#7C3AED',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: '#A78BFA',
+        tabBarInactiveTintColor: '#475569',
       }}
     >
       <Tab.Screen
@@ -3085,8 +1309,8 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
         name="FamilyTab"
         component={FamilyScreen}
         options={{
-          tabBarLabel: 'Family',
-          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="people" size={size} color={color} />,
+          tabBarLabel: 'Squad',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="trophy-variant" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -3109,6 +1333,187 @@ export default function App() {
   const [pausedSession, setPausedSession] = useState(null);
   const [adRuntime, setAdRuntime] = useState(createDefaultAdRuntime());
   const [masteryMap, setMasteryMap] = useState(createDefaultMasteryMap());
+  const [userProfile, setUserProfile] = useState(createDefaultUserProfile());
+  const [squadSync, setSquadSync] = useState(createDefaultSquadSync());
+  const navigationRef = useRef(null);
+  const routeNameRef = useRef(null);
+  const localDeviceIdRef = useRef(`local-${Platform.OS}-${Math.random().toString(36).slice(2, 8)}`);
+  const lastPushedRevisionRef = useRef(0);
+  const lastSegmentTransitionSignatureRef = useRef('');
+  const lastOfferWinnersSignatureRef = useRef('');
+  const lastExperimentCohortsSignatureRef = useRef('');
+
+  const getSelfIntentSegment = () => {
+    const leaderboard = Array.isArray(squadSync?.season?.leaderboard) ? squadSync.season.leaderboard : [];
+    const selfEntry = leaderboard.find((row) => String(row?.id || '').trim() === 'self');
+    return normalizeIntentSegment(selfEntry?.intentSegment || 'warming');
+  };
+
+  const getRevenueIntelligenceExperiment = (runtime = adRuntime) => {
+    const cohorts = normalizeExperimentCohorts(runtime?.experimentCohorts || {});
+    return cohorts?.revenueIntelligence || createDefaultAdRuntime().experimentCohorts.revenueIntelligence;
+  };
+
+  const getRevenueIntelligenceCohort = (runtime = adRuntime) => String(getRevenueIntelligenceExperiment(runtime)?.cohort || 'treatment');
+  const isRevenueIntelligenceTreatment = (runtime = adRuntime) => getRevenueIntelligenceCohort(runtime) !== 'holdout';
+  const getBaselineOfferVariant = (variantKey) => OFFER_VARIANT_OPTIONS[variantKey]?.[0] || 'control';
+
+  const logOfferCapDecision = ({
+    channel,
+    trigger = 'n/a',
+    decision,
+    reason,
+    segment,
+    policy,
+    cooldownMs = 0,
+    dailyLimit = 0,
+    triggerLimit = 0,
+  }) => {
+    trackAppEvent(APP_EVENT_NAMES.OFFER_CAP_DECISION, {
+      channel: String(channel || 'unknown'),
+      trigger: String(trigger || 'n/a'),
+      decision: String(decision || 'unknown'),
+      reason: String(reason || 'unknown'),
+      segment: String(segment || 'unknown'),
+      experiment_cohort: getRevenueIntelligenceCohort(),
+      cooldown_ms: Number(cooldownMs || 0),
+      daily_limit: Number(dailyLimit || 0),
+      trigger_limit: Number(triggerLimit || 0),
+      policy_interstitial_daily_mult: Number(policy?.interstitialDailyLimitMultiplier || 0),
+      policy_interstitial_cooldown_mult: Number(policy?.interstitialCooldownMultiplier || 0),
+      policy_rewarded_daily_mult: Number(policy?.rewardedDailyLimitMultiplier || 0),
+      policy_rewarded_cooldown_mult: Number(policy?.rewardedCooldownMultiplier || 0),
+    });
+  };
+
+  const applySquadMutation = (mutator, touchedFields = []) => {
+    setSquadSync((previous) => {
+      const prev = normalizeSquadSync(previous);
+      const proposed = typeof mutator === 'function' ? mutator(prev) : prev;
+      let next = normalizeSquadSync(proposed || prev);
+      const nowIso = new Date().toISOString();
+      const nowMs = Date.now();
+      const nextFieldClock = { ...(prev.syncMeta?.fieldClock || {}) };
+
+      const seasonResult = deriveSeasonState(next, nowMs);
+      if (seasonResult.changed) {
+        next = {
+          ...next,
+          season: seasonResult.season,
+        };
+        nextFieldClock.season = nowMs;
+      }
+
+      touchedFields.forEach((fieldName) => {
+        if (!fieldName) return;
+        nextFieldClock[fieldName] = nowMs;
+      });
+
+      return {
+        ...next,
+        updatedAt: nowIso,
+        syncMeta: {
+          ...next.syncMeta,
+          revision: Math.max(Number(prev.syncMeta?.revision || 0) + 1, Number(next.syncMeta?.revision || 0)),
+          lastMutationAt: nowIso,
+          lastWriterDeviceId: localDeviceIdRef.current,
+          fieldClock: nextFieldClock,
+        },
+      };
+    });
+  };
+
+  useEffect(() => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (!teamId) return undefined;
+
+    const maintainSeason = () => {
+      const nowMs = Date.now();
+      const nowIso = new Date(nowMs).toISOString();
+
+      setSquadSync((previous) => {
+        const prev = normalizeSquadSync(previous);
+        const result = deriveSeasonState(prev, nowMs);
+        if (!result.changed) return previous;
+
+        return {
+          ...prev,
+          season: result.season,
+          updatedAt: nowIso,
+          syncMeta: {
+            ...prev.syncMeta,
+            revision: Number(prev.syncMeta?.revision || 0) + 1,
+            lastMutationAt: nowIso,
+            lastWriterDeviceId: localDeviceIdRef.current,
+            fieldClock: {
+              ...(prev.syncMeta?.fieldClock || {}),
+              season: nowMs,
+            },
+          },
+        };
+      });
+    };
+
+    maintainSeason();
+    const intervalId = setInterval(maintainSeason, 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, [squadSync?.teamId, squadSync?.members, squadSync?.season?.seasonId, squadSync?.season?.endsAt]);
+
+  const trackAppEvent = (eventName, params = {}) => {
+    if (!eventName) return;
+
+    const safeParams = Object.entries(params || {}).reduce((acc, [key, value]) => {
+      const valueType = typeof value;
+      if (value == null) return acc;
+      if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    console.log('[Analytics]', eventName, safeParams);
+    void logAppAnalyticsEvent(eventName, safeParams);
+  };
+
+  useEffect(() => {
+    const season = squadSync?.season || {};
+    const summary = season?.intentTransitionSummary && typeof season.intentTransitionSummary === 'object'
+      ? season.intentTransitionSummary
+      : null;
+    const transitions = summary?.transitions && typeof summary.transitions === 'object'
+      ? summary.transitions
+      : {};
+    const entries = Number(summary?.totals?.entries || 0);
+    const changed = Number(summary?.totals?.changed || 0);
+    const unchanged = Number(summary?.totals?.unchanged || 0);
+    const seasonId = String(season?.seasonId || '').trim();
+    if (!seasonId || entries <= 0) return;
+
+    const signature = `${seasonId}|${entries}|${changed}|${unchanged}|${JSON.stringify(transitions)}`;
+    if (signature === lastSegmentTransitionSignatureRef.current) return;
+    lastSegmentTransitionSignatureRef.current = signature;
+
+    const topTransition = Object.entries(transitions)
+      .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))[0];
+
+    trackAppEvent(APP_EVENT_NAMES.SEGMENT_TRANSITION, {
+      season_id: seasonId,
+      week_key: String(season?.weekKey || ''),
+      entries,
+      changed_count: changed,
+      unchanged_count: unchanged,
+      transition_types: Object.keys(transitions).length,
+      top_transition: String(topTransition?.[0] || 'none'),
+      top_transition_count: Number(topTransition?.[1] || 0),
+    });
+  }, [squadSync?.season?.seasonId, squadSync?.season?.weekKey, squadSync?.season?.intentTransitionSummary]);
+
+  useEffect(() => {
+    trackAppEvent(APP_EVENT_NAMES.APP_OPEN, {
+      platform: Platform.OS,
+    });
+    playLogoSwell();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -3139,7 +1544,15 @@ export default function App() {
           setAdRuntime((prev) => ({
             ...prev,
             ...parsed,
+            comebackCampaign: normalizeComebackCampaign(parsed.comebackCampaign),
             history: Array.isArray(parsed.history) ? parsed.history : prev.history,
+            offerVariants: buildOfferVariants(parsed.offerVariants),
+            pinnedOfferVariants: buildPinnedOfferVariants(parsed.pinnedOfferVariants),
+            autoOfferWinners: normalizeOfferVariantWinners(parsed.autoOfferWinners),
+            experimentCohorts: normalizeExperimentCohorts(parsed.experimentCohorts),
+            offerVariantStats: parsed.offerVariantStats && typeof parsed.offerVariantStats === 'object'
+              ? parsed.offerVariantStats
+              : prev.offerVariantStats,
             analytics: {
               ...prev.analytics,
               ...(parsed.analytics || {}),
@@ -3172,10 +1585,62 @@ export default function App() {
       }
     };
 
+    const loadUserProfile = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(USER_PROFILE_STORAGE_KEY);
+        if (!stored || !isMounted) return;
+
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          setUserProfile({
+            ...createDefaultUserProfile(),
+            ...parsed,
+          });
+        }
+      } catch (error) {
+        console.log('Failed to load user profile:', error);
+      }
+    };
+
+    const loadSquadSync = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(SQUAD_SYNC_STORAGE_KEY);
+        if (!stored || !isMounted) return;
+
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          setSquadSync((prev) => reconcileSquadSync(prev, parsed));
+        }
+      } catch (error) {
+        console.log('Failed to load squad sync:', error);
+      }
+    };
+
     loadMasteryMap();
+    loadUserProfile();
+    loadSquadSync();
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    setAdRuntime((prev) => {
+      const nextVariants = buildOfferVariants(prev.offerVariants);
+      const nextPinnedVariants = buildPinnedOfferVariants(prev.pinnedOfferVariants);
+      if (
+        JSON.stringify(prev.offerVariants || {}) === JSON.stringify(nextVariants)
+        && JSON.stringify(prev.pinnedOfferVariants || {}) === JSON.stringify(nextPinnedVariants)
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        offerVariants: nextVariants,
+        pinnedOfferVariants: nextPinnedVariants,
+      };
+    });
   }, []);
 
   useEffect(() => {
@@ -3193,6 +1658,183 @@ export default function App() {
 
     persistPausedSession();
   }, [pausedSession]);
+
+  useEffect(() => {
+    const maintainComebackState = () => {
+      const nowMs = Date.now();
+      setAdRuntime((previous) => {
+        const treatmentEnabled = isRevenueIntelligenceTreatment(previous);
+        const derived = treatmentEnabled
+          ? deriveComebackCampaign(previous, nowMs)
+          : {
+              campaign: {
+                ...normalizeComebackCampaign(previous?.comebackCampaign || {}),
+                lastActiveDayKey: getDayKey(new Date(nowMs)),
+                eligibleWindow: null,
+                windows: Object.entries(normalizeComebackCampaign(previous?.comebackCampaign || {}).windows || {}).reduce((acc, [windowKey, windowValue]) => {
+                  acc[windowKey] = {
+                    ...windowValue,
+                    eligible: false,
+                  };
+                  return acc;
+                }, {}),
+              },
+              triggeredWindow: null,
+              inactiveDays: 0,
+              currentDayKey: getDayKey(new Date(nowMs)),
+            };
+        const analytics = {
+          ...createDefaultAdRuntime().analytics,
+          ...(previous.analytics || {}),
+        };
+
+        if (derived.triggeredWindow === 'd2') analytics.comebackD2Triggered += 1;
+        if (derived.triggeredWindow === 'd5') analytics.comebackD5Triggered += 1;
+        if (derived.triggeredWindow === 'd10') analytics.comebackD10Triggered += 1;
+
+        const next = {
+          ...previous,
+          dayKey: derived.currentDayKey,
+          comebackCampaign: derived.campaign,
+          analytics,
+        };
+
+        if (JSON.stringify(previous.comebackCampaign || {}) === JSON.stringify(next.comebackCampaign)
+          && JSON.stringify(previous.analytics || {}) === JSON.stringify(next.analytics)
+          && previous.dayKey === next.dayKey) {
+          return previous;
+        }
+
+        return next;
+      });
+    };
+
+    maintainComebackState();
+    const intervalId = setInterval(maintainComebackState, 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const maintainOfferWinners = () => {
+      const nowMs = Date.now();
+      setAdRuntime((previous) => {
+        const nextAutoOfferWinners = isRevenueIntelligenceTreatment(previous)
+          ? deriveAutoOfferWinners(previous, nowMs)
+          : createDefaultAdRuntime().autoOfferWinners;
+        if (JSON.stringify(normalizeOfferVariantWinners(previous.autoOfferWinners || {})) === JSON.stringify(nextAutoOfferWinners)) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          autoOfferWinners: nextAutoOfferWinners,
+        };
+      });
+    };
+
+    maintainOfferWinners();
+    const intervalId = setInterval(maintainOfferWinners, 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    setAdRuntime((previous) => {
+      const nextExperimentCohorts = deriveExperimentCohorts(previous, `${localDeviceIdRef.current}:revenue-intelligence`, Date.now());
+      if (JSON.stringify(normalizeExperimentCohorts(previous.experimentCohorts || {})) === JSON.stringify(nextExperimentCohorts)) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        experimentCohorts: nextExperimentCohorts,
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    const comebackCampaign = normalizeComebackCampaign(adRuntime?.comebackCampaign || {});
+    const eligibleWindow = String(comebackCampaign?.eligibleWindow || '').trim();
+    if (!eligibleWindow) return;
+    const activeWindow = comebackCampaign.windows?.[eligibleWindow];
+    if (!activeWindow?.lastTriggeredAt) return;
+
+    trackAppEvent(APP_EVENT_NAMES.COMEBACK_TRIGGERED, {
+      window_key: eligibleWindow,
+      day_offset: Number(activeWindow.dayOffset || 0),
+      eligible_day_key: String(activeWindow.lastEligibleDayKey || ''),
+      shown_count: Number(activeWindow.shownCount || 0),
+    });
+  }, [adRuntime?.comebackCampaign?.eligibleWindow, adRuntime?.comebackCampaign?.windows?.d2?.lastTriggeredAt, adRuntime?.comebackCampaign?.windows?.d5?.lastTriggeredAt, adRuntime?.comebackCampaign?.windows?.d10?.lastTriggeredAt]);
+
+  useEffect(() => {
+    const winners = normalizeOfferVariantWinners(adRuntime?.autoOfferWinners || {});
+    const signature = JSON.stringify(winners);
+    if (lastOfferWinnersSignatureRef.current === signature) return;
+
+    const previousWinners = lastOfferWinnersSignatureRef.current
+      ? normalizeOfferVariantWinners(JSON.parse(lastOfferWinnersSignatureRef.current))
+      : createDefaultAdRuntime().autoOfferWinners;
+
+    Object.keys(winners).forEach((variantKey) => {
+      const currentWinner = winners[variantKey];
+      const previousWinner = previousWinners?.[variantKey];
+      const winnerActivated = Boolean(
+        currentWinner?.active
+        && currentWinner?.variantName
+        && (!previousWinner?.active || previousWinner?.variantName !== currentWinner?.variantName),
+      );
+      const winnerExpired = Boolean(
+        previousWinner?.active
+        && previousWinner?.variantName
+        && (!currentWinner?.active || currentWinner?.variantName !== previousWinner?.variantName),
+      );
+
+      if (winnerActivated) {
+        trackAppEvent(APP_EVENT_NAMES.OFFER_WINNER_SELECTED, {
+          variant_key: variantKey,
+          winner_variant: String(currentWinner.variantName || ''),
+          confidence_start: Number(currentWinner.confidenceStart || 0),
+          confidence_current: Number(currentWinner.confidenceCurrent || 0),
+          cvr_delta_pct_points: Number(currentWinner.cvrDeltaPctPoints || 0),
+          relative_lift_pct: Number(currentWinner.relativeLiftPct || 0),
+          attempts: Number(currentWinner.attempts || 0),
+          baseline_attempts: Number(currentWinner.baselineAttempts || 0),
+          assigned_at: String(currentWinner.assignedAt || ''),
+        });
+      }
+
+      if (winnerExpired) {
+        trackAppEvent(APP_EVENT_NAMES.OFFER_WINNER_EXPIRED, {
+          variant_key: variantKey,
+          winner_variant: String(previousWinner.variantName || ''),
+          reason: String(currentWinner?.reason || 'confidence_decay'),
+          confidence_end: Number(currentWinner?.confidenceCurrent || 0),
+          expired_at: String(currentWinner?.expiredAt || new Date().toISOString()),
+        });
+      }
+    });
+
+    lastOfferWinnersSignatureRef.current = signature;
+  }, [adRuntime?.autoOfferWinners]);
+
+  useEffect(() => {
+    const cohorts = normalizeExperimentCohorts(adRuntime?.experimentCohorts || {});
+    const signature = JSON.stringify(cohorts);
+    if (lastExperimentCohortsSignatureRef.current === signature) return;
+
+    const revenueIntelligence = cohorts?.revenueIntelligence;
+    if (revenueIntelligence?.cohort) {
+      trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_COHORT_ASSIGNED, {
+        experiment: 'revenue_intelligence',
+        cohort: String(revenueIntelligence.cohort || ''),
+        bucket: Number(revenueIntelligence.bucket ?? -1),
+        holdout_pct: Number(revenueIntelligence.holdoutPct || REVENUE_INTELLIGENCE_HOLDOUT_PCT),
+        assigned_at: String(revenueIntelligence.assignedAt || ''),
+      });
+    }
+
+    lastExperimentCohortsSignatureRef.current = signature;
+  }, [adRuntime?.experimentCohorts]);
 
   useEffect(() => {
     const persistAdRuntime = async () => {
@@ -3217,6 +1859,80 @@ export default function App() {
 
     persistMasteryMap();
   }, [masteryMap]);
+
+  useEffect(() => {
+    const persistUserProfile = async () => {
+      try {
+        await AsyncStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
+      } catch (error) {
+        console.log('Failed to persist user profile:', error);
+      }
+    };
+
+    persistUserProfile();
+  }, [userProfile]);
+
+  useEffect(() => {
+    const persistSquadSync = async () => {
+      try {
+        await AsyncStorage.setItem(SQUAD_SYNC_STORAGE_KEY, JSON.stringify(squadSync));
+      } catch (error) {
+        console.log('Failed to persist squad sync:', error);
+      }
+    };
+
+    persistSquadSync();
+  }, [squadSync]);
+
+  useEffect(() => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (!teamId) return undefined;
+
+    let stopped = false;
+
+    const pullRemote = async () => {
+      try {
+        const remoteSnapshot = await fetchSquadSyncSnapshot(teamId);
+        if (stopped || !remoteSnapshot || typeof remoteSnapshot !== 'object') return;
+        setSquadSync((prev) => reconcileSquadSync(prev, remoteSnapshot));
+      } catch (error) {
+        console.log('Remote squad pull failed:', error);
+      }
+    };
+
+    pullRemote();
+    const intervalId = setInterval(pullRemote, 15000);
+
+    return () => {
+      stopped = true;
+      clearInterval(intervalId);
+    };
+  }, [squadSync?.teamId]);
+
+  useEffect(() => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (!teamId) return undefined;
+
+    const revision = Number(squadSync?.syncMeta?.revision || 0);
+    if (!revision || revision <= lastPushedRevisionRef.current) return undefined;
+
+    const payload = normalizeSquadSync(squadSync);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const result = await pushSquadSyncSnapshot(teamId, payload, {
+          revision,
+          writerDeviceId: payload.syncMeta?.lastWriterDeviceId || localDeviceIdRef.current,
+        });
+        if (result?.ok) {
+          lastPushedRevisionRef.current = revision;
+        }
+      } catch (error) {
+        console.log('Remote squad push failed:', error);
+      }
+    }, 900);
+
+    return () => clearTimeout(timeoutId);
+  }, [squadSync]);
 
   useEffect(() => {
     const todayKey = adRuntime.dayKey || new Date().toISOString().slice(0, 10);
@@ -3260,6 +1976,10 @@ export default function App() {
 
   const handleOnboardingComplete = (details) => {
     setTestDetails(withAutoStudyPlan(details));
+    setUserProfile((prev) => ({
+      ...prev,
+      name: prev.name || details?.name || '',
+    }));
     setOnboardingComplete(true);
   };
 
@@ -3353,12 +2073,250 @@ export default function App() {
     ]);
   };
 
-  const trackAdEvent = (eventName) => {
+  const updateUserProfile = (patch = {}) => {
+    if (!patch || typeof patch !== 'object') return;
+    setUserProfile((prev) => ({
+      ...prev,
+      ...patch,
+    }));
+  };
+
+  const createSquad = (teamNameInput = '') => {
+    const trimmedName = String(teamNameInput || '').trim();
+    const nextTeamName = trimmedName || squadSync.teamName || 'Civics Squad';
+    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const existingMembers = Array.isArray(squadSync.members) ? squadSync.members : [];
+    const nextMembers = existingMembers.some((member) => String(member.id) === 'self')
+      ? existingMembers.map((member) => (String(member.id) === 'self' ? { ...member, ...selfMember } : member))
+      : [selfMember, ...existingMembers];
+
+    const nextState = {
+      ...squadSync,
+      teamId: squadSync.teamId || `team-${Date.now()}`,
+      teamName: nextTeamName,
+      inviteCode: squadSync.inviteCode || buildInviteCode(),
+      householdBoard: squadSync.householdBoard || createDefaultSquadSync().householdBoard,
+      streakChain: squadSync.streakChain || createDefaultSquadSync().streakChain,
+      nudgeCooldownByMember: squadSync.nudgeCooldownByMember || {},
+      moderation: squadSync.moderation || createDefaultSquadSync().moderation,
+      season: squadSync.season || createDefaultSquadSync().season,
+      members: nextMembers,
+      updatedAt: new Date().toISOString(),
+    };
+
+    applySquadMutation(
+      () => nextState,
+      ['teamId', 'teamName', 'inviteCode', 'members'],
+    );
+    trackAppEvent(APP_EVENT_NAMES.TEAM_CREATED, {
+      team_name: nextTeamName,
+      member_count: nextMembers.length,
+    });
+    return nextState;
+  };
+
+  const refreshSquadInviteCode = () => {
+    const nextCode = buildInviteCode();
+    applySquadMutation((prev) => ({
+      ...prev,
+      teamId: prev.teamId || `team-${Date.now()}`,
+      teamName: prev.teamName || 'Civics Squad',
+      inviteCode: nextCode,
+    }), ['inviteCode']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_INVITE_CODE_REFRESHED, {
+      has_team: Boolean(squadSync.teamId),
+    });
+    return nextCode;
+  };
+
+  const updateSquadWeeklyGoal = (patch = {}) => {
+    if (!patch || typeof patch !== 'object') return;
+    applySquadMutation((prev) => ({
+      ...prev,
+      weeklyGoal: {
+        ...prev.weeklyGoal,
+        ...patch,
+      },
+    }), ['weeklyGoal']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_WEEKLY_GOAL_UPDATED, {
+      goal_quizzes: Number(patch.quizzes || squadSync.weeklyGoal?.quizzes || 0),
+      goal_focus_minutes: Number(patch.focusMinutes || squadSync.weeklyGoal?.focusMinutes || 0),
+    });
+  };
+
+  const updateSquadChallengeProgress = (progress = 0) => {
+    const safeProgress = Math.max(0, Number(progress) || 0);
+    applySquadMutation((prev) => ({
+      ...prev,
+      weeklyChallenge: {
+        ...prev.weeklyChallenge,
+        progress: safeProgress,
+      },
+    }), ['weeklyChallenge']);
+  };
+
+  const toggleHouseholdBoardItem = (itemId, completed) => {
+    const targetId = String(itemId || '').trim();
+    if (!targetId) return;
+
+    applySquadMutation((prev) => {
+      const board = prev.householdBoard || createDefaultSquadSync().householdBoard;
+      const items = Array.isArray(board.items) ? board.items : [];
+      const nextItems = items.map((item) => {
+        if (String(item.id) !== targetId) return item;
+        return {
+          ...item,
+          completed: Boolean(completed),
+          lastCompletedAt: completed ? new Date().toISOString() : null,
+        };
+      });
+
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const streak = prev.streakChain || createDefaultSquadSync().streakChain;
+      let nextStreak = { ...streak };
+
+      if (completed) {
+        const lastDay = streak.lastActivityDay;
+        if (lastDay === todayKey) {
+          nextStreak = { ...streak };
+        } else if (lastDay) {
+          const msPerDay = 24 * 60 * 60 * 1000;
+          const deltaDays = Math.floor((new Date(todayKey).getTime() - new Date(lastDay).getTime()) / msPerDay);
+          const continued = deltaDays === 1;
+          const currentDays = continued ? (streak.currentDays || 0) + 1 : 1;
+          nextStreak = {
+            currentDays,
+            bestDays: Math.max(streak.bestDays || 0, currentDays),
+            lastActivityDay: todayKey,
+          };
+        } else {
+          nextStreak = {
+            currentDays: 1,
+            bestDays: Math.max(streak.bestDays || 0, 1),
+            lastActivityDay: todayKey,
+          };
+        }
+      }
+
+      return {
+        ...prev,
+        householdBoard: {
+          ...board,
+          items: nextItems,
+        },
+        streakChain: nextStreak,
+      };
+    }, ['householdBoard', 'streakChain']);
+
+    if (completed) {
+      trackAppEvent(APP_EVENT_NAMES.STREAK_CHAIN_UPDATED, {
+        source: 'household_board',
+        item_id: targetId,
+      });
+    }
+  };
+
+  const recordParentChildNudge = (memberIds = []) => {
+    const safeIds = Array.from(new Set((Array.isArray(memberIds) ? memberIds : [])
+      .map((id) => String(id || '').trim())
+      .filter((id) => id && id !== 'self')));
+    if (!safeIds.length) return;
+
+    const nowIso = new Date().toISOString();
+    applySquadMutation((prev) => {
+      const current = prev.nudgeCooldownByMember && typeof prev.nudgeCooldownByMember === 'object'
+        ? prev.nudgeCooldownByMember
+        : {};
+      const nextMap = { ...current };
+      safeIds.forEach((id) => {
+        nextMap[id] = nowIso;
+      });
+      return {
+        ...prev,
+        nudgeCooldownByMember: nextMap,
+      };
+    }, ['nudgeCooldownByMember']);
+  };
+
+  const enforceModerationPolicy = async (params = {}) => {
+    const nowMs = Date.now();
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (teamId) {
+      const serverResult = await enforceServerModerationPolicy(teamId, {
+        ...params,
+        writerDeviceId: localDeviceIdRef.current,
+      });
+
+      if (serverResult?.payload) {
+        setSquadSync((prev) => reconcileSquadSync(prev, serverResult.payload));
+      }
+
+      if (serverResult?.decision) {
+        return serverResult.decision;
+      }
+    }
+
+    const baseline = normalizeSquadSync(squadSync);
+    const baseResult = evaluateModerationPolicy(baseline, params, nowMs);
+    applySquadMutation((prev) => {
+      const evaluated = evaluateModerationPolicy(prev, params, nowMs);
+      return {
+        ...prev,
+        moderation: evaluated.moderation,
+      };
+    }, ['moderation']);
+    return baseResult.decision;
+  };
+
+  const refreshSquadFromRemote = async () => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (!teamId) return { ok: false, reason: 'missing_team' };
+
+    const remoteSnapshot = await fetchSquadSyncSnapshot(teamId);
+    if (!remoteSnapshot || typeof remoteSnapshot !== 'object') {
+      return { ok: false, reason: 'no_remote_snapshot' };
+    }
+
+    setSquadSync((prev) => reconcileSquadSync(prev, remoteSnapshot));
+    return {
+      ok: true,
+      revision: Number(remoteSnapshot?.syncMeta?.revision || 0),
+    };
+  };
+
+  const runModerationAdminAction = async (action, options = {}) => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    if (!teamId) return { ok: false, reason: 'missing_team' };
+
+    const result = await runServerModerationAdminAction(teamId, action, {
+      ...options,
+      adminActorId: options?.adminActorId || 'self',
+    });
+
+    if (result?.payload) {
+      setSquadSync((prev) => reconcileSquadSync(prev, result.payload));
+    }
+
+    return result;
+  };
+
+  const trackAdEvent = (eventInput) => {
     setAdRuntime((prev) => {
+      const options = typeof eventInput === 'string' ? { eventName: eventInput } : (eventInput || {});
+      const eventName = options.eventName || '';
+      const experiments = Array.isArray(options.experiments)
+        ? options.experiments.filter((entry) => entry?.variantKey)
+        : options.variantKey
+          ? [{ variantKey: options.variantKey, variantName: options.variantName }]
+          : [];
+      const phase = options.phase || null;
       const todayKey = new Date().toISOString().slice(0, 10);
       const next = prev.dayKey === todayKey
         ? {
             ...prev,
+            offerVariantStats: {
+              ...(prev.offerVariantStats || {}),
+            },
             analytics: {
               ...prev.analytics,
             },
@@ -3369,30 +2327,71 @@ export default function App() {
             dailyCount: 0,
             resumeCount: 0,
             quizCompleteCount: 0,
+            quizCompleteOpportunityCount: 0,
             lastShownAt: 0,
             currentDayInterstitialShown: 0,
             currentDayRewardedCompleted: 0,
+            offerVariantStats: {
+              ...(prev.offerVariantStats || {}),
+            },
             analytics: {
               ...prev.analytics,
             },
           };
 
+      if (experiments.length > 0) {
+        experiments.forEach((experiment) => {
+          const variantKey = experiment.variantKey;
+          const variantName = experiment.variantName || getBalancedOfferVariant(variantKey, next);
+          const existingVariantGroup = next.offerVariantStats?.[variantKey] || {};
+          const existingVariantStats = existingVariantGroup[variantName] || { attempts: 0, completions: 0 };
+          next.offerVariantStats = {
+            ...next.offerVariantStats,
+            [variantKey]: {
+              ...existingVariantGroup,
+              [variantName]: {
+                attempts: existingVariantStats.attempts + (phase === 'attempt' ? 1 : 0),
+                completions: existingVariantStats.completions + (phase === 'complete' ? 1 : 0),
+              },
+            },
+          };
+        });
+      }
+
       switch (eventName) {
-        case 'rewarded_attempt':
+        case AD_EVENT_NAMES.REWARDED_ATTEMPT:
           next.analytics.rewardedAttempts += 1;
           break;
-        case 'rewarded_completed':
+        case AD_EVENT_NAMES.REWARDED_COMPLETED:
           next.analytics.rewardedCompleted += 1;
           next.currentDayRewardedCompleted += 1;
           break;
-        case 'rewarded_failed_or_closed':
+        case AD_EVENT_NAMES.REWARDED_FAILED_OR_CLOSED:
           next.analytics.rewardedFailedOrClosed += 1;
           break;
-        case 'rewarded_sprint_unlock':
+        case AD_EVENT_NAMES.REWARDED_HOME_SPRINT_ATTEMPT:
+          next.analytics.rewardedHomeSprintAttempts += 1;
+          break;
+        case AD_EVENT_NAMES.REWARDED_SPRINT_UNLOCK:
           next.analytics.rewardedSprintUnlocks += 1;
           break;
-        case 'rewarded_bonus_unlock':
+        case AD_EVENT_NAMES.REWARDED_REVIEW_BONUS_ATTEMPT:
+          next.analytics.rewardedReviewBonusAttempts += 1;
+          break;
+        case AD_EVENT_NAMES.REWARDED_BONUS_UNLOCK:
           next.analytics.rewardedBonusUnlocks += 1;
+          break;
+        case AD_EVENT_NAMES.REWARDED_REVIEW_WEAK_ATTEMPT:
+          next.analytics.rewardedReviewWeakAttempts += 1;
+          break;
+        case AD_EVENT_NAMES.REWARDED_REVIEW_WEAK_UNLOCK:
+          next.analytics.rewardedReviewWeakUnlocks += 1;
+          break;
+        case AD_EVENT_NAMES.WEAK_SCORE_UPSELL_ELIGIBLE:
+          next.analytics.weakScoreUpsellEligible += 1;
+          break;
+        case AD_EVENT_NAMES.WEAK_SCORE_UPSELL_SHOWN:
+          next.analytics.weakScoreUpsellShown += 1;
           break;
         default:
           break;
@@ -3402,9 +2401,72 @@ export default function App() {
     });
   };
 
+  const getOfferVariant = (variantKey) => {
+    if (!isRevenueIntelligenceTreatment()) {
+      return getBaselineOfferVariant(variantKey);
+    }
+
+    const pinnedVariantName = adRuntime.pinnedOfferVariants?.[variantKey];
+    if ((OFFER_VARIANT_OPTIONS[variantKey] || []).includes(pinnedVariantName)) {
+      return pinnedVariantName;
+    }
+
+    const autoWinnerVariantName = adRuntime?.autoOfferWinners?.[variantKey]?.active
+      ? adRuntime.autoOfferWinners[variantKey]?.variantName
+      : null;
+    if ((OFFER_VARIANT_OPTIONS[variantKey] || []).includes(autoWinnerVariantName)) {
+      return autoWinnerVariantName;
+    }
+
+    return getBalancedOfferVariant(variantKey, adRuntime);
+  };
+
+  const setPinnedOfferVariant = (variantKey, variantName = null) => {
+    const options = OFFER_VARIANT_OPTIONS[variantKey] || [];
+    const nextPinnedVariant = options.includes(variantName) ? variantName : null;
+
+    setAdRuntime((prev) => ({
+      ...prev,
+      pinnedOfferVariants: {
+        ...buildPinnedOfferVariants(prev.pinnedOfferVariants),
+        [variantKey]: nextPinnedVariant,
+      },
+    }));
+  };
+
+  const setRevenueCohortOverride = (nextCohort = null) => {
+    const normalized = String(nextCohort || '').trim().toLowerCase();
+    const override = normalized === 'holdout' || normalized === 'treatment' ? normalized : null;
+    setAdRuntime((prev) => {
+      const cohorts = normalizeExperimentCohorts(prev?.experimentCohorts || {});
+      return {
+        ...prev,
+        experimentCohorts: {
+          ...cohorts,
+          revenueIntelligence: {
+            ...cohorts.revenueIntelligence,
+            overrideCohort: override,
+          },
+        },
+      };
+    });
+  };
+
+  const resetOfferVariantStats = () => {
+    setAdRuntime((prev) => ({
+      ...prev,
+      pinnedOfferVariants: createDefaultAdRuntime().pinnedOfferVariants,
+      autoOfferWinners: createDefaultAdRuntime().autoOfferWinners,
+      offerVariantStats: {},
+    }));
+  };
+
   const resetAdAnalytics = () => {
     setAdRuntime((prev) => ({
       ...prev,
+      pinnedOfferVariants: createDefaultAdRuntime().pinnedOfferVariants,
+      autoOfferWinners: createDefaultAdRuntime().autoOfferWinners,
+      offerVariantStats: {},
       analytics: createDefaultAdRuntime().analytics,
     }));
   };
@@ -3412,6 +2474,12 @@ export default function App() {
   const unlockDailyFreePack = async () => {
     const now = Date.now();
     const todayKey = new Date().toISOString().slice(0, 10);
+    const activeSegment = getSelfIntentSegment();
+    const treatmentEnabled = isRevenueIntelligenceTreatment();
+    const effectiveSegment = treatmentEnabled ? activeSegment : 'warming';
+    const segmentPolicy = getOfferFrequencyPolicyForSegment(effectiveSegment);
+    const maxFreePackUnlocks = Math.max(1, Math.round(DAILY_FREE_PACK_LIMIT * segmentPolicy.rewardedDailyLimitMultiplier));
+    const freePackCooldownMs = Math.max(60 * 1000, Math.round(FREE_PACK_COOLDOWN_MS * segmentPolicy.rewardedCooldownMultiplier));
     const baseline = adRuntime.dayKey === todayKey
       ? { ...adRuntime }
       : {
@@ -3432,7 +2500,17 @@ export default function App() {
       baseline.freePackUnlocksToday = 0;
     }
 
-    if (baseline.freePackUnlocksToday >= DAILY_FREE_PACK_LIMIT) {
+    if (baseline.freePackUnlocksToday >= maxFreePackUnlocks) {
+      logOfferCapDecision({
+        channel: 'rewarded_free_pack',
+        trigger: 'daily_unlock',
+        decision: 'blocked',
+        reason: 'daily_limit',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs: freePackCooldownMs,
+        dailyLimit: maxFreePackUnlocks,
+      });
       setAdRuntime({
         ...baseline,
         analytics: {
@@ -3444,6 +2522,16 @@ export default function App() {
     }
 
     if (now < (baseline.freePackCooldownUntil || 0)) {
+      logOfferCapDecision({
+        channel: 'rewarded_free_pack',
+        trigger: 'daily_unlock',
+        decision: 'blocked',
+        reason: 'cooldown',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs: freePackCooldownMs,
+        dailyLimit: maxFreePackUnlocks,
+      });
       setAdRuntime({
         ...baseline,
         analytics: {
@@ -3470,11 +2558,22 @@ export default function App() {
     try {
       await showRewardedAd();
 
+      logOfferCapDecision({
+        channel: 'rewarded_free_pack',
+        trigger: 'daily_unlock',
+        decision: 'allowed',
+        reason: 'shown',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs: freePackCooldownMs,
+        dailyLimit: maxFreePackUnlocks,
+      });
+
       const next = {
         ...withAttempt,
         freePackDayKey: todayKey,
         freePackUnlocksToday: (withAttempt.freePackUnlocksToday || 0) + 1,
-        freePackCooldownUntil: now + FREE_PACK_COOLDOWN_MS,
+        freePackCooldownUntil: now + freePackCooldownMs,
         currentDayRewardedCompleted: (withAttempt.currentDayRewardedCompleted || 0) + 1,
         analytics: {
           ...withAttempt.analytics,
@@ -3490,9 +2589,19 @@ export default function App() {
         cooldownUntil: next.freePackCooldownUntil,
       };
     } catch (error) {
+      logOfferCapDecision({
+        channel: 'rewarded_free_pack',
+        trigger: 'daily_unlock',
+        decision: 'blocked',
+        reason: 'ad_failed',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs: freePackCooldownMs,
+        dailyLimit: maxFreePackUnlocks,
+      });
       setAdRuntime({
         ...withAttempt,
-        freePackCooldownUntil: now + 5 * 60 * 1000,
+        freePackCooldownUntil: now + Math.max(60 * 1000, Math.round((5 * 60 * 1000) * segmentPolicy.rewardedCooldownMultiplier)),
         analytics: {
           ...withAttempt.analytics,
           rewardedFailedOrClosed: (withAttempt.analytics?.rewardedFailedOrClosed || 0) + 1,
@@ -3503,9 +2612,83 @@ export default function App() {
     }
   };
 
+  const claimComebackReward = async () => {
+    if (!isRevenueIntelligenceTreatment()) {
+      return { ok: false, reason: 'holdout' };
+    }
+
+    const nowIso = new Date().toISOString();
+    const currentDayKey = getDayKey(new Date());
+    const campaign = normalizeComebackCampaign(adRuntime?.comebackCampaign || {});
+    const windowKey = String(campaign?.eligibleWindow || '').trim();
+    if (!windowKey || !campaign?.windows?.[windowKey]?.eligible) {
+      return { ok: false, reason: 'not_eligible' };
+    }
+
+    const window = campaign.windows[windowKey] || {};
+    const lastClaimDayKey = String(window?.lastClaimedAt || '').trim().slice(0, 10);
+    if (lastClaimDayKey === currentDayKey) {
+      return { ok: false, reason: 'already_claimed' };
+    }
+
+    const questionCount = Number(COMEBACK_REWARD_QUESTIONS[windowKey] || 8);
+    const nextCampaign = {
+      ...campaign,
+      eligibleWindow: null,
+      windows: {
+        ...campaign.windows,
+        [windowKey]: {
+          ...window,
+          eligible: false,
+          claimedCount: Number(window?.claimedCount || 0) + 1,
+          lastClaimedAt: nowIso,
+        },
+      },
+    };
+
+    setAdRuntime((prev) => {
+      const analytics = {
+        ...createDefaultAdRuntime().analytics,
+        ...(prev.analytics || {}),
+      };
+      if (windowKey === 'd2') analytics.comebackD2Claimed += 1;
+      if (windowKey === 'd5') analytics.comebackD5Claimed += 1;
+      if (windowKey === 'd10') analytics.comebackD10Claimed += 1;
+      return {
+        ...prev,
+        comebackCampaign: nextCampaign,
+        analytics,
+      };
+    });
+
+    trackAppEvent(APP_EVENT_NAMES.COMEBACK_REWARD_CLAIMED, {
+      window_key: windowKey,
+      day_offset: Number(window?.dayOffset || 0),
+      question_count: questionCount,
+      claimed_count: Number(window?.claimedCount || 0) + 1,
+    });
+
+    return {
+      ok: true,
+      windowKey,
+      questionCount,
+    };
+  };
+
   const maybeShowInterstitial = async (trigger = 'generic') => {
+    const options = typeof trigger === 'string' ? { trigger } : (trigger || {});
+    const triggerName = options.trigger || 'generic';
+    const sessionQuestionCount = Math.max(0, Number(options.sessionQuestionCount || 0));
+    const sessionScore = Math.max(0, Number(options.score || 0));
+    const sessionPercentage = sessionQuestionCount > 0
+      ? Math.round((sessionScore / sessionQuestionCount) * 100)
+      : 0;
     const now = Date.now();
     const todayKey = new Date().toISOString().slice(0, 10);
+    const activeSegment = getSelfIntentSegment();
+    const treatmentEnabled = isRevenueIntelligenceTreatment();
+    const effectiveSegment = treatmentEnabled ? activeSegment : 'warming';
+    const segmentPolicy = getOfferFrequencyPolicyForSegment(effectiveSegment);
     const baseline = adRuntime.dayKey === todayKey
       ? { ...adRuntime }
       : {
@@ -3514,6 +2697,7 @@ export default function App() {
           dailyCount: 0,
           resumeCount: 0,
           quizCompleteCount: 0,
+          quizCompleteOpportunityCount: 0,
           lastShownAt: 0,
           currentDayInterstitialShown: 0,
           currentDayRewardedCompleted: 0,
@@ -3521,10 +2705,11 @@ export default function App() {
           freePackUnlocksToday: 0,
         };
 
-    const cooldownMs = trigger === 'resume' ? 5 * 60 * 1000 : 2 * 60 * 1000;
-    const maxDailyAds = 8;
-    const maxResumeAds = 3;
-    const maxQuizCompleteAds = 4;
+    const baseCooldownMs = triggerName === 'resume' ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const cooldownMs = Math.max(60 * 1000, Math.round(baseCooldownMs * segmentPolicy.interstitialCooldownMultiplier));
+    const maxDailyAds = Math.max(3, Math.round(8 * segmentPolicy.interstitialDailyLimitMultiplier));
+    const maxResumeAds = Math.max(1, Math.round(3 * segmentPolicy.resumeLimitMultiplier));
+    const maxQuizCompleteAds = Math.max(1, Math.round(4 * segmentPolicy.quizCompleteLimitMultiplier));
 
     const withAttempt = {
       ...baseline,
@@ -3534,7 +2719,102 @@ export default function App() {
       },
     };
 
+    if (triggerName === 'quizComplete') {
+      const withEligibility = {
+        ...withAttempt,
+        analytics: {
+          ...withAttempt.analytics,
+          interstitialQuizCompleteEligible: (withAttempt.analytics?.interstitialQuizCompleteEligible || 0) + 1,
+        },
+      };
+
+      if (sessionQuestionCount > 0 && sessionQuestionCount < 8) {
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'blocked',
+          reason: 'short_session',
+          segment: effectiveSegment,
+          policy: segmentPolicy,
+          cooldownMs,
+          dailyLimit: maxDailyAds,
+          triggerLimit: maxQuizCompleteAds,
+        });
+        setAdRuntime({
+          ...withEligibility,
+          analytics: {
+            ...withEligibility.analytics,
+            interstitialQuizCompleteSkippedShortSession: (withEligibility.analytics?.interstitialQuizCompleteSkippedShortSession || 0) + 1,
+          },
+        });
+        return false;
+      }
+
+      if (sessionQuestionCount > 0 && sessionPercentage < 60) {
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'blocked',
+          reason: 'low_score',
+          segment: effectiveSegment,
+          policy: segmentPolicy,
+          cooldownMs,
+          dailyLimit: maxDailyAds,
+          triggerLimit: maxQuizCompleteAds,
+        });
+        setAdRuntime({
+          ...withEligibility,
+          analytics: {
+            ...withEligibility.analytics,
+            interstitialQuizCompleteSkippedLowScore: (withEligibility.analytics?.interstitialQuizCompleteSkippedLowScore || 0) + 1,
+          },
+        });
+        return false;
+      }
+
+      const nextOpportunityCount = (withEligibility.quizCompleteOpportunityCount || 0) + 1;
+      const cadenceEvery = 2;
+      if (nextOpportunityCount % cadenceEvery !== 0) {
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'blocked',
+          reason: 'cadence_skip',
+          segment: effectiveSegment,
+          policy: segmentPolicy,
+          cooldownMs,
+          dailyLimit: maxDailyAds,
+          triggerLimit: maxQuizCompleteAds,
+        });
+        setAdRuntime({
+          ...withEligibility,
+          quizCompleteOpportunityCount: nextOpportunityCount,
+          analytics: {
+            ...withEligibility.analytics,
+            interstitialQuizCompleteSkippedCadence: (withEligibility.analytics?.interstitialQuizCompleteSkippedCadence || 0) + 1,
+          },
+        });
+        return false;
+      }
+
+      withAttempt.quizCompleteOpportunityCount = nextOpportunityCount;
+      withAttempt.analytics = {
+        ...withEligibility.analytics,
+      };
+    }
+
     if (withAttempt.dailyCount >= maxDailyAds) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'daily_limit',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
       setAdRuntime({
         ...withAttempt,
         analytics: {
@@ -3546,6 +2826,17 @@ export default function App() {
     }
 
     if (now - (withAttempt.lastShownAt || 0) < cooldownMs) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'cooldown',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
       setAdRuntime({
         ...withAttempt,
         analytics: {
@@ -3556,7 +2847,18 @@ export default function App() {
       return false;
     }
 
-    if (trigger === 'resume' && withAttempt.resumeCount >= maxResumeAds) {
+    if (triggerName === 'resume' && withAttempt.resumeCount >= maxResumeAds) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'trigger_limit',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: maxResumeAds,
+      });
       setAdRuntime({
         ...withAttempt,
         analytics: {
@@ -3567,7 +2869,18 @@ export default function App() {
       return false;
     }
 
-    if (trigger === 'quizComplete' && withAttempt.quizCompleteCount >= maxQuizCompleteAds) {
+    if (triggerName === 'quizComplete' && withAttempt.quizCompleteCount >= maxQuizCompleteAds) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'trigger_limit',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: maxQuizCompleteAds,
+      });
       setAdRuntime({
         ...withAttempt,
         analytics: {
@@ -3581,29 +2894,52 @@ export default function App() {
     try {
       await showInterstitialAd();
 
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'allowed',
+        reason: 'shown',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
+
       setAdRuntime({
         ...withAttempt,
         dailyCount: withAttempt.dailyCount + 1,
-        resumeCount: trigger === 'resume' ? withAttempt.resumeCount + 1 : withAttempt.resumeCount,
-        quizCompleteCount: trigger === 'quizComplete' ? withAttempt.quizCompleteCount + 1 : withAttempt.quizCompleteCount,
+        resumeCount: triggerName === 'resume' ? withAttempt.resumeCount + 1 : withAttempt.resumeCount,
+        quizCompleteCount: triggerName === 'quizComplete' ? withAttempt.quizCompleteCount + 1 : withAttempt.quizCompleteCount,
         lastShownAt: now,
         currentDayInterstitialShown: (withAttempt.currentDayInterstitialShown || 0) + 1,
         analytics: {
           ...withAttempt.analytics,
           interstitialShown: (withAttempt.analytics?.interstitialShown || 0) + 1,
-          interstitialResumeShown: trigger === 'resume'
+          interstitialResumeShown: triggerName === 'resume'
             ? (withAttempt.analytics?.interstitialResumeShown || 0) + 1
             : (withAttempt.analytics?.interstitialResumeShown || 0),
-          interstitialQuizCompleteShown: trigger === 'quizComplete'
+          interstitialQuizCompleteShown: triggerName === 'quizComplete'
             ? (withAttempt.analytics?.interstitialQuizCompleteShown || 0) + 1
             : (withAttempt.analytics?.interstitialQuizCompleteShown || 0),
-          interstitialGenericShown: trigger !== 'resume' && trigger !== 'quizComplete'
+          interstitialGenericShown: triggerName !== 'resume' && triggerName !== 'quizComplete'
             ? (withAttempt.analytics?.interstitialGenericShown || 0) + 1
             : (withAttempt.analytics?.interstitialGenericShown || 0),
         },
       });
       return true;
     } catch (error) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'ad_failed',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
       setAdRuntime({
         ...withAttempt,
         analytics: {
@@ -3629,18 +2965,56 @@ export default function App() {
         maybeShowInterstitial,
         adRuntime,
         trackAdEvent,
+        trackAppEvent,
+        getOfferVariant,
+        setPinnedOfferVariant,
+        setRevenueCohortOverride,
+        resetOfferVariantStats,
         resetAdAnalytics,
         unlockDailyFreePack,
+        claimComebackReward,
         masteryMap,
         recordMasterySession,
         resetMasteryMap,
+        userProfile,
+        updateUserProfile,
+        squadSync,
+        createSquad,
+        refreshSquadInviteCode,
+        updateSquadWeeklyGoal,
+        updateSquadChallengeProgress,
+        toggleHouseholdBoardItem,
+        recordParentChildNudge,
+        enforceModerationPolicy,
+        refreshSquadFromRemote,
+        runModerationAdminAction,
       }}
     >
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          const initialRoute = navigationRef.current?.getCurrentRoute()?.name || 'unknown';
+          routeNameRef.current = initialRoute;
+          trackAppEvent(APP_EVENT_NAMES.SCREEN_VIEW, { screen_name: initialRoute });
+        }}
+        onStateChange={() => {
+          const previousRoute = routeNameRef.current;
+          const currentRoute = navigationRef.current?.getCurrentRoute()?.name || 'unknown';
+
+          if (previousRoute !== currentRoute) {
+            trackAppEvent(APP_EVENT_NAMES.SCREEN_VIEW, {
+              screen_name: currentRoute,
+              previous_screen: previousRoute || 'unknown',
+            });
+          }
+
+          routeNameRef.current = currentRoute;
+        }}
+      >
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            cardStyle: { backgroundColor: '#f9fafb' },
+            cardStyle: { backgroundColor: '#0A0A12' },
           }}
         >
           {!onboardingComplete ? (
@@ -3668,6 +3042,7 @@ export default function App() {
               <Stack.Screen name="MasteryMap" component={MasteryMapScreen} options={{ animationEnabled: true }} />
               <Stack.Screen name="Quiz" component={QuizScreen} />
               <Stack.Screen name="Review" component={ReviewScreen} />
+              <Stack.Screen name="Interview" component={InterviewScreen} options={{ animationEnabled: true }} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Family" component={FamilyScreen} />
               <Stack.Screen name="CaseProgress" component={CaseProgressScreen} />
@@ -3675,1893 +3050,8 @@ export default function App() {
           )}
         </Stack.Navigator>
       </NavigationContainer>
+      <StatusBar style="light" />
     </AppDataContext.Provider>
   );
 }
 
-// 🎨 STYLES - Modern, ADHD-Friendly
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 30,
-  },
-  scrollContent: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-
-  // Header Styles
-  headerBg: {
-    height: 260,
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(30, 30, 50, 0.6)',
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  levelBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backdropFilter: 'blur(10px)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  levelBadgeText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  levelBadgeLevel: {
-    color: '#7C3AED',
-    fontWeight: '700',
-    fontSize: 16,
-    marginTop: 2,
-  },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#fff',
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerContent: {
-    zIndex: 10,
-  },
-  welcomeTitle: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  welcomeSub: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
-  },
-
-  // CTA Button
-  ctaButton: {
-    flexDirection: 'row',
-    backgroundColor: '#10B981',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginTop: -24,
-    marginBottom: 24,
-    alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  ctaButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  ctaButtonSub: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  // Stats Grid
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: 16,
-    marginBottom: 24,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  statLabel: {
-    color: '#666',
-    fontSize: 12,
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginTop: 4,
-  },
-
-  // Cards
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  adaptiveCard: {
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
-    backgroundColor: '#FAFAF9',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
-    color: '#1f2937',
-  },
-  progressItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressLabel: {
-    color: '#666',
-    fontWeight: '500',
-  },
-  trendBadge: {
-    flexDirection: 'row',
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    alignItems: 'center',
-  },
-  trendText: {
-    color: '#10B981',
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  milestoneText: {
-    color: '#666',
-    fontSize: 13,
-    marginTop: 4,
-  },
-  confidenceText: {
-    color: '#999',
-    fontSize: 11,
-    marginTop: 12,
-    fontStyle: 'italic',
-  },
-
-  // Quick Actions
-  quickActionsSection: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  actionButtonText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginLeft: 12,
-  },
-
-  // Achievements
-  achievementsSection: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-  },
-  achievementGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  achievementBadge: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    width: '31%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  achievementEmoji: {
-    fontSize: 32,
-    marginBottom: 4,
-  },
-  achievementName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1f2937',
-    textAlign: 'center',
-  },
-
-  // Quiz
-  quizHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  quizTopActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  quizActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F0FF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  quizActionText: {
-    color: '#6D28D9',
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#7C3AED',
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  quizContent: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  quizContainer: {
-    padding: 16,
-    paddingBottom: 30,
-  },
-  questionText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-    lineHeight: 28,
-  },
-  hintBox: {
-    flexDirection: 'row',
-    backgroundColor: '#FEF3C7',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  hintText: {
-    color: '#92400E',
-    marginLeft: 10,
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  optionsContainer: {
-    gap: 10,
-  },
-  optionButton: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  optionSelected: {
-    borderColor: '#7C3AED',
-    backgroundColor: '#F3F0FF',
-  },
-  optionCorrect: {
-    borderColor: '#10B981',
-    backgroundColor: '#DCFCE7',
-  },
-  optionWrong: {
-    borderColor: '#EF4444',
-    backgroundColor: '#FEE2E2',
-  },
-  optionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#d1d5db',
-    marginRight: 10,
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  optionCorrectText: {
-    color: '#10B981',
-  },
-  optionWrongText: {
-    color: '#EF4444',
-  },
-  feedbackBox: {
-    marginTop: 20,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  feedbackCorrect: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#10B981',
-    marginTop: 8,
-  },
-  feedbackWrong: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 8,
-  },
-  feedbackAnswer: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginTop: 4,
-  },
-
-  // Review
-  reviewContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-  },
-  celebrationBox: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  celebrationEmoji: {
-    fontSize: 60,
-    marginBottom: 12,
-  },
-  scoreTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  scoreValue: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#7C3AED',
-    marginVertical: 8,
-  },
-  scorePercent: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#10B981',
-    marginBottom: 12,
-  },
-  praises: {
-    fontSize: 16,
-    color: '#666',
-    fontStyle: 'italic',
-    marginTop: 12,
-  },
-  weakCard: {
-    marginHorizontal: 0,
-    marginBottom: 20,
-  },
-  weakItem: {
-    marginBottom: 14,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  weakTopic: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 6,
-  },
-  weakBar: {
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  weakBarFill: {
-    height: '100%',
-    backgroundColor: '#EF4444',
-  },
-  weakPercent: {
-    fontSize: 12,
-    color: '#999',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  buttonPrimary: {
-    backgroundColor: '#7C3AED',
-  },
-  buttonSecondary: {
-    backgroundColor: '#f3f4f6',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-
-  // Page
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-  },
-
-  // Mode Card
-  modeCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  modeIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modeIconText: {
-    fontSize: 28,
-  },
-  modeContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  modeTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  modeDesc: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  modeFilterCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  modeFilterTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  modeFilterHint: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  modeFilterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4b5563',
-    marginBottom: 6,
-  },
-  modeFilterSummary: {
-    marginTop: 12,
-    fontSize: 13,
-    color: '#065f46',
-    fontWeight: '600',
-  },
-  modeStartButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#7C3AED',
-  },
-  modeStartButtonText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // Case Progress
-  caseCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  caseHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  caseTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  casePct: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2563EB',
-  },
-  caseSubtext: {
-    marginTop: 8,
-    color: '#6B7280',
-    fontSize: 13,
-  },
-  caseProgressTrack: {
-    marginTop: 12,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-    overflow: 'hidden',
-  },
-  caseProgressFill: {
-    height: '100%',
-    backgroundColor: '#2563EB',
-  },
-  casePortalButton: {
-    marginTop: 12,
-    backgroundColor: '#111827',
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  casePortalButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    marginLeft: 8,
-  },
-  caseLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 6,
-  },
-  caseActionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-  },
-  caseSaveButton: {
-    flex: 1,
-    borderRadius: 10,
-    backgroundColor: '#7C3AED',
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  caseSaveButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    marginLeft: 8,
-  },
-  caseResetButton: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  caseResetButtonText: {
-    color: '#7C3AED',
-    fontWeight: '700',
-    marginLeft: 6,
-  },
-  caseTimelineItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  caseTimelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 6,
-    marginRight: 10,
-    backgroundColor: '#2563EB',
-  },
-  caseTimelineStage: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  caseTimelineStatus: {
-    fontSize: 13,
-    color: '#374151',
-    marginTop: 2,
-  },
-  caseTimelineDate: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  caseChecklistItem: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  caseChecklistText: {
-    marginLeft: 8,
-    color: '#374151',
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 18,
-  },
-  caseSecondaryButton: {
-    marginTop: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#F9FAFB',
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  caseSecondaryButtonText: {
-    marginLeft: 8,
-    color: '#1F2937',
-    fontWeight: '700',
-  },
-
-  // Mastery Map
-  masteryOverviewCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  masteryOverviewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  masteryMetric: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-  },
-  masteryMetricValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  masteryMetricLabel: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  masteryUpdatedText: {
-    marginTop: 10,
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  masteryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  masteryCardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  masteryEmptyText: {
-    color: '#6B7280',
-    fontSize: 13,
-  },
-  masteryTopicRow: {
-    marginTop: 10,
-  },
-  masteryDueRow: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-    backgroundColor: '#F8FBFF',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  masteryDueTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E3A8A',
-  },
-  masteryDueMeta: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#1E40AF',
-  },
-  masteryActionButton: {
-    backgroundColor: '#0EA5E9',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  masteryActionButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  masteryRecommendationRow: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  masteryRecommendationMeta: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#4B5563',
-  },
-  masteryTopicHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  masteryTopicTitle: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginRight: 10,
-  },
-  masteryTopicMeta: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  masteryBarTrack: {
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-    overflow: 'hidden',
-  },
-  masteryBarFill: {
-    height: '100%',
-    backgroundColor: '#0EA5E9',
-  },
-  masteryHeatItem: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  masteryHeatTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  masteryHeatMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  masteryHeatmapWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  masteryHeatTile: {
-    width: '31%',
-    minWidth: 95,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  masteryHeatTilePct: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  masteryHeatTileName: {
-    marginTop: 4,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  masteryTrendRow: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 12,
-  },
-  masteryTrendHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-  },
-  masteryTrendBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  masteryTrendBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  masteryTrendMeta: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#4B5563',
-  },
-  masteryTrendBars: {
-    marginTop: 8,
-    gap: 8,
-  },
-  masteryTrendBarBlock: {
-    gap: 4,
-  },
-  masteryTrendBarLabel: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  masteryResetButton: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    marginBottom: 18,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  masteryResetButtonText: {
-    marginLeft: 8,
-    fontWeight: '700',
-    color: '#7C3AED',
-  },
-
-  // Profile
-  profileCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  profileAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#7C3AED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileAvatarText: {
-    fontSize: 36,
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 20,
-  },
-  profileStats: {
-    flexDirection: 'row',
-    gap: 30,
-    marginBottom: 20,
-  },
-  profileStat: {
-    alignItems: 'center',
-  },
-  profileStatValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#7C3AED',
-  },
-  profileStatLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-  },
-  editButton: {
-    flexDirection: 'row',
-    backgroundColor: '#7C3AED',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-
-  // Family
-  familyCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  familyCardLeader: {
-    backgroundColor: '#FFFBEB',
-    borderWidth: 2,
-    borderColor: '#FFB84D',
-  },
-  familyRank: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFB84D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  familyRankText: {
-    fontWeight: 'bold',
-    color: '#fff',
-    fontSize: 14,
-  },
-  familyAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#7C3AED',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  familyAvatarText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  familyInfo: {
-    flex: 1,
-  },
-  familyName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  familyStats: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  familyPoints: {
-    alignItems: 'center',
-  },
-  familyPointsValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#7C3AED',
-  },
-  familyPointsLabel: {
-    fontSize: 10,
-    color: '#999',
-  },
-
-  // Tab Bar
-  tabBar: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 8,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-  },
-
-  // Onboarding Styles
-  onboardingProgress: {
-    marginBottom: 32,
-  },
-  onboardingProgressText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#7C3AED',
-  },
-  onboardingStep: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  onboardingIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  onboardingTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  onboardingSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  textInput: {
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#1f2937',
-    backgroundColor: '#fff',
-  },
-  pickerContainer: {
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 50,
-    color: '#1f2937',
-  },
-  dateButton: {
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#1f2937',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 20,
-  },
-  modalCloseButton: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#7C3AED',
-    borderRadius: 8,
-  },
-  modalCloseText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  inputHint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 6,
-  },
-  onboardingOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    width: '100%',
-  },
-  onboardingOptionSelected: {
-    borderColor: '#7C3AED',
-    backgroundColor: '#f3f0ff',
-  },
-  optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  optionIconText: {
-    fontSize: 28,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  optionDesc: {
-    fontSize: 13,
-    color: '#999',
-  },
-  studyPlanPreview: {
-    backgroundColor: '#f3f0ff',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 20,
-    width: '100%',
-  },
-  studyPlanTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#7C3AED',
-    marginBottom: 8,
-  },
-  studyPlanText: {
-    fontSize: 14,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  studyPlanSmall: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 8,
-  },
-  onboardingActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-  },
-
-  // Test Details Styles
-  testDetailsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: '#7C3AED',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  studyPlanCard: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
-  },
-  studyPlanHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  studyPlanCardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#065F46',
-    marginLeft: 6,
-  },
-  studyPlanCardLine: {
-    fontSize: 14,
-    color: '#065F46',
-    marginBottom: 2,
-  },
-  studyPlanCardHint: {
-    fontSize: 12,
-    color: '#047857',
-    marginTop: 6,
-  },
-  resumeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D1FAE5',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
-  },
-  resumeButtonTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#065F46',
-  },
-  resumeButtonSubtitle: {
-    fontSize: 12,
-    color: '#047857',
-    marginTop: 2,
-  },
-  rewardedHomeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#7C3AED',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    shadowColor: '#7C3AED',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  rewardedHomeButtonDisabled: {
-    opacity: 0.65,
-  },
-  rewardedHomeTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  rewardedHomeSubtitle: {
-    fontSize: 12,
-    color: '#DDD6FE',
-    marginTop: 2,
-  },
-  countdownBadge: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EDE9FE',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  countdownBadgeText: {
-    marginLeft: 4,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4C1D95',
-  },
-  adminCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  adminCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  analyticsLine: {
-    fontSize: 13,
-    color: '#374151',
-    marginBottom: 4,
-  },
-  revenueSummaryBox: {
-    marginTop: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  revenueLine: {
-    fontSize: 13,
-    color: '#1F2937',
-    marginTop: 2,
-  },
-  trendChartRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  trendBarColumn: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  trendValueLabel: {
-    fontSize: 10,
-    color: '#4B5563',
-    marginBottom: 4,
-  },
-  trendBarTrack: {
-    width: 18,
-    height: 96,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  trendBarFill: {
-    width: '100%',
-    backgroundColor: '#7C3AED',
-    borderRadius: 999,
-  },
-  trendBarLabel: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginTop: 6,
-  },
-  revenueBandLine: {
-    fontSize: 12,
-    color: '#374151',
-    marginTop: 6,
-    lineHeight: 18,
-  },
-  monthlyToggleButton: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#F3F0FF',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  monthlyToggleText: {
-    marginLeft: 4,
-    color: '#6D28D9',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  revenueTotal: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#065F46',
-    marginTop: 8,
-  },
-  revenueHint: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 6,
-  },
-  testDetailsContent: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 16,
-  },
-  testDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  testDetailLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-    flex: 1,
-  },
-  testDetailValue: {
-    fontSize: 14,
-    color: '#1f2937',
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 12,
-  },
-  screenHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  spacer: {
-    width: 24,
-  },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-
-  // Rewarded Ads Styles
-  rewardedAdButton: {
-    flexDirection: 'row',
-    backgroundColor: '#7C3AED',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 12,
-    shadowColor: '#7C3AED',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  rewardedAdText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  explanationBox: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: '#F3F0FF',
-    borderRadius: 12,
-    width: '100%',
-  },
-  explanationTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#7C3AED',
-    marginBottom: 8,
-  },
-  explanationText: {
-    fontSize: 14,
-    color: '#1f2937',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  bonusCard: {
-    marginHorizontal: 0,
-    marginBottom: 20,
-    backgroundColor: '#FFFBEB',
-    borderLeftColor: '#FFB84D',
-    borderLeftWidth: 4,
-  },
-  bonusText: {
-    fontSize: 14,
-    color: '#92400E',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-
-  // ✨ ADHD-FRIENDLY QUIZ STYLES (Larger, Slower, Clearer)
-  questionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#7C3AED',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  questionImage: {
-    width: '100%',
-    height: 180,
-  },
-  multiAnswerHint: {
-    marginTop: 10,
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 18,
-  },
-
-  // 🔘 ADHD-Friendly: Large 4-Answer Buttons
-  adhd_optionButton: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 14,
-    alignItems: 'center',
-    borderWidth: 2.5,
-    borderColor: '#E5E7EB',
-    minHeight: 70,
-  },
-  adhd_optionSelected: {
-    borderColor: '#7C3AED',
-    backgroundColor: '#F3F0FF',
-  },
-  adhd_optionCorrect: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#10B981',
-  },
-  adhd_optionWrong: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#EF4444',
-  },
-
-  // Option visual indicators
-  optionDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#D1D5DB',
-    marginRight: 14,
-    flexShrink: 0,
-  },
-  dotCorrect: {
-    backgroundColor: '#10B981',
-  },
-  dotWrong: {
-    backgroundColor: '#EF4444',
-  },
-
-  // ADHD-Friendly text
-  adhd_optionText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    fontWeight: '500',
-    lineHeight: 22,
-  },
-  adhd_textCorrect: {
-    color: '#10B981',
-    fontWeight: '600',
-  },
-  adhd_textWrong: {
-    color: '#EF4444',
-    fontWeight: '600',
-  },
-
-  // 💬 Feedback Box (Slow Paced - User Controls Next)
-  adhd_feedbackBox: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    borderTopWidth: 4,
-    borderTopColor: '#7C3AED',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 18,
-  },
-  feedbackEmoji: {
-    fontSize: 40,
-    marginRight: 12,
-  },
-  feedbackMessage: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 26,
-  },
-  feedbackSuccess: {
-    color: '#10B981',
-  },
-  feedbackInfo: {
-    color: '#6366F1',
-  },
-
-  // ✅ Official Correct Answer - Always visible
-  correctAnswerBox: {
-    backgroundColor: '#ECFDF5',
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  correctAnswerLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#059669',
-    marginBottom: 8,
-  },
-  correctAnswerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#10B981',
-    lineHeight: 22,
-  },
-
-  // 💡 Explanation Button (reveal on demand)
-  adhd_explanationButton: {
-    flexDirection: 'row',
-    backgroundColor: '#FEF3C7',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: '#FBBF24',
-  },
-  adhd_explanationButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 8,
-  },
-
-  // 📖 Visual Explanation Content
-  adhd_explanationBox: {
-    backgroundColor: '#000',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  visualImage: {
-    width: '100%',
-    height: 220,
-  },
-  adhd_explanationTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#6D28D9',
-    marginBottom: 10,
-  },
-  adhd_explanationText: {
-    fontSize: 15,
-    color: '#1F2937',
-    lineHeight: 24,
-    marginBottom: 12,
-  },
-
-  // Alternate answers
-  alternateAnswersBox: {
-    backgroundColor: '#EDE9FE',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-  },
-  alternateAnswersLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5B21B6',
-    marginBottom: 8,
-  },
-  alternateAnswerItem: {
-    fontSize: 14,
-    color: '#1F2937',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-
-  // Continue Button (User paces)
-  adhd_continueButton: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    shadowColor: '#7C3AED',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  adhd_continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // Helper text for ADHD
-  helperTextBox: {
-    flexDirection: 'row',
-    backgroundColor: '#F0F4FF',
-    borderRadius: 10,
-    padding: 12,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  helperText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#4B5563',
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-});

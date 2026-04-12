@@ -1,10 +1,9 @@
-// Google AdMob Integration (FREE - 100% approved by Apple & Google)
-// No backend costs, purely ad-based monetization
-// Already installed: expo-ads-admob
+// Temporary ad service compatibility shim.
+// expo-ads-admob is not compatible with the current Android Gradle toolchain,
+// so ads are disabled here until migration to a supported ads SDK.
 
-import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import { BannerAd, BannerAdSize, InterstitialAd, AdEventType, RewardedAd, RewardedAdEventType } from 'expo-ads-admob';
+import React from 'react';
+import { View, Text, Platform } from 'react-native';
 
 // ============ AD UNIT IDs (REPLACE WITH YOURS FROM AdMob) ============
 // https://admob.google.com -> Get your Ad Unit IDs
@@ -39,62 +38,33 @@ export const HomeBannerAd = () => {
     }
 
     return (
-        <BannerAd
-            unitId={TEST_AD_UNIT_IDS.BANNER}
-            size={BannerAdSize.FULL_BANNER}
-            onAdFailedToLoad={(error) => console.log('Ad failed to load:', error)}
-            onAdLoaded={() => console.log('Ad loaded')}
-        />
+        <View
+            style={{
+                width: '100%',
+                minHeight: 56,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: '#E5E7EB',
+                backgroundColor: '#F9FAFB',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 8,
+            }}
+        >
+            <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600' }}>Ads temporarily disabled in this build</Text>
+        </View>
     );
 };
 
 // ============ INTERSTITIAL ADS (Shows between sessions) ============
 export const showInterstitialAd = async () => {
-    try {
-        const interstitial = InterstitialAd.createForAdRequest(TEST_AD_UNIT_IDS.INTERSTITIAL);
-
-        await new Promise((resolve, reject) => {
-            const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-                resolve();
-            });
-
-            const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-                unsubscribeLoaded();
-                unsubscribeClosed();
-            });
-
-            interstitial.load();
-        });
-
-        await interstitial.show();
-    } catch (error) {
-        console.log('Interstitial ad error:', error);
-    }
+    return false;
 };
 
 // ============ REWARDED ADS (Premium content unlock) ============
 export const showRewardedAd = async () => {
-    return new Promise((resolve, reject) => {
-        const rewarded = RewardedAd.createForAdRequest(TEST_AD_UNIT_IDS.REWARDED);
-
-        const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
-            rewarded.show();
-        });
-
-        const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
-            console.log('User earned reward:', reward);
-            resolve(reward);
-        });
-
-        const unsubscribeClosed = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
-            unsubscribeLoaded();
-            unsubscribeEarned();
-            unsubscribeClosed();
-            reject(new Error('User closed the ad'));
-        });
-
-        rewarded.load();
-    });
+    // Keep API shape for existing flows that expect a reward object.
+    return { type: 'stub', amount: 1 };
 };
 
 // ============ AD SCHEDULING ============

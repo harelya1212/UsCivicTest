@@ -2,6 +2,8 @@
 // Official 2026 USCIS 128 Civics Test Questions and Answers
 // Source: https://www.uscis.gov/citizenship/civics-test-study-materials
 // Enriched with imageUrl + topic + subTopic from civics-questions-2026-02-06.csv
+// Enriched with imageUrl + topic + subTopic from civics-questions-2026-02-06.csv
+// Enriched with imageUrl + topic + subTopic from civics-questions-2026-02-06.csv
 
 // Define all 128 official USCIS civics questions
 const civicsQuestions = [
@@ -15,6 +17,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/06371a259_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -31,6 +34,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3539a33f4_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -47,6 +51,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fc4df5b1e_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -63,6 +68,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2f69e1103_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -79,6 +85,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d266c1597_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -95,6 +102,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e7616352e_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -111,6 +119,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c9ab1e478_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -127,6 +136,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/76c83485e_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -143,6 +153,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/78cbe68a8_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -159,6 +170,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/071de79f6_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -175,6 +187,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/583c3bfe5_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -191,6 +204,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/13ab54737_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -207,6 +221,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/46da765cb_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -223,6 +238,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cccff0f1a_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -239,6 +255,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/02779272f_generated_image.png',
     topic: 'American Government',
     subTopic: 'Principles',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -255,6 +272,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3bdb913e8_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -271,6 +289,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/918b9b626_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -287,6 +306,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2152345ac_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -303,6 +323,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/89a984b4c_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -319,6 +340,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/aa36f134c_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -335,6 +357,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ec64bc34e_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -351,6 +374,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3b4bb7c0a_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -367,6 +391,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3ab8143ce_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -383,6 +408,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/31ea25bdd_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -399,6 +425,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a95fcb55a_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -415,6 +442,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ea535200f_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -431,6 +459,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f1e9671bd_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -447,6 +476,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/54f12b836_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -463,6 +493,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -479,6 +510,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -495,6 +527,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/6e68c3c54_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -511,6 +544,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d9334ffa7_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -527,6 +561,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/af5305ba1_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -543,6 +578,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a1ce7d722_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -559,6 +595,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/89bcb57da_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -575,6 +612,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fa2e02e79_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -591,6 +629,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/60b8be23a_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -607,6 +646,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -623,6 +663,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -639,6 +680,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a44655572_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -655,6 +697,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e91b60641_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -671,6 +714,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cc8d66ebf_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -687,6 +731,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/96ca0623b_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -703,6 +748,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cb514a06b_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -719,6 +765,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e691f1bc8_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -735,6 +782,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -751,6 +799,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -767,6 +816,7 @@ const civicsQuestions = [
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -783,6 +833,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f23c4514f_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -799,6 +850,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b3607fe0d_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -815,6 +867,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cd63a7409_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -831,6 +884,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a70435959_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -847,6 +901,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7614f6e85_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -863,6 +918,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/660b55b17_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -879,6 +935,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cfb757194_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -895,6 +952,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/481a8d759_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -911,6 +969,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/55b0f7081_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -927,6 +986,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/55ef20f94_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -943,6 +1003,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7f9f1b4fc_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -959,6 +1020,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0c16b214c_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -975,6 +1037,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0dc029767_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -991,6 +1054,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/dbd112b34_generated_image.png',
     topic: 'American Government',
     subTopic: 'System of Government',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1007,6 +1071,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a71ac4057_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1023,6 +1088,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/52a3f5ecc_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1039,6 +1105,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/edcde16f2_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1055,6 +1122,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/df3c7030c_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1071,6 +1139,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b12ac54b7_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1087,6 +1156,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/736cac0a1_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1103,6 +1173,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f17d63992_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1119,6 +1190,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c062db4f3_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1135,6 +1207,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b3a87cd02_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1151,6 +1224,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e47f4b9d2_generated_image.png',
     topic: 'American Government',
     subTopic: 'Rights & Responsibilities',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1167,6 +1241,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/082a762f3_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1183,6 +1258,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/60188b457_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1199,6 +1275,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/baef65074_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1215,6 +1292,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d79b60ac4_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1231,6 +1309,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d1965d839_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1247,6 +1326,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/299b2dd19_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1263,6 +1343,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/8320a5e82_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1279,6 +1360,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/611c50e3e_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1295,6 +1377,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/9e9ad75bd_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1311,6 +1394,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/08ef20c7b_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1327,6 +1411,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/44bfa55b1_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1343,6 +1428,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/f76d6513c_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1359,6 +1445,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/41549ba13_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1375,6 +1462,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/fa0865957_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1391,6 +1479,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a079a54ce_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1407,6 +1496,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/12f60e0da_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1423,6 +1513,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e397dd41e_generated_image.png',
     topic: 'American History',
     subTopic: 'Colonial & Independence',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1439,6 +1530,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/375331634_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1455,6 +1547,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/aefe4d251_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1471,6 +1564,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4668ff7e3_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1487,6 +1581,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ea9daf299_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1503,6 +1598,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/306f4d5df_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1519,6 +1615,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/51cbe1069_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1535,6 +1632,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4d4cd71f3_generated_image.png',
     topic: 'American History',
     subTopic: '1800s',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1551,6 +1649,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/17a1ce7bd_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1567,6 +1666,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/42efd2952_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1583,6 +1683,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/e8b08c3a4_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1599,6 +1700,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cb17c96a4_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1615,6 +1717,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/469445221_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1631,6 +1734,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ec1d03742_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1647,6 +1751,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/2158d3381_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1663,6 +1768,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/29655bbd5_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1679,6 +1785,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/628cc59b6_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1695,6 +1802,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/037beb25c_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1711,6 +1819,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/063de1298_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1727,6 +1836,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/d31e2a847_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1743,6 +1853,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/9ccdc5c2a_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1759,6 +1870,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/cbb8b6b13_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1775,6 +1887,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/b35ccd4fa_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1791,6 +1904,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/ad72319e3_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1807,6 +1921,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/7454c7bd0_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1823,6 +1938,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/31f97ab57_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1839,6 +1955,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/a51eb401f_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1855,6 +1972,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4a221a8d2_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1871,6 +1989,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/35c588127_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1887,6 +2006,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/8eec11482_generated_image.png',
     topic: 'American History',
     subTopic: 'Recent History & Other',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1903,6 +2023,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0ba70739f_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1919,6 +2040,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/3fff15221_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1935,6 +2057,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/1c3341ef3_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1951,6 +2074,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0596d86ce_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1967,6 +2091,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/0fc936436_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1983,6 +2108,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/c6847f974_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Symbols',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -1999,6 +2125,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/6ad95a5d5_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Holidays',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -2015,6 +2142,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4c8398397_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Holidays',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -2031,6 +2159,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/5253c2b7e_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Holidays',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],
@@ -2047,6 +2176,7 @@ const civicsQuestions = [
     imageUrl: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/77d0b5de4_generated_image.png',
     topic: 'Symbols & Holidays',
     subTopic: 'Holidays',
+    whyThisAnswer: null,
     wrongAnswers: {
       easy: [],
       medium: [],

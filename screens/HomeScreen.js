@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   SafeAreaView,
@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
@@ -25,9 +26,11 @@ import {
 } from '../adMobService';
 
 function HomeScreen({ navigation }) {
-  const { testDetails, pausedSession, clearPausedSession, maybeShowInterstitial, trackAdEvent, trackAppEvent, adRuntime, unlockDailyFreePack, getOfferVariant } = useContext(AppDataContext);
+  const { testDetails, pausedSession, clearPausedSession, maybeShowInterstitial, trackAdEvent, trackAppEvent, adRuntime, unlockDailyFreePack, claimComebackReward, getOfferVariant } = useContext(AppDataContext);
   const studyPlan = testDetails?.studyPlan;
   const [nowTick, setNowTick] = useState(Date.now());
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const homeScrollRef = useRef(null);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 30000);
@@ -47,6 +50,23 @@ function HomeScreen({ navigation }) {
   const rewardedConversionRate = analytics.rewardedAttempts
     ? Math.round(((analytics.rewardedCompleted || 0) / analytics.rewardedAttempts) * 100)
     : 0;
+  const comebackCampaign = adRuntime?.comebackCampaign || {};
+  const revenueExperiment = adRuntime?.experimentCohorts?.revenueIntelligence || {};
+  const _revenueOverride = String(revenueExperiment?.overrideCohort || '').trim().toLowerCase();
+  const revenueCohort = (_revenueOverride === 'treatment' || _revenueOverride === 'holdout')
+    ? _revenueOverride
+    : String(revenueExperiment?.cohort || 'treatment');
+  const revenueTreatmentEnabled = revenueCohort !== 'holdout';
+  const comebackEligibleWindow = String(comebackCampaign?.eligibleWindow || '').trim();
+  const comebackWindow = comebackEligibleWindow ? comebackCampaign?.windows?.[comebackEligibleWindow] : null;
+  const comebackLastClaimedDayKey = String(comebackWindow?.lastClaimedAt || '').trim().slice(0, 10);
+  const comebackClaimedToday = Boolean(comebackEligibleWindow) && comebackLastClaimedDayKey === todayKey;
+  const comebackRewardLabelMap = {
+    d2: '8-question reset pack',
+    d5: '12-question momentum pack',
+    d10: '18-question comeback pack',
+  };
+  const comebackRewardLabel = comebackRewardLabelMap[comebackEligibleWindow] || 'bonus pack';
   const homeSprintVariant = getOfferVariant('homeSprintOffer');
   const homeSprintRewardVariant = getOfferVariant('homeSprintReward');
   const sprintRewardDelta = homeSprintRewardVariant === 'extended' ? 15 : 10;
@@ -142,6 +162,34 @@ function HomeScreen({ navigation }) {
     }
   };
 
+  const handleClaimComebackReward = async () => {
+    const result = await claimComebackReward();
+
+    if (!result?.ok) {
+      if (result?.reason === 'holdout') {
+        Alert.alert('Baseline Cohort', 'Comeback rewards are disabled for the holdout cohort during lift measurement.');
+        return;
+      }
+
+      if (result?.reason === 'already_claimed') {
+        Alert.alert('Already Claimed', 'You already claimed today\'s comeback reward.');
+        return;
+      }
+
+      Alert.alert('Not Eligible', 'No comeback reward window is active right now.');
+      return;
+    }
+
+    Alert.alert('Comeback Reward Claimed', `Unlocked ${result.questionCount} bonus questions from ${String(result.windowKey || '').toUpperCase()}.`);
+    clearPausedSession();
+    navigation.navigate('Quiz', {
+      type: testDetails?.testType || 'naturalization128',
+      forceQuestionCount: result.questionCount,
+      focusMode: 'minimal',
+      comebackWindow: result.windowKey,
+    });
+  };
+
   const startFocusPreset = ({ count, label, focusMode = null }) => {
     clearPausedSession();
     navigation.navigate('Quiz', {
@@ -203,7 +251,21 @@ function HomeScreen({ navigation }) {
         </View>
       </ImageBackground>
 
-      <ScrollView style={styles.scrollContent} contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView
+        ref={homeScrollRef}
+        style={styles.scrollContent}
+        contentContainerStyle={styles.homeScrollContent}
+        nestedScrollEnabled
+        scrollEnabled
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+        onScroll={(event) => {
+          const y = event?.nativeEvent?.contentOffset?.y || 0;
+          if (y > 420 && !showScrollTop) setShowScrollTop(true);
+          if (y <= 420 && showScrollTop) setShowScrollTop(false);
+        }}
+        scrollEventThrottle={16}
+      >
         {/* Test Details Card */}
         {testDetails && (
           <TouchableOpacity
@@ -228,14 +290,14 @@ function HomeScreen({ navigation }) {
                 <Text style={styles.testDetailsValue}>📅 {testDetails.testDate}</Text>
               </View>
             </View>
-            <MaterialCommunityIcons name="pencil" size={20} color="#7C3AED" />
+            <MaterialCommunityIcons name="pencil" size={20} color="#A78BFA" />
           </TouchableOpacity>
         )}
 
         {studyPlan && (
           <View style={styles.studyPlanCard}>
             <View style={styles.studyPlanHeaderRow}>
-              <MaterialCommunityIcons name="calendar-check" size={20} color="#065F46" />
+              <MaterialCommunityIcons name="calendar-check" size={20} color="#34D399" />
               <Text style={styles.studyPlanCardTitle}>Auto Study Plan</Text>
             </View>
             <Text style={styles.studyPlanCardLine}>Days left: {studyPlan.daysUntilTest}</Text>
@@ -277,24 +339,29 @@ function HomeScreen({ navigation }) {
 
         {/* Big CTA Button - Quiz Mode */}
         <TouchableOpacity
-          style={styles.ctaButton}
           onPress={() => {
             clearPausedSession();
             navigation.navigate('Quiz', { type: testDetails?.testType || 'naturalization128' });
           }}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons name="play-circle" size={32} color="#fff" />
-          <View style={{ marginLeft: 12 }}>
-            <Text style={styles.ctaButtonText}>Start Practice Quiz</Text>
-            <Text style={styles.ctaButtonSub}>
-              {testDetails?.testType === 'highschool' ? 'High School Civics' : testDetails?.testType === 'naturalization100' ? 'Naturalization (100Q)' : 'Naturalization (128Q)'}
-            </Text>
-          </View>
+          <LinearGradient
+            colors={['#8B5CF6', '#6366F1']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.ctaButton}
+          >
+            <MaterialCommunityIcons name="play-circle" size={32} color="#fff" />
+            <View style={{ marginLeft: 12 }}>
+              <Text style={styles.ctaButtonText}>Start Practice Quiz</Text>
+              <Text style={styles.ctaButtonSub}>
+                {testDetails?.testType === 'highschool' ? 'High School Civics' : testDetails?.testType === 'naturalization100' ? 'Naturalization (100Q)' : 'Naturalization (128Q)'}
+              </Text>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.ctaButton, styles.listenCtaButton]}
           onPress={() => {
             clearPausedSession();
             trackAppEvent(APP_EVENT_NAMES.HOME_LISTEN_CTA_CLICKED, {
@@ -307,16 +374,22 @@ function HomeScreen({ navigation }) {
           }}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons name="volume-high" size={32} color="#fff" />
-          <View style={{ marginLeft: 12 }}>
-            <Text style={styles.ctaButtonText}>Start Listen Mode</Text>
-            <Text style={styles.ctaButtonSub}>Listen to each question with speed and repeat controls</Text>
-          </View>
+          <LinearGradient
+            colors={['#06B6D4', '#0891B2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.ctaButton, styles.listenCtaButton]}
+          >
+            <MaterialCommunityIcons name="volume-high" size={32} color="#fff" />
+            <View style={{ marginLeft: 12 }}>
+              <Text style={styles.ctaButtonText}>Start Listen Mode</Text>
+              <Text style={styles.ctaButtonSub}>Listen to each question with speed and repeat controls</Text>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Interview Mode CTA Button */}
         <TouchableOpacity
-          style={styles.interviewCtaButton}
           onPress={() => {
             clearPausedSession();
             trackAppEvent(APP_EVENT_NAMES.HOME_INTERVIEW_CTA_CLICKED, {
@@ -326,12 +399,19 @@ function HomeScreen({ navigation }) {
           }}
           activeOpacity={0.8}
         >
-          <MaterialCommunityIcons name="microphone-outline" size={28} color="#fff" />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={styles.interviewCtaButtonText}>Start Interview Mode</Text>
-            <Text style={styles.interviewCtaButtonSub}>🎤 Answer with your voice • Get instant feedback</Text>
-          </View>
-          <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.interviewCtaButton}
+          >
+            <MaterialCommunityIcons name="microphone-outline" size={28} color="#fff" />
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text style={styles.interviewCtaButtonText}>Start Interview Mode</Text>
+              <Text style={styles.interviewCtaButtonSub}>🎤 Answer with your voice • Get instant feedback</Text>
+            </View>
+            <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+          </LinearGradient>
         </TouchableOpacity>
 
         {pausedSession && (
@@ -348,7 +428,7 @@ function HomeScreen({ navigation }) {
             }}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="play-box-multiple-outline" size={24} color="#065F46" />
+            <MaterialCommunityIcons name="play-box-multiple-outline" size={24} color="#34D399" />
             <View style={{ marginLeft: 10 }}>
               <Text style={styles.resumeButtonTitle}>Resume Paused Session</Text>
               <Text style={styles.resumeButtonSubtitle}>
@@ -364,7 +444,7 @@ function HomeScreen({ navigation }) {
               <Text style={styles.boostsTitle}>Ad-Powered Practice Boosts</Text>
               <Text style={styles.boostsSubtitle}>Optional boosts convert better than passive banners because the value is obvious.</Text>
             </View>
-            <MaterialCommunityIcons name="rocket-launch" size={22} color="#7C3AED" />
+            <MaterialCommunityIcons name="rocket-launch" size={22} color="#A78BFA" />
           </View>
           <View style={styles.boostsGrid}>
             <View style={styles.boostMetricCard}>
@@ -383,7 +463,7 @@ function HomeScreen({ navigation }) {
         <View style={styles.homeKpiCard}>
           <View style={styles.homeKpiHeader}>
             <Text style={styles.homeKpiTitle}>Rewarded Revenue Pulse</Text>
-            <MaterialCommunityIcons name="chart-line" size={18} color="#0F766E" />
+            <MaterialCommunityIcons name="chart-line" size={18} color="#2DD4BF" />
           </View>
           <View style={styles.homeKpiMetricsRow}>
             <View style={styles.homeKpiMetricBox}>
@@ -400,6 +480,9 @@ function HomeScreen({ navigation }) {
           </Text>
           <Text style={styles.homeKpiInsight}>
             Winning reward: {homeSprintRewardLeader ? `${homeSprintRewardLeader.variantName} at ${homeSprintRewardLeader.conversionRate}% CVR` : 'collecting data'}
+          </Text>
+          <Text style={styles.homeKpiInsight}>
+            Revenue cohort: {revenueTreatmentEnabled ? 'treatment' : 'holdout baseline'}
           </Text>
         </View>
 
@@ -428,35 +511,53 @@ function HomeScreen({ navigation }) {
             </Text>
             {freePackCooldownMs > 0 && !freePackUnlockedToday && (
               <View style={styles.countdownBadge}>
-                <MaterialCommunityIcons name="timer-sand" size={14} color="#4C1D95" />
+                <MaterialCommunityIcons name="timer-sand" size={14} color="#C4B5FD" />
                 <Text style={styles.countdownBadgeText}>{cooldownHHMM}</Text>
               </View>
             )}
           </View>
         </TouchableOpacity>
 
+        {revenueTreatmentEnabled && comebackEligibleWindow ? (
+          <TouchableOpacity
+            style={[styles.rewardedHomeButton, comebackClaimedToday && styles.rewardedHomeButtonDisabled]}
+            onPress={handleClaimComebackReward}
+            disabled={comebackClaimedToday}
+          >
+            <MaterialCommunityIcons name="backup-restore" size={22} color="#fff" />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.rewardedHomeTitle}>Comeback Reward {String(comebackEligibleWindow).toUpperCase()}</Text>
+              <Text style={styles.rewardedHomeSubtitle}>
+                {comebackClaimedToday
+                  ? 'Already claimed today'
+                  : `Claim your ${comebackRewardLabel} after returning to practice`}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : null}
+
         {/* Stats Row */}
         <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { borderLeftColor: '#FFB84D' }]}>
-            <MaterialCommunityIcons name="book" size={28} color="#FFB84D" />
+          <View style={[styles.statCard, { borderLeftColor: '#FBBF24' }]}>
+            <MaterialCommunityIcons name="book" size={28} color="#FBBF24" />
             <Text style={styles.statLabel}>Questions</Text>
             <Text style={styles.statValue}>{userStats.questionsAnswered}</Text>
           </View>
 
-          <View style={[styles.statCard, { borderLeftColor: '#7C3AED' }]}>
-            <MaterialCommunityIcons name="target" size={28} color="#7C3AED" />
+          <View style={[styles.statCard, { borderLeftColor: '#8B5CF6' }]}>
+            <MaterialCommunityIcons name="target" size={28} color="#8B5CF6" />
             <Text style={styles.statLabel}>Accuracy</Text>
             <Text style={styles.statValue}>{userStats.accuracy}%</Text>
           </View>
 
-          <View style={[styles.statCard, { borderLeftColor: '#EC4899' }]}>
-            <MaterialCommunityIcons name="clock" size={28} color="#EC4899" />
+          <View style={[styles.statCard, { borderLeftColor: '#F472B6' }]}>
+            <MaterialCommunityIcons name="clock" size={28} color="#F472B6" />
             <Text style={styles.statLabel}>Studied</Text>
             <Text style={styles.statValue}>{userStats.timeSpent}</Text>
           </View>
 
-          <View style={[styles.statCard, { borderLeftColor: '#10B981' }]}>
-            <MaterialCommunityIcons name="fire" size={28} color="#10B981" />
+          <View style={[styles.statCard, { borderLeftColor: '#34D399' }]}>
+            <MaterialCommunityIcons name="fire" size={28} color="#34D399" />
             <Text style={styles.statLabel}>Streak</Text>
             <Text style={styles.statValue}>{user.streak} days</Text>
           </View>
@@ -465,19 +566,19 @@ function HomeScreen({ navigation }) {
         {/* Adaptive Learning Path Card */}
         <View style={[styles.card, styles.adaptiveCard]}>
           <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="brain" size={24} color="#7C3AED" />
+            <MaterialCommunityIcons name="brain" size={24} color="#A78BFA" />
             <Text style={styles.cardTitle}>Your Adaptive Learning Path</Text>
           </View>
 
           <View style={styles.progressItem}>
             <Text style={styles.progressLabel}>Performance Trend</Text>
             <View style={styles.trendBadge}>
-              <MaterialCommunityIcons name="trending-up" size={16} color="#10B981" />
+              <MaterialCommunityIcons name="trending-up" size={16} color="#34D399" />
               <Text style={styles.trendText}>Stable</Text>
             </View>
           </View>
 
-          <View style={[styles.progressItem, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#FFF3E0', paddingTop: 12 }]}>
+          <View style={[styles.progressItem, { marginTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', paddingTop: 12 }]}>
             <Text style={styles.progressLabel}>Next Milestone</Text>
             <Text style={styles.milestoneText}>Complete 50 questions with 80%+ accuracy</Text>
           </View>
@@ -489,33 +590,33 @@ function HomeScreen({ navigation }) {
         <View style={styles.quickActionsSection}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Coming Soon', 'Error Bank tracking will be available after you complete a quiz!')}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color="#EF4444" />
+            <MaterialCommunityIcons name="alert-circle" size={20} color="#F87171" />
             <Text style={styles.actionButtonText}>Practice Error Bank</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#475569" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ModeSelector')}>
-            <MaterialCommunityIcons name="target" size={20} color="#FF9800" />
+            <MaterialCommunityIcons name="target" size={20} color="#FBBF24" />
             <Text style={styles.actionButtonText}>Practice by Topic</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#475569" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('MasteryMap')}>
-            <MaterialCommunityIcons name="chart-bubble" size={20} color="#0EA5E9" />
+            <MaterialCommunityIcons name="chart-bubble" size={20} color="#38BDF8" />
             <Text style={styles.actionButtonText}>Mastery Map & Heatmap</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#475569" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Family')}>
-            <MaterialCommunityIcons name="people" size={20} color="#9C27B0" />
-            <Text style={styles.actionButtonText}>Family Challenge</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="account-group" size={20} color="#C084FC" />
+            <Text style={styles.actionButtonText}>Squad Challenge Hub</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#475569" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('CaseProgress')}>
-            <MaterialCommunityIcons name="file-document-outline" size={20} color="#2563EB" />
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#60A5FA" />
             <Text style={styles.actionButtonText}>Case Progress Tracker</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color="#999" />
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#475569" />
           </TouchableOpacity>
         </View>
 
@@ -534,6 +635,17 @@ function HomeScreen({ navigation }) {
 
         <HomeBannerAd />
       </ScrollView>
+
+      {showScrollTop && (
+        <TouchableOpacity
+          style={styles.homeScrollTopButton}
+          activeOpacity={0.9}
+          onPress={() => homeScrollRef.current?.scrollTo({ y: 0, animated: true })}
+        >
+          <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
+          <Text style={styles.homeScrollTopButtonText}>Top</Text>
+        </TouchableOpacity>
+      )}
 
       <StatusBar style="light" />
     </SafeAreaView>

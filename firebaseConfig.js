@@ -10,13 +10,14 @@ import { getDatabase } from 'firebase/database';
 // IMPORTANT: Replace with your actual Firebase project credentials
 // Get from: https://console.firebase.google.com
 const firebaseConfig = {
-    apiKey: "AIzaSyDemoKeyReplaceme123456789abcdef", // Replace with real key
-    authDomain: "civics-coach-app.firebaseapp.com", // Replace with real domain
-    projectId: "civics-coach-app", // Replace with real project ID
-    storageBucket: "civics-coach-app.appspot.com", // Replace with real bucket
-    messagingSenderId: "123456789012", // Replace with real ID
-    appId: "1:123456789012:web:abc123def456ghi789", // Replace with real app ID
-    databaseURL: "https://civics-coach-app.firebaseio.com" // Replace with real URL
+    apiKey: "REVOKED_USE_EXPO_PUBLIC_FIREBASE_API_KEY",
+    authDomain: "civic-citizenship-app.firebaseapp.com",
+    projectId: "civic-citizenship-app",
+    storageBucket: "civic-citizenship-app.firebasestorage.app",
+    messagingSenderId: "1089484361825",
+    appId: "1:1089484361825:web:f5c7edcd3f5d55ee0c5a20",
+    databaseURL: "https://civic-citizenship-app-default-rtdb.firebaseio.com/",
+    measurementId: "G-CT4V0D1WZL"
 };
 
 // Initialize Firebase
