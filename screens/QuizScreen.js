@@ -28,10 +28,11 @@ import {
   isAnswerCorrect as checkAnswerCorrect,
 } from '../quizHelpers';
 import { ttsManager } from '../utils/ttsWrapper';
-import { playCorrectFeedback, playWrongFeedback } from '../utils/audioHaptics';
+import { useHapticEngine } from '../context/HapticProvider';
 
 function QuizScreen({ route, navigation }) {
   const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession, trackAppEvent } = useContext(AppDataContext);
+  const { triggerSensoryEvent, events: sensoryEvents } = useHapticEngine();
   const { type, topicFilter, subTopicFilter } = route.params;
   const requestedQuestionIds = Array.isArray(route?.params?.questionIds)
     ? route.params.questionIds.map((id) => String(id))
@@ -477,11 +478,11 @@ function QuizScreen({ route, navigation }) {
     setIsAnswerCorrect(correct);
 
     if (correct) {
-      playCorrectFeedback();
+      triggerSensoryEvent(sensoryEvents.QUIZ_ANSWER_CORRECT);
       setFeedbackMessage('✅ Correct! Amazing job! 🎉');
       setScore((prev) => prev + 1);
     } else {
-      playWrongFeedback();
+      triggerSensoryEvent(sensoryEvents.QUIZ_ANSWER_INCORRECT);
       setFeedbackMessage('❌ Good try! Review the correct answer below.');
     }
 

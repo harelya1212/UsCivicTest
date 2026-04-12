@@ -107,6 +107,7 @@ import {
   enforceServerModerationPolicy,
   runServerModerationAdminAction,
 } from './firebaseServices';
+import { HapticProvider } from './context/HapticProvider';
 // import { PremiumManager, PREMIUM_TIERS, logMonetizationEvent } from './monetizationService';
 
 const Stack = createNativeStackNavigator();
@@ -2953,44 +2954,45 @@ export default function App() {
   };
 
   return (
-    <AppDataContext.Provider
-      value={{
-        testDetails,
-        setTestDetails,
-        errorBank,
-        addErrorItem,
-        pausedSession,
-        savePausedSession,
-        clearPausedSession,
-        maybeShowInterstitial,
-        adRuntime,
-        trackAdEvent,
-        trackAppEvent,
-        getOfferVariant,
-        setPinnedOfferVariant,
-        setRevenueCohortOverride,
-        resetOfferVariantStats,
-        resetAdAnalytics,
-        unlockDailyFreePack,
-        claimComebackReward,
-        masteryMap,
-        recordMasterySession,
-        resetMasteryMap,
-        userProfile,
-        updateUserProfile,
-        squadSync,
-        createSquad,
-        refreshSquadInviteCode,
-        updateSquadWeeklyGoal,
-        updateSquadChallengeProgress,
-        toggleHouseholdBoardItem,
-        recordParentChildNudge,
-        enforceModerationPolicy,
-        refreshSquadFromRemote,
-        runModerationAdminAction,
-      }}
-    >
-      <NavigationContainer
+    <HapticProvider>
+      <AppDataContext.Provider
+        value={{
+          testDetails,
+          setTestDetails,
+          errorBank,
+          addErrorItem,
+          pausedSession,
+          savePausedSession,
+          clearPausedSession,
+          maybeShowInterstitial,
+          adRuntime,
+          trackAdEvent,
+          trackAppEvent,
+          getOfferVariant,
+          setPinnedOfferVariant,
+          setRevenueCohortOverride,
+          resetOfferVariantStats,
+          resetAdAnalytics,
+          unlockDailyFreePack,
+          claimComebackReward,
+          masteryMap,
+          recordMasterySession,
+          resetMasteryMap,
+          userProfile,
+          updateUserProfile,
+          squadSync,
+          createSquad,
+          refreshSquadInviteCode,
+          updateSquadWeeklyGoal,
+          updateSquadChallengeProgress,
+          toggleHouseholdBoardItem,
+          recordParentChildNudge,
+          enforceModerationPolicy,
+          refreshSquadFromRemote,
+          runModerationAdminAction,
+        }}
+      >
+        <NavigationContainer
         ref={navigationRef}
         onReady={() => {
           const initialRoute = navigationRef.current?.getCurrentRoute()?.name || 'unknown';
@@ -3049,9 +3051,10 @@ export default function App() {
             </>
           )}
         </Stack.Navigator>
-      </NavigationContainer>
-      <StatusBar style="light" />
-    </AppDataContext.Provider>
+        </NavigationContainer>
+        <StatusBar style="light" />
+      </AppDataContext.Provider>
+    </HapticProvider>
   );
 }
 
