@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US Citizenship Test Prep 2025 🇺🇸</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
+        .celebration { animation: celebrate 0.6s ease-out; }
+        @keyframes celebrate { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .shake { animation: shake 0.5s ease-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- Separate script file for questions data -->
+    <script type="text/babel" src="questions-data.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Main App Component
+        function App() {
+            const [page, setPage] = useState(() => {
+                const saved = localStorage.getItem('citizenshipUser');
+                return saved ? 'dashboard' : 'welcome';
+            });
+            const [user, setUser] = useState(() => {
+                const saved = localStorage.getItem('citizenshipUser');
+                return saved ? JSON.parse(saved) : null;
+            });
+            const [progress, setProgress] = useState(() => {
+                const saved = localStorage.getItem('citizenshipProgress');
+                return saved ? JSON.parse(saved) : {
+                    questionsAttempted: 0,
+                    questionsCorrect: 0,
+                    streak: 0,
+                    lastStudyDate: null
+                };
+            });
+
+            useEffect(() => {
+                if (user) localStorage.setItem('citizenshipUser', JSON.stringify(user));
+                if (progress) localStorage.setItem('citizenshipProgress', JSON.stringify(progress));
+            }, [user, progress]);
+
+            const pages = {
+                welcome: <WelcomePage onStart={() => setPage('setup')} />,
+                setup: <SetupPage onComplete={(u) => { setUser(u); setPage('dashboard'); }} />,
+                dashboard: <Dashboard user={user} progress={progress} setPage={setPage} />,
+                practice: <PracticePage user={user} progress={progress} setProgress={setProgress} onBack={() => setPage('dashboard')} />,
+                study: <StudyPage user={user} onBack={() => setPage('dashboard')} />,
+                interview: <InterviewPage onBack={() => setPage('dashboard')} />
+            };
+
+            return pages[page] || pages.welcome;
+        }
+
+        // Welcome Page
+        function WelcomePage({ onStart }) {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 flex items-center justify-center p-4">
+                    <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-8 md:p-12">
+                        <div className="text-7xl text-center mb-6">🇺🇸</div>
+                        <h1 className="text-5xl font-bold text-blue-900 text-center mb-4">
+                            US Citizenship Test Prep
+                        </h1>
+                        <p className="text-xl text-gray-700 text-center mb-8">
+                            Your journey to citizenship starts here!
+                        </p>
+                        
+                        <div className="bg-gradient-to-r from-blue-50 to-red-50 rounded-2xl p-6 mb-8">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Features:</h2>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {[
+                                    { icon: '📚', title: 'All 128 Questions', desc: '2025 Official USCIS Test' },
+                                    { icon: '🎯', title: 'Personalized Plan', desc: 'Based on interview date' },
+                                    { icon: '🎨', title: 'ADHD-Friendly', desc: 'Visual aids & mnemonics' },
+                                    { icon: '👨‍👩‍👧‍👦', title: 'Family Mode', desc: 'Study together' },
+                                    { icon: '📱', title: 'Mobile Ready', desc: 'Study anywhere' },
+                                    { icon: '🎤', title: 'Interview Prep', desc: 'AI interviewer' }
+                                ].map((f, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <span className="text-3xl">{f.icon}</span>
+                                        <div>
+                                            <h3 className="font-bold text-blue-900">{f.title}</h3>
+                                            <p className="text-sm text-gray-600">{f.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <button
+                            onClick={onStart}
+                            className="w-full bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+                        >
+                            Get Started! 🚀
+                        </button>
+                        
+                        <p className="mt-6 text-center text-gray-600">
+                            ⏱️ Just 10-15 minutes per day
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Setup Page
+        function SetupPage({ onComplete }) {
+            const [formData, setFormData] = useState({
+                name: '', state: 'Arizona', interviewDate: '',
+                is65Plus: false, goal: 'citizenship'
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onComplete({ ...formData, createdAt: new Date().toISOString() });
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 flex items-center justify-center p-4">
+                    <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8">
+                        <h1 className="text-3xl font-bold text-blue-900 mb-6 text-center">
+                            Let's Get Started! 🎯
+                        </h1>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-gray-700 font-semibold mb-2">👤 Your Name</label>
+                                <input type="text" required
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                                    placeholder="Enter your name" />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-semibold mb-2">🏛️ Your State</label>
+                                <select required
+                                    value={formData.state}
+                                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none">
+                                    <option value="Arizona">Arizona</option>
+                                    <option value="California">California</option>
+                                    <option value="Texas">Texas</option>
+                                    <option value="New York">New York</option>
+                                    <option value="Florida">Florida</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-semibold mb-2">📅 Expected Interview Date</label>
+                                <input type="date" required
+                                    value={formData.interviewDate}
+                                    onChange={(e) => setFormData({...formData, interviewDate: e.target.value})}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none" />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-semibold mb-2">🎯 Primary Goal</label>
+                                <select
+                                    value={formData.goal}
+                                    onChange={(e) => setFormData({...formData, goal: e.target.value})}
+                                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:outline-none">
+                                    <option value="citizenship">US Citizenship Test</option>
+                                    <option value="highschool">High School Civics</option>
+                                    <option value="general">General Knowledge</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <input type="checkbox" id="is65Plus"
+                                    checked={formData.is65Plus}
+                                    onChange={(e) => setFormData({...formData, is65Plus: e.target.checked})}
+                                    className="w-5 h-5" />
+                                <label htmlFor="is65Plus" className="text-sm text-gray-700">
+                                    I'm 65+ with 20+ years as LPR (65/20 Special)
+                                </label>
+                            </div>
+
+                            <button type="submit"
+                                className="w-full bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-105">
+                                Create My Study Plan 🚀
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Dashboard
+        function Dashboard({ user, progress, setPage }) {
+            const daysUntil = Math.floor((new Date(user?.interviewDate) - new Date()) / (1000*60*60*24));
+            const accuracy = progress.questionsAttempted > 0 ? 
+                Math.round((progress.questionsCorrect / progress.questionsAttempted) * 100) : 0;
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 p-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header */}
+                        <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-blue-900">
+                                        Welcome back, {user?.name}! 👋
+                                    </h1>
+                                    <p className="text-gray-600 mt-1">
+                                        📅 {daysUntil} days until your interview
+                                    </p>
+                                </div>
+                                <div className="flex gap-6">
+                                    <div className="text-center">
+                                        <div className="text-3xl font-bold text-orange-500">{progress.streak}🔥</div>
+                                        <div className="text-sm text-gray-600">Day Streak</div>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="text-3xl font-bold text-green-600">{accuracy}%</div>
+                                        <div className="text-sm text-gray-600">Accuracy</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                { page: 'practice', bg: 'from-blue-500 to-blue-700', icon: '📝', title: 'Practice Test', desc: 'Test your knowledge' },
+                                { page: 'study', bg: 'from-green-500 to-green-700', icon: '📚', title: 'Study Mode', desc: 'Learn with flashcards' },
+                                { page: 'interview', bg: 'from-purple-500 to-purple-700', icon: '🎤', title: 'Interview Prep', desc: 'Practice with AI' }
+                            ].map((item, i) => (
+                                <button key={i} onClick={() => setPage(item.page)}
+                                    className={`bg-gradient-to-br ${item.bg} text-white p-8 rounded-3xl shadow-xl transform transition hover:scale-105 card-hover`}>
+                                    <div className="text-5xl mb-4">{item.icon}</div>
+                                    <h3 className="font-bold text-2xl mb-2">{item.title}</h3>
+                                    <p className="opacity-90">{item.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Progress */}
+                        <div className="bg-white rounded-3xl shadow-xl p-8 mt-6">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Progress</h2>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="bg-blue-50 rounded-2xl p-6 text-center">
+                                    <div className="text-5xl font-bold text-blue-600 mb-2">{progress.questionsAttempted}</div>
+                                    <div className="text-gray-700 font-semibold">Questions Attempted</div>
+                                </div>
+                                <div className="bg-green-50 rounded-2xl p-6 text-center">
+                                    <div className="text-5xl font-bold text-green-600 mb-2">{progress.questionsCorrect}</div>
+                                    <div className="text-gray-700 font-semibold">Correct Answers</div>
+                                </div>
+                                <div className="bg-purple-50 rounded-2xl p-6 text-center">
+                                    <div className="text-5xl font-bold text-purple-600 mb-2">
+                                        {(user?.is65Plus ? 20 : 128) - progress.questionsAttempted}
+                                    </div>
+                                    <div className="text-gray-700 font-semibold">Remaining</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Practice Page - Shows practice test interface
+        function PracticePage({ user, progress, setProgress, onBack }) {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8">
+                            <button onClick={onBack}
+                                className="mb-6 bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl font-semibold">
+                                ← Back to Dashboard
+                            </button>
+                            
+                            <div className="text-center py-12">
+                                <div className="text-7xl mb-6">📝</div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-4">Practice Test</h1>
+                                <p className="text-xl text-gray-600 mb-8">
+                                    Answer 20 random questions from the official USCIS test
+                                </p>
+                                
+                                <div className="bg-blue-50 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+                                    <h3 className="font-bold text-gray-800 mb-4">Test Format:</h3>
+                                    <ul className="text-left space-y-2 text-gray-700">
+                                        <li>✓ 20 questions selected randomly</li>
+                                        <li>✓ Multiple choice format</li>
+                                        <li>✓ Need 12 correct to pass (60%)</li>
+                                        <li>✓ Visual aids for each question</li>
+                                    </ul>
+                                </div>
+                                
+                                <button
+                                    onClick={() => alert('Practice test starting...')}
+                                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105">
+                                    Start Practice Test 🚀
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Study Page - Shows flashcard-style learning
+        function StudyPage({ user, onBack }) {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8">
+                            <button onClick={onBack}
+                                className="mb-6 bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl font-semibold">
+                                ← Back to Dashboard
+                            </button>
+                            
+                            <div className="text-center py-12">
+                                <div className="text-7xl mb-6">📚</div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-4">Study Mode</h1>
+                                <p className="text-xl text-gray-600 mb-8">
+                                    Learn with interactive flashcards and visual aids
+                                </p>
+                                
+                                <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
+                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6">
+                                        <div className="text-4xl mb-3">🏛️</div>
+                                        <h3 className="font-bold text-gray-800 mb-2">By Category</h3>
+                                        <p className="text-sm text-gray-600">Study specific topics</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6">
+                                        <div className="text-4xl mb-3">⭐</div>
+                                        <h3 className="font-bold text-gray-800 mb-2">65/20 Special</h3>
+                                        <p className="text-sm text-gray-600">20 essential questions</p>
+                                    </div>
+                                </div>
+                                
+                                <button
+                                    onClick={() => alert('Study mode starting...')}
+                                    className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105">
+                                    Start Studying 📖
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Interview Page - AI interview practice
+        function InterviewPage({ onBack }) {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-700 to-red-600 p-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8">
+                            <button onClick={onBack}
+                                className="mb-6 bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-xl font-semibold">
+                                ← Back to Dashboard
+                            </button>
+                            
+                            <div className="text-center py-12">
+                                <div className="text-7xl mb-6">🎤</div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-4">Interview Preparation</h1>
+                                <p className="text-xl text-gray-600 mb-8">
+                                    Practice with our AI interviewer to build confidence
+                                </p>
+                                
+                                <div className="bg-purple-50 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+                                    <h3 className="font-bold text-gray-800 mb-4">What to Expect:</h3>
+                                    <ul className="text-left space-y-2 text-gray-700">
+                                        <li>✓ Realistic interview simulation</li>
+                                        <li>✓ Verbal response practice</li>
+                                        <li>✓ Immediate feedback</li>
+                                        <li>✓ Tips and best practices</li>
+                                    </ul>
+                                </div>
+                                
+                                <button
+                                    onClick={() => alert('Interview practice starting...')}
+                                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105">
+                                    Start Interview Practice 🎯
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render App
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
