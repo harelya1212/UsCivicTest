@@ -33,6 +33,12 @@ Elevate Civic Citizenship from a functional utility to a premium 2026 product by
 - Ghost Progress Visualization
   - Ambient social presence: when a squad member is studying, show a subtle pulsing aura around their shared Topic Radar segment.
   - Effort heatmap: replace list-only social effort views with a squishy 3D tile grid whose glow intensity follows study-hours ranking.
+- Home Spatial UI Architecture
+  - Use stacked architecture: blurred Mastery Map data layer in back, sharp 3D route islands in front, dock/actions on top.
+  - Keep Topic Radar + 7-day Trend + urgency signals as lighting engine, not a separate disconnected screen.
+- Glass Ascent Route
+  - Present the route as vertical helix/floating island chain with 3/4 isometric perspective.
+  - Future route steps use fog-of-war translucency while unlocked steps stay crisp.
 - Micro-Goal Confetti Logic
   - Haptic-visual sync when a pacing micro-goal is reached: Success Wave haptic + kinetic score pop/ripple.
   - Celebration style uses mesh gradients (moving soft color fields), not flat icon bursts.
@@ -107,6 +113,10 @@ Elevate Civic Citizenship from a functional utility to a premium 2026 product by
 - [ ] Visual Haptic Mirroring: each named haptic has matching micro-animation (ripple, blur, shake, or glow).
 - [ ] Squad Live State: Firestore transport emits live pulse events during active study swipes.
 - [ ] Brag-Card Template: glassmorphism shareable card finalized for viral sharing flow.
+- [ ] Home refactor guardrail: if 3D assets/runtime fail, fallback to clean bento-grid route with no crash.
+- [ ] Batch 1 instrumentation: compare 3D route interactions vs list/bento fallback interactions.
+- [ ] Mastery background memoization: prevent heavy re-renders while foreground 3D route scrolls.
+- [ ] State identity carry-over: preserve state code + flag fidelity on route start island.
 
 ## Definition of Done
 - Sensory Check: 100% of correct/incorrect answers trigger the mapped sensory signature (sound + haptic).

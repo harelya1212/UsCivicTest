@@ -60,6 +60,12 @@ Revenue should grow by increasing user-perceived value first:
 8. ADHD pacing layer on 3D route
 - adaptive pacing nudge: if user scrolls rapidly without entering a step, trigger Soft Thud and suggest slower progression
 
+9. Home Spatial UI refactor and safety guardrails
+- Home entry should initialize the spatial 3D route runtime, with Mastery Map rendered as blurred background energy layer
+- instrument 3D interactions vs fallback list/bento interactions for adoption measurement
+- if 3D assets fail or runtime errors occur, fallback instantly to bento route (no blank/white screen)
+- map active squad member pulse events from remote transport to island halo presence
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
@@ -77,6 +83,9 @@ Revenue should grow by increasing user-perceived value first:
 - [ ] Haptic Dial Logic: map route snap points to HapticProvider click events
 - [ ] Urgency Layer Integration: color islands dynamically from weak-area urgency map
 - [ ] Adaptive Pacing Nudges: if scroll speed exceeds threshold without step entry, emit Soft Thud and show low-stress guidance
+- [ ] Home Layer Stack: blurred Topic Radar/Trend/Urgency background + sharp foreground route islands + overlay dock
+- [ ] Background Memoization: lock mastery background rerenders during active 3D scroll
+- [ ] Variant Guardrails: production-safe fallback path to bento route when 3D route cannot initialize
 
 ---
 
