@@ -218,6 +218,10 @@ Plan file: [SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md](SPRINT_8_9_CAPABILITY_REVENUE
 - [ ] Add explain-why coaching cards with weak-topic drill links
 - [ ] Add adaptive weekly plan regeneration using mastery + urgency + test date
 - [ ] Add family accountability nudges tied to milestones and session completions
+- [ ] Add focus-aware nudge queue (ambient island marker during focus; flush on break-point)
+- [ ] Add NudgeBack ghost pill on completed islands with one-tap gratitude response
+- [ ] Add long-press orbital emoji picker with micro-tick haptic dial and reaction payload tracking
+- [ ] Sync "In the Zone" focus status to squad presence layer
 
 Definition of done:
 - [ ] Session completion and next-day return improve vs Sprint 6 baseline
@@ -230,6 +234,8 @@ Plan file: [SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md](SPRINT_8_9_CAPABILITY_REVENUE
 - [ ] Add revenue quality scoring (completion quality, fatigue risk, bounce risk)
 - [ ] Add dynamic cap policy by segment + session depth with guardrails
 - [ ] Add Admin monetization audit panel for pacing and holdout parity
+- [ ] Add rewarded Mass Nudge action (sponsor clip for multi-recipient social boost)
+- [ ] Add premium emoji packs as cosmetic social monetization option
 
 Definition of done:
 - [ ] Revenue per active user improves while churn/fatigue remain within guardrails

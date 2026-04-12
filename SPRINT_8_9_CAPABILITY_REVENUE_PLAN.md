@@ -72,6 +72,41 @@ Revenue should grow by increasing user-perceived value first:
 - coordinate BlurView opacity + island scale/translate using reanimated
 - trigger Success Tock when camera lands to signal control handoff
 
+11. Focus-aware social nudge handling (Visual Queue)
+- when Deep Focus is active, suppress interruptive nudge popups and suppress Double Knock audio
+- represent inbound nudges as passive ambient signals on the active 3D island (glow dot or tiny friend avatar)
+- fire Micro-Tick haptic only (tap-on-shoulder feel), not high-salience alerts
+- queue incoming nudge events while suppression is active
+
+12. Break-point social delivery and loop closure
+- on flow exit, flush queued nudges into a frosted "Squad Energy" summary card
+- summary copy style: "Your squad was cheering you on"
+- include one-tap actions: Nudge Back and optional Mass Nudge
+- Mass Nudge can be rewarded-gated and grants temporary squad energy bonus
+
+13. Focus status and ambient presence
+- publish focus status "In the Zone" to Family/Squad sync so peers see a glowing aura state
+- map friend avatars to islands as ambient ghost presence in mid-ground layer
+- when target user is in focus, sender-side nudge CTA shows "Silent Nudge" state
+
+14. Nudge Back ghost interaction on completed islands
+- show NudgeBack pill only when step_status == done and active_nudges > 0
+- visual style: small glass pill with friend avatar + bolt/heart icon, spring entrance from island edge
+- single tap sends immediate gratitude response (no confirmation)
+- tactile + feedback: local Success Tock, remote Double Knock, dissolve-to-particles completion effect
+
+15. Orbital emoji reaction picker (Long-Press Bloom)
+- long-press NudgeBack pill blooms curated emojis around avatar (radial/orbital layout)
+- slide-to-select interaction with Micro-Tick per emoji hit-box entry
+- use spring animation for bloom in/out so emojis feel weighted
+- if flow state is true, shrink picker by 20% and increase translucency for low-clutter mode
+
+16. Spatial Home interaction layer hierarchy
+- Foreground: 3D islands (vertical helix + haptic snapping)
+- Overlay: Reaction Orb on completed islands (tap nudge back, long-press bloom)
+- Mid-ground: Squad presence avatars with pulse halos
+- Background: Blurred Mastery Map mesh reacting to focus state
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
@@ -94,6 +129,17 @@ Revenue should grow by increasing user-perceived value first:
 - [ ] Variant Guardrails: production-safe fallback path to bento route when 3D route cannot initialize
 - [ ] CameraFlyThrough: scripted landing transition from blurred data-engine layer to active route island
 - [ ] Home route mount: spatial route is default when flag is enabled, fallback route remains production-safe
+- [ ] Nudge Queue Manager: cache inbound Firestore nudge events while ad/focus suppression is active; flush on focus exit.
+- [ ] Focus-Aware Delivery Rule: during focus, no modal nudge interruption and no Double Knock playback.
+- [ ] Ambient Nudge Marker: show tiny avatar/glow marker on active island when queued nudges exist.
+- [ ] Squad Energy Summary Card: render queued nudge recap card at break-point with "Nudge Back" + "Mass Nudge" actions.
+- [ ] Focus Status Sync: publish/subscribe "In the Zone" status in Family/Squad transport layer.
+- [ ] NudgeBack Visibility Guard: only render NudgeBack when active_nudges > 0 and step_status == done.
+- [ ] Gesture Handler: implement LongPressGestureHandler for NudgeBack pill and slide-to-select flow.
+- [ ] Radial Layout Math: use Math.cos/Math.sin to place 4-5 emojis in orbital ring around avatar.
+- [ ] Nudge Response Payload: send nudge_response with response_type='gratitude' and optional reaction_id.
+- [ ] Haptic Profiles: Micro-Tick on reaction hover, Success Tock on local send, remote Double Knock on recipient.
+- [ ] Telemetry Additions: track nudge_back_sent, reaction_selected, queue_size_at_flush, and post-nudge session extension.
 
 ---
 
@@ -121,12 +167,17 @@ Revenue should grow by increasing user-perceived value first:
 - integrated Sponsor Island ad format with same glass styling and explicit value exchange
 - Streak Shield prompt when streak-loss risk is detected (forgiving ad)
 - deep-focus suppression and ad-light recovery windows remain enforced to protect retention
+- Mass Nudge rewarded trade: watch 15s sponsor clip to nudge all queued friends + temporary squad effort bonus
 
-5. Revenue quality scoring gate
+5. Social monetization expansion
+- premium emoji packs (cosmetic reactions) as one-time or high-effort unlock
+- reward-gated Gold Nudge for multi-friend acknowledgement without session interruption
+
+6. Revenue quality scoring gate
 - if retention/fatigue risk is low, allow safe ad-frequency elevation
 - if retention/fatigue risk is high, reduce interruption pressure and prioritize optional rewarded surfaces
 
-6. Monetization audit panel
+7. Monetization audit panel
 - daily pacing
 - holdout parity
 - guardrail breaches
