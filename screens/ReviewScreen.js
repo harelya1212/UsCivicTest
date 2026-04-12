@@ -18,8 +18,23 @@ import {
 } from '../adMobService';
 import { playAdStartFeedback, playHighScoreFeedback } from '../utils/audioHaptics';
 
+const OFFER_VARIANT_ALLOWED = Object.freeze({
+  reviewBonusOffer: ['control', 'challenge'],
+  reviewWeakOffer: ['control', 'coach'],
+});
+
+function sanitizeVariant(variantKey, candidate) {
+  const options = OFFER_VARIANT_ALLOWED[variantKey] || [];
+  if (options.includes(candidate)) {
+    return { value: candidate, fallbackApplied: false, fallbackFrom: null };
+  }
+
+  const fallback = options[0] || 'control';
+  return { value: fallback, fallbackApplied: true, fallbackFrom: String(candidate || '') };
+}
+
 function ReviewScreen({ route, navigation }) {
-  const { trackAdEvent, trackAppEvent, getOfferVariant } = useContext(AppDataContext);
+  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime } = useContext(AppDataContext);
   const { score, total, type, weak } = route.params;
   const percentage = Math.round((score / total) * 100);
   const weakScoreThreshold = 70;
@@ -30,8 +45,15 @@ function ReviewScreen({ route, navigation }) {
   const recoveryTopic = route?.params?.recoveryTopic ? String(route.params.recoveryTopic) : null;
   const recoveryStorageKey = `${RECOVERY_CAMPAIGN_STORAGE_PREFIX}.${String(type || 'default')}`;
   const personalBestStorageKey = `civics.personalBestPct.${String(type || 'default')}`;
-  const reviewBonusVariant = getOfferVariant('reviewBonusOffer');
-  const reviewWeakVariant = getOfferVariant('reviewWeakOffer');
+  const revenueExperiment = adRuntime?.experimentCohorts?.revenueIntelligence || {};
+  const revenueOverride = String(revenueExperiment?.overrideCohort || '').trim().toLowerCase();
+  const revenueCohort = (revenueOverride === 'treatment' || revenueOverride === 'holdout')
+    ? revenueOverride
+    : String(revenueExperiment?.cohort || 'treatment');
+  const reviewBonusVariantResult = sanitizeVariant('reviewBonusOffer', getOfferVariant('reviewBonusOffer'));
+  const reviewWeakVariantResult = sanitizeVariant('reviewWeakOffer', getOfferVariant('reviewWeakOffer'));
+  const reviewBonusVariant = reviewBonusVariantResult.value;
+  const reviewWeakVariant = reviewWeakVariantResult.value;
   const [showWeakScoreUpsell, setShowWeakScoreUpsell] = useState(false);
   const [recoveryCampaign, setRecoveryCampaign] = useState({
     completedSessions: 0,
@@ -49,6 +71,48 @@ function ReviewScreen({ route, navigation }) {
   const reviewBonusBody = reviewBonusVariant === 'challenge'
     ? 'Finish strong with a short bonus set while your momentum is still high.'
     : 'Use rewarded ads only at high-intent moments: short bonus drills or immediate weak-area rescue.';
+
+  useEffect(() => {
+    trackAppEvent(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED, {
+      cohort: revenueCohort,
+      review_bonus_variant: reviewBonusVariant,
+      review_weak_variant: reviewWeakVariant,
+      weak_score_session: isWeakScoreSession,
+    });
+  }, [
+    isWeakScoreSession,
+    revenueCohort,
+    reviewBonusVariant,
+    reviewWeakVariant,
+    trackAppEvent,
+  ]);
+
+  useEffect(() => {
+    if (reviewBonusVariantResult.fallbackApplied) {
+      trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, {
+        screen: 'review',
+        variant_key: 'reviewBonusOffer',
+        requested_variant: reviewBonusVariantResult.fallbackFrom,
+        fallback_variant: reviewBonusVariant,
+      });
+    }
+    if (reviewWeakVariantResult.fallbackApplied) {
+      trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, {
+        screen: 'review',
+        variant_key: 'reviewWeakOffer',
+        requested_variant: reviewWeakVariantResult.fallbackFrom,
+        fallback_variant: reviewWeakVariant,
+      });
+    }
+  }, [
+    reviewBonusVariant,
+    reviewBonusVariantResult.fallbackApplied,
+    reviewBonusVariantResult.fallbackFrom,
+    reviewWeakVariant,
+    reviewWeakVariantResult.fallbackApplied,
+    reviewWeakVariantResult.fallbackFrom,
+    trackAppEvent,
+  ]);
 
   useEffect(() => {
     if (!isWeakScoreSession) return undefined;

@@ -67,6 +67,9 @@ export const APP_EVENT_NAMES = Object.freeze({
   OFFER_WINNER_SELECTED: 'offer_winner_selected',
   OFFER_WINNER_EXPIRED: 'offer_winner_expired',
   EXPERIMENT_COHORT_ASSIGNED: 'experiment_cohort_assigned',
+  EXPERIMENT_VARIANT_FALLBACK_APPLIED: 'experiment_variant_fallback_applied',
+  HOME_REVENUE_RUNTIME_EXPOSED: 'home_revenue_runtime_exposed',
+  REVIEW_REVENUE_RUNTIME_EXPOSED: 'review_revenue_runtime_exposed',
   ADMIN_DEBUG_PING: 'admin_debug_ping',
 });
 

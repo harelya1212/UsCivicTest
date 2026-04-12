@@ -25,12 +25,28 @@ import {
   HomeBannerAd,
 } from '../adMobService';
 
+const OFFER_VARIANT_ALLOWED = Object.freeze({
+  homeSprintOffer: ['control', 'urgency'],
+  homeSprintReward: ['standard', 'extended'],
+});
+
+function sanitizeVariant(variantKey, candidate) {
+  const options = OFFER_VARIANT_ALLOWED[variantKey] || [];
+  if (options.includes(candidate)) {
+    return { value: candidate, fallbackApplied: false, fallbackFrom: null };
+  }
+
+  const fallback = options[0] || 'control';
+  return { value: fallback, fallbackApplied: true, fallbackFrom: String(candidate || '') };
+}
+
 function HomeScreen({ navigation }) {
   const { testDetails, pausedSession, clearPausedSession, maybeShowInterstitial, trackAdEvent, trackAppEvent, adRuntime, unlockDailyFreePack, claimComebackReward, getOfferVariant } = useContext(AppDataContext);
   const studyPlan = testDetails?.studyPlan;
   const [nowTick, setNowTick] = useState(Date.now());
   const [showScrollTop, setShowScrollTop] = useState(false);
   const homeScrollRef = useRef(null);
+  const runtimeExposureTrackedRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 30000);
@@ -67,8 +83,10 @@ function HomeScreen({ navigation }) {
     d10: '18-question comeback pack',
   };
   const comebackRewardLabel = comebackRewardLabelMap[comebackEligibleWindow] || 'bonus pack';
-  const homeSprintVariant = getOfferVariant('homeSprintOffer');
-  const homeSprintRewardVariant = getOfferVariant('homeSprintReward');
+  const homeSprintVariantResult = sanitizeVariant('homeSprintOffer', getOfferVariant('homeSprintOffer'));
+  const homeSprintRewardVariantResult = sanitizeVariant('homeSprintReward', getOfferVariant('homeSprintReward'));
+  const homeSprintVariant = homeSprintVariantResult.value;
+  const homeSprintRewardVariant = homeSprintRewardVariantResult.value;
   const sprintRewardDelta = homeSprintRewardVariant === 'extended' ? 15 : 10;
   const sprintRewardLabel = homeSprintRewardVariant === 'extended' ? '+15 questions' : '+10 questions';
   const getLeadingVariant = (variantKey) => {
@@ -99,6 +117,51 @@ function HomeScreen({ navigation }) {
         title: 'Watch Ad: Unlock Sprint Practice',
         subtitle: `Get ${sprintRewardLabel} today at no cost`,
       };
+
+  useEffect(() => {
+    if (!runtimeExposureTrackedRef.current) {
+      runtimeExposureTrackedRef.current = true;
+      trackAppEvent(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED, {
+        cohort: revenueCohort,
+        treatment_enabled: revenueTreatmentEnabled,
+        home_sprint_offer_variant: homeSprintVariant,
+        home_sprint_reward_variant: homeSprintRewardVariant,
+      });
+    }
+  }, [
+    homeSprintRewardVariant,
+    homeSprintVariant,
+    revenueCohort,
+    revenueTreatmentEnabled,
+    trackAppEvent,
+  ]);
+
+  useEffect(() => {
+    if (homeSprintVariantResult.fallbackApplied) {
+      trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, {
+        screen: 'home',
+        variant_key: 'homeSprintOffer',
+        requested_variant: homeSprintVariantResult.fallbackFrom,
+        fallback_variant: homeSprintVariant,
+      });
+    }
+    if (homeSprintRewardVariantResult.fallbackApplied) {
+      trackAppEvent(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, {
+        screen: 'home',
+        variant_key: 'homeSprintReward',
+        requested_variant: homeSprintRewardVariantResult.fallbackFrom,
+        fallback_variant: homeSprintRewardVariant,
+      });
+    }
+  }, [
+    homeSprintRewardVariant,
+    homeSprintRewardVariantResult.fallbackApplied,
+    homeSprintRewardVariantResult.fallbackFrom,
+    homeSprintVariant,
+    homeSprintVariantResult.fallbackApplied,
+    homeSprintVariantResult.fallbackFrom,
+    trackAppEvent,
+  ]);
 
   const handleDailyFreePackUnlock = async () => {
     const result = await unlockDailyFreePack();
