@@ -44,13 +44,26 @@ function sanitizeVariant(variantKey, candidate) {
 }
 
 function HomeScreen({ navigation }) {
-  const { testDetails, pausedSession, clearPausedSession, maybeShowInterstitial, trackAdEvent, trackAppEvent, adRuntime, unlockDailyFreePack, claimComebackReward, getOfferVariant } = useContext(AppDataContext);
+  const {
+    testDetails,
+    pausedSession,
+    clearPausedSession,
+    maybeShowInterstitial,
+    trackAdEvent,
+    trackAppEvent,
+    adRuntime,
+    unlockDailyFreePack,
+    claimComebackReward,
+    getOfferVariant,
+    recordCinematicLanding,
+  } = useContext(AppDataContext);
   const studyPlan = testDetails?.studyPlan;
   const [nowTick, setNowTick] = useState(Date.now());
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [spatialPathFailed, setSpatialPathFailed] = useState(false);
   const homeScrollRef = useRef(null);
   const runtimeExposureTrackedRef = useRef(false);
+  const cinematicLandingTrackedRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 30000);
@@ -218,6 +231,16 @@ function HomeScreen({ navigation }) {
     homeSprintVariantResult.fallbackFrom,
     trackAppEvent,
   ]);
+
+  useEffect(() => {
+    if (!showSpatialPath) {
+      cinematicLandingTrackedRef.current = false;
+      return;
+    }
+    if (cinematicLandingTrackedRef.current) return;
+    cinematicLandingTrackedRef.current = true;
+    recordCinematicLanding({ surface: 'home_spatial_path' });
+  }, [recordCinematicLanding, showSpatialPath]);
 
   const handleDailyFreePackUnlock = async () => {
     const result = await unlockDailyFreePack();

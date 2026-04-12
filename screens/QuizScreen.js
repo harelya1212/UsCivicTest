@@ -31,7 +31,18 @@ import { ttsManager } from '../utils/ttsWrapper';
 import { useHapticEngine } from '../context/HapticProvider';
 
 function QuizScreen({ route, navigation }) {
-  const { testDetails, pausedSession, savePausedSession, clearPausedSession, maybeShowInterstitial, recordMasterySession, trackAppEvent } = useContext(AppDataContext);
+  const {
+    testDetails,
+    pausedSession,
+    savePausedSession,
+    clearPausedSession,
+    maybeShowInterstitial,
+    recordMasterySession,
+    trackAppEvent,
+    reportFocusInteraction,
+    activateFocusShieldRewarded,
+    adRuntime,
+  } = useContext(AppDataContext);
   const { triggerSensoryEvent, events: sensoryEvents } = useHapticEngine();
   const { type, topicFilter, subTopicFilter } = route.params;
   const requestedQuestionIds = Array.isArray(route?.params?.questionIds)
@@ -126,7 +137,16 @@ function QuizScreen({ route, navigation }) {
   const [autoAdvancePhase, setAutoAdvancePhase] = useState(null); // 'reveal' | 'next' | null
   const autoAdvanceTimerRef = useRef(null);
   const autoAdvanceCounterRef = useRef(null);
+  const questionShownAtRef = useRef(Date.now());
+  const sessionStartedAtRef = useRef(Date.now());
+  const recentCorrectAnswerTsRef = useRef([]);
+  const recentAllAnswerTsRef = useRef([]);
+  const consecutiveCorrectRef = useRef(0);
+  const consecutiveIncorrectRef = useRef(0);
+  const skipActionsRef = useRef(0);
+  const [focusActionBusy, setFocusActionBusy] = useState(false);
   const stepGoalPulse = useRef(new Animated.Value(0)).current;
+  const meshBreathingPulse = useRef(new Animated.Value(0.22)).current;
   const showFeedbackRef = useRef(showFeedback);
   const latestSnapshotRef = useRef({
     current,
@@ -310,6 +330,38 @@ function QuizScreen({ route, navigation }) {
     speakCurrentQuestion();
   }, [listenMode, current, currentQuestion?.id, showFeedback, speechRateIndex]);
 
+  useEffect(() => {
+    questionShownAtRef.current = Date.now();
+  }, [currentQuestion?.id]);
+
+  useEffect(() => {
+    const focusTelemetry = adRuntime?.focusTelemetry || {};
+    if (!focusTelemetry.adSuppressionActive) {
+      meshBreathingPulse.stopAnimation();
+      meshBreathingPulse.setValue(0.22);
+      return;
+    }
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(meshBreathingPulse, {
+          toValue: 0.34,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(meshBreathingPulse, {
+          toValue: 0.18,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+
+    return () => {
+      meshBreathingPulse.stopAnimation();
+    };
+  }, [adRuntime?.focusTelemetry?.adSuppressionActive, meshBreathingPulse]);
+
   useEffect(() => () => {
     ttsManager.stop();
     clearAutoAdvance();
@@ -488,6 +540,8 @@ function QuizScreen({ route, navigation }) {
 
     // Check if answer is correct (including alternates)
     const correct = checkAnswerCorrect(selectedAnswer, question);
+    const now = Date.now();
+    const interactionLatencyMs = Math.max(0, now - questionShownAtRef.current);
     setIsAnswerCorrect(correct);
 
     if (correct) {
@@ -522,6 +576,36 @@ function QuizScreen({ route, navigation }) {
     ];
     setHistory(newHistory);
 
+    if (correct) {
+      consecutiveCorrectRef.current += 1;
+      consecutiveIncorrectRef.current = 0;
+      recentCorrectAnswerTsRef.current = [...recentCorrectAnswerTsRef.current, now].slice(-5);
+    } else {
+      consecutiveIncorrectRef.current += 1;
+      consecutiveCorrectRef.current = 0;
+    }
+
+    recentAllAnswerTsRef.current = [...recentAllAnswerTsRef.current, now]
+      .filter((timestamp) => now - timestamp <= 60 * 1000);
+    const focusVelocity = Math.round(recentAllAnswerTsRef.current.length * 10) / 10;
+    const firstRecentCorrectTs = recentCorrectAnswerTsRef.current[0] || 0;
+    const focusWindowQualified = recentCorrectAnswerTsRef.current.length >= 5
+      && (now - firstRecentCorrectTs) <= 45 * 1000
+      && skipActionsRef.current === 0;
+    const adsViewedInSession = Number(adRuntime?.currentDayInterstitialShown || 0) + Number(adRuntime?.currentDayRewardedCompleted || 0);
+    const elapsedSessionMinutes = Math.max(0, (now - sessionStartedAtRef.current) / (60 * 1000));
+    const sessionFatigueScore = Number((elapsedSessionMinutes + (adsViewedInSession * 1.2)).toFixed(2));
+
+    reportFocusInteraction({
+      focusVelocity,
+      accuracyStreak: consecutiveCorrectRef.current,
+      interactionLatencyMs,
+      sessionFatigueScore,
+      skipActionsInWindow: skipActionsRef.current,
+      focusWindowQualified,
+      consecutiveIncorrect: consecutiveIncorrectRef.current,
+    });
+
     // Show feedback immediately after selection
     setShowFeedback(true);
 
@@ -534,6 +618,21 @@ function QuizScreen({ route, navigation }) {
     // Screen-off-friendly: in listen mode, speak the answer then schedule auto-next
     if (listenMode) {
       speakAnswer();
+    }
+
+    questionShownAtRef.current = now;
+  };
+
+  const handleFocusRewardedAction = async () => {
+    if (focusActionBusy) return;
+    setFocusActionBusy(true);
+    try {
+      const result = await activateFocusShieldRewarded();
+      if (!result?.ok) {
+        Alert.alert('Ad skipped', 'Rewarded video was not completed. Focus shield was not activated.');
+      }
+    } finally {
+      setFocusActionBusy(false);
     }
   };
 
@@ -604,6 +703,7 @@ function QuizScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <Animated.View pointerEvents="none" style={[styles.focusMeshBreathingLayer, { opacity: meshBreathingPulse }]} />
       {/* 📊 Progress Bar */}
       <View style={styles.quizHeader}>
         <View style={styles.quizTopActions}>
@@ -711,6 +811,30 @@ function QuizScreen({ route, navigation }) {
             <Text style={styles.focusModeBadgeText}>Focus Mode: minimal distractions</Text>
           </View>
         )}
+        {adRuntime?.focusTelemetry?.adSuppressionActive && adRuntime?.focusTelemetry?.focusShieldEligible ? (
+          <TouchableOpacity
+            style={styles.focusShieldFloatingButton}
+            onPress={handleFocusRewardedAction}
+            disabled={focusActionBusy}
+          >
+            <MaterialCommunityIcons name="shield-star-outline" size={16} color="#FDE68A" />
+            <Text style={styles.focusShieldFloatingButtonText}>
+              {focusActionBusy ? 'Loading...' : 'Watch 1 ad: Keep ad-free 20m'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {adRuntime?.focusTelemetry?.recoveryRewardedPrompt ? (
+          <TouchableOpacity
+            style={[styles.focusShieldFloatingButton, styles.focusRecoveryButton]}
+            onPress={handleFocusRewardedAction}
+            disabled={focusActionBusy}
+          >
+            <MaterialCommunityIcons name="rocket-launch-outline" size={16} color="#86EFAC" />
+            <Text style={styles.focusShieldFloatingButtonText}>
+              {focusActionBusy ? 'Loading...' : 'Rewarded boost: get back on track'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView 

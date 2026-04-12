@@ -140,6 +140,12 @@ const MODERATION_MUTE_THRESHOLD = 3;
 const MODERATION_ESCALATION_THRESHOLD = 5;
 const COMEBACK_WINDOW_OFFSETS = Object.freeze({ d2: 2, d5: 5, d10: 10 });
 const COMEBACK_REWARD_QUESTIONS = Object.freeze({ d2: 8, d5: 12, d10: 18 });
+const FOCUS_SUPPRESSION_WINDOW_MS = 5 * 60 * 1000;
+const FOCUS_SHIELD_WINDOW_MS = 20 * 60 * 1000;
+const FOCUS_POST_VICTORY_WINDOW_MS = 10 * 60 * 1000;
+const CINEMATIC_SAFETY_BUFFER_MS = 30 * 1000;
+const AD_ROLLING_WINDOW_MS = 10 * 60 * 1000;
+const MAX_ADS_PER_10_MIN = 3;
 
 const INTENT_SEGMENTS = Object.freeze(['high-intent', 'warming', 'low-intent', 'unknown']);
 
@@ -351,6 +357,38 @@ function deriveExperimentCohorts(runtime = {}, seed = '', nowMs = Date.now()) {
       bucket,
       holdoutPct,
     },
+  };
+}
+
+function normalizeFocusTelemetry(raw = {}, nowMs = Date.now()) {
+  const defaults = createDefaultAdRuntime().focusTelemetry || {};
+  const suppressionUntil = Math.max(0, Number(raw?.adSuppressionUntil || 0));
+  const shieldUntil = Math.max(0, Number(raw?.focusShieldUntil || 0));
+  const activeUntil = Math.max(suppressionUntil, shieldUntil);
+  const interstitialShownAt = Array.isArray(raw?.interstitialShownAt)
+    ? raw.interstitialShownAt
+      .map((value) => Number(value || 0))
+      .filter((value) => Number.isFinite(value) && value > 0 && (nowMs - value) <= AD_ROLLING_WINDOW_MS)
+    : [];
+
+  return {
+    ...defaults,
+    ...raw,
+    focusVelocity: Math.max(0, Number(raw?.focusVelocity || 0)),
+    accuracyStreak: Math.max(0, Number(raw?.accuracyStreak || 0)),
+    interactionLatencyMs: Math.max(0, Number(raw?.interactionLatencyMs || 0)),
+    sessionFatigueScore: Math.max(0, Number(raw?.sessionFatigueScore || 0)),
+    adSuppressionUntil: suppressionUntil,
+    focusShieldUntil: shieldUntil,
+    adSuppressionActive: activeUntil > nowMs,
+    focusShieldEligible: Boolean(raw?.focusShieldEligible),
+    focusShieldPromptShownForWindow: Boolean(raw?.focusShieldPromptShownForWindow),
+    recoveryRewardedPrompt: Boolean(raw?.recoveryRewardedPrompt),
+    focusStateSeen: Boolean(raw?.focusStateSeen),
+    focusEnteredAt: Math.max(0, Number(raw?.focusEnteredAt || 0)),
+    focusExitedAt: Math.max(0, Number(raw?.focusExitedAt || 0)),
+    cinematicLandingAt: Math.max(0, Number(raw?.cinematicLandingAt || 0)),
+    interstitialShownAt,
   };
 }
 
@@ -1558,6 +1596,7 @@ export default function App() {
               ...prev.analytics,
               ...(parsed.analytics || {}),
             },
+            focusTelemetry: normalizeFocusTelemetry(parsed.focusTelemetry, Date.now()),
           }));
         }
       } catch (error) {
@@ -2676,6 +2715,182 @@ export default function App() {
     };
   };
 
+  const reportFocusInteraction = (payload = {}) => {
+    const now = Date.now();
+    let enteredFocusState = false;
+    let exitedFocusState = false;
+    let showedFocusShieldPrompt = false;
+    let exitReason = 'unknown';
+
+    setAdRuntime((prev) => {
+      const focusTelemetry = normalizeFocusTelemetry(prev.focusTelemetry, now);
+      const nextFocusTelemetry = {
+        ...focusTelemetry,
+        focusVelocity: Math.max(0, Number(payload.focusVelocity || focusTelemetry.focusVelocity || 0)),
+        accuracyStreak: Math.max(0, Number(payload.accuracyStreak || 0)),
+        interactionLatencyMs: Math.max(0, Number(payload.interactionLatencyMs || 0)),
+        sessionFatigueScore: Math.max(0, Number(payload.sessionFatigueScore || 0)),
+      };
+
+      const windowQualified = Boolean(payload.focusWindowQualified);
+      const skipActionsInWindow = Math.max(0, Number(payload.skipActionsInWindow || 0));
+      const consecutiveIncorrect = Math.max(0, Number(payload.consecutiveIncorrect || 0));
+      const interactionLatencyMs = Math.max(0, Number(payload.interactionLatencyMs || 0));
+
+      const shouldEnterFocus = !nextFocusTelemetry.adSuppressionActive
+        && windowQualified
+        && nextFocusTelemetry.accuracyStreak >= 5
+        && skipActionsInWindow === 0;
+
+      if (shouldEnterFocus) {
+        enteredFocusState = true;
+        nextFocusTelemetry.adSuppressionActive = true;
+        nextFocusTelemetry.adSuppressionUntil = now + FOCUS_SUPPRESSION_WINDOW_MS;
+        nextFocusTelemetry.focusEnteredAt = now;
+        nextFocusTelemetry.focusStateSeen = true;
+        nextFocusTelemetry.recoveryRewardedPrompt = false;
+        nextFocusTelemetry.focusShieldEligible = true;
+        nextFocusTelemetry.focusShieldPromptShownForWindow = false;
+      }
+
+      const shouldExitByLatency = interactionLatencyMs > 15000;
+      const shouldExitByIncorrect = consecutiveIncorrect >= 2;
+      const shouldExitFocus = nextFocusTelemetry.adSuppressionActive && (shouldExitByLatency || shouldExitByIncorrect);
+      if (shouldExitFocus) {
+        exitedFocusState = true;
+        exitReason = shouldExitByLatency ? 'latency_gt_15s' : 'two_incorrect_streak';
+        nextFocusTelemetry.adSuppressionActive = false;
+        nextFocusTelemetry.adSuppressionUntil = now;
+        nextFocusTelemetry.focusExitedAt = now;
+        nextFocusTelemetry.recoveryRewardedPrompt = true;
+        nextFocusTelemetry.focusShieldEligible = false;
+        nextFocusTelemetry.focusShieldPromptShownForWindow = false;
+      }
+
+      if (
+        nextFocusTelemetry.adSuppressionActive
+        && nextFocusTelemetry.focusShieldEligible
+        && !nextFocusTelemetry.focusShieldPromptShownForWindow
+      ) {
+        showedFocusShieldPrompt = true;
+        nextFocusTelemetry.focusShieldPromptShownForWindow = true;
+      }
+
+      const nextAnalytics = {
+        ...prev.analytics,
+        focusStateEnterCount: (prev.analytics?.focusStateEnterCount || 0) + (enteredFocusState ? 1 : 0),
+        focusStateExitCount: (prev.analytics?.focusStateExitCount || 0) + (exitedFocusState ? 1 : 0),
+        focusShieldPromptShownCount: (prev.analytics?.focusShieldPromptShownCount || 0) + (showedFocusShieldPrompt ? 1 : 0),
+      };
+
+      return {
+        ...prev,
+        analytics: nextAnalytics,
+        focusTelemetry: nextFocusTelemetry,
+      };
+    });
+
+    if (enteredFocusState) {
+      trackAppEvent(APP_EVENT_NAMES.FOCUS_STATE_ENTERED, {
+        focus_velocity: Number(payload.focusVelocity || 0),
+        accuracy_streak: Number(payload.accuracyStreak || 0),
+        interaction_latency_ms: Number(payload.interactionLatencyMs || 0),
+        session_fatigue_score: Number(payload.sessionFatigueScore || 0),
+        skip_actions_in_window: Number(payload.skipActionsInWindow || 0),
+      });
+    }
+
+    if (exitedFocusState) {
+      trackAppEvent(APP_EVENT_NAMES.FOCUS_STATE_EXITED, {
+        reason: exitReason,
+        focus_velocity: Number(payload.focusVelocity || 0),
+        accuracy_streak: Number(payload.accuracyStreak || 0),
+        interaction_latency_ms: Number(payload.interactionLatencyMs || 0),
+        session_fatigue_score: Number(payload.sessionFatigueScore || 0),
+      });
+    }
+
+    if (showedFocusShieldPrompt) {
+      trackAppEvent(APP_EVENT_NAMES.FOCUS_SHIELD_PROMPT_SHOWN, {
+        prompt: 'watch_ad_keep_ad_free_20m',
+      });
+    }
+  };
+
+  const activateFocusShieldRewarded = async () => {
+    const now = Date.now();
+    const currentFocusTelemetry = normalizeFocusTelemetry(adRuntime?.focusTelemetry, now);
+    if (!currentFocusTelemetry.adSuppressionActive) {
+      return { ok: false, reason: 'not_in_focus' };
+    }
+
+    setAdRuntime((prev) => ({
+      ...prev,
+      analytics: {
+        ...prev.analytics,
+        rewardedAttempts: (prev.analytics?.rewardedAttempts || 0) + 1,
+      },
+    }));
+
+    try {
+      await showRewardedAd();
+      const focusShieldUntil = Date.now() + FOCUS_SHIELD_WINDOW_MS;
+
+      setAdRuntime((prev) => {
+        const nextFocusTelemetry = normalizeFocusTelemetry(prev?.focusTelemetry, Date.now());
+        return {
+          ...prev,
+          analytics: {
+            ...prev.analytics,
+            rewardedCompleted: (prev.analytics?.rewardedCompleted || 0) + 1,
+            focusShieldActivatedCount: (prev.analytics?.focusShieldActivatedCount || 0) + 1,
+          },
+          focusTelemetry: {
+            ...nextFocusTelemetry,
+            focusShieldUntil,
+            adSuppressionUntil: Math.max(Number(nextFocusTelemetry.adSuppressionUntil || 0), focusShieldUntil),
+            adSuppressionActive: true,
+            focusShieldEligible: false,
+            recoveryRewardedPrompt: false,
+          },
+        };
+      });
+
+      trackAppEvent(APP_EVENT_NAMES.FOCUS_SHIELD_ACTIVATED, {
+        shield_minutes: 20,
+      });
+
+      return { ok: true, focusShieldUntil };
+    } catch (error) {
+      setAdRuntime((prev) => ({
+        ...prev,
+        analytics: {
+          ...prev.analytics,
+          rewardedFailedOrClosed: (prev.analytics?.rewardedFailedOrClosed || 0) + 1,
+        },
+      }));
+      return { ok: false, reason: 'ad_failed' };
+    }
+  };
+
+  const recordCinematicLanding = (meta = {}) => {
+    const landedAt = Date.now();
+    setAdRuntime((prev) => {
+      const nextFocusTelemetry = normalizeFocusTelemetry(prev?.focusTelemetry, landedAt);
+      return {
+        ...prev,
+        focusTelemetry: {
+          ...nextFocusTelemetry,
+          cinematicLandingAt: landedAt,
+        },
+      };
+    });
+
+    trackAppEvent(APP_EVENT_NAMES.CINEMATIC_FLYTHROUGH_LANDED, {
+      surface: String(meta.surface || 'home_spatial_path'),
+    });
+  };
+
   const maybeShowInterstitial = async (trigger = 'generic') => {
     const options = typeof trigger === 'string' ? { trigger } : (trigger || {});
     const triggerName = options.trigger || 'generic';
@@ -2719,8 +2934,104 @@ export default function App() {
         interstitialAttempts: (baseline.analytics?.interstitialAttempts || 0) + 1,
       },
     };
+    const focusTelemetry = normalizeFocusTelemetry(withAttempt.focusTelemetry, now);
+
+    if (focusTelemetry.adSuppressionActive) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'focus_suppression',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
+      setAdRuntime({
+        ...withAttempt,
+        focusTelemetry,
+        analytics: {
+          ...withAttempt.analytics,
+          interstitialSkippedFocusSuppression: (withAttempt.analytics?.interstitialSkippedFocusSuppression || 0) + 1,
+        },
+      });
+      return false;
+    }
+
+    if (focusTelemetry.cinematicLandingAt > 0 && (now - focusTelemetry.cinematicLandingAt) < CINEMATIC_SAFETY_BUFFER_MS) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'cinematic_safety_buffer',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
+      setAdRuntime({
+        ...withAttempt,
+        focusTelemetry,
+        analytics: {
+          ...withAttempt.analytics,
+          interstitialSkippedCinematicSafetyBuffer: (withAttempt.analytics?.interstitialSkippedCinematicSafetyBuffer || 0) + 1,
+        },
+      });
+      return false;
+    }
+
+    if ((focusTelemetry.interstitialShownAt || []).length >= MAX_ADS_PER_10_MIN) {
+      logOfferCapDecision({
+        channel: 'interstitial',
+        trigger: triggerName,
+        decision: 'blocked',
+        reason: 'rolling_10m_cap',
+        segment: effectiveSegment,
+        policy: segmentPolicy,
+        cooldownMs,
+        dailyLimit: maxDailyAds,
+        triggerLimit: triggerName === 'resume' ? maxResumeAds : maxQuizCompleteAds,
+      });
+      setAdRuntime({
+        ...withAttempt,
+        focusTelemetry,
+        analytics: {
+          ...withAttempt.analytics,
+          interstitialSkippedRolling10mCap: (withAttempt.analytics?.interstitialSkippedRolling10mCap || 0) + 1,
+        },
+      });
+      return false;
+    }
 
     if (triggerName === 'quizComplete') {
+      const hasNaturalBreak = focusTelemetry.focusStateSeen
+        ? (focusTelemetry.focusExitedAt > 0 && (now - focusTelemetry.focusExitedAt) <= FOCUS_POST_VICTORY_WINDOW_MS)
+        : true;
+      if (!hasNaturalBreak) {
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'blocked',
+          reason: 'post_victory_wait_focus_exit',
+          segment: effectiveSegment,
+          policy: segmentPolicy,
+          cooldownMs,
+          dailyLimit: maxDailyAds,
+          triggerLimit: maxQuizCompleteAds,
+        });
+        setAdRuntime({
+          ...withAttempt,
+          focusTelemetry,
+          analytics: {
+            ...withAttempt.analytics,
+            interstitialQuizCompleteSkippedNoNaturalBreak: (withAttempt.analytics?.interstitialQuizCompleteSkippedNoNaturalBreak || 0) + 1,
+          },
+        });
+        return false;
+      }
+
       const withEligibility = {
         ...withAttempt,
         analytics: {
@@ -2927,7 +3238,18 @@ export default function App() {
             ? (withAttempt.analytics?.interstitialGenericShown || 0) + 1
             : (withAttempt.analytics?.interstitialGenericShown || 0),
         },
+        focusTelemetry: {
+          ...focusTelemetry,
+          interstitialShownAt: [...(focusTelemetry.interstitialShownAt || []), now]
+            .filter((ts) => Number.isFinite(Number(ts)) && (now - Number(ts)) <= AD_ROLLING_WINDOW_MS),
+        },
       });
+      if (triggerName === 'quizComplete') {
+        trackAppEvent(APP_EVENT_NAMES.INTERSTITIAL_POST_VICTORY_SHOWN, {
+          focus_state_seen: Boolean(focusTelemetry.focusStateSeen),
+          millis_since_focus_exit: focusTelemetry.focusExitedAt > 0 ? Math.max(0, now - focusTelemetry.focusExitedAt) : -1,
+        });
+      }
       return true;
     } catch (error) {
       logOfferCapDecision({
@@ -2968,6 +3290,9 @@ export default function App() {
           adRuntime,
           trackAdEvent,
           trackAppEvent,
+          reportFocusInteraction,
+          activateFocusShieldRewarded,
+          recordCinematicLanding,
           getOfferVariant,
           setPinnedOfferVariant,
           setRevenueCohortOverride,

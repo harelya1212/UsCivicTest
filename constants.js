@@ -70,6 +70,12 @@ export const APP_EVENT_NAMES = Object.freeze({
   EXPERIMENT_VARIANT_FALLBACK_APPLIED: 'experiment_variant_fallback_applied',
   HOME_REVENUE_RUNTIME_EXPOSED: 'home_revenue_runtime_exposed',
   REVIEW_REVENUE_RUNTIME_EXPOSED: 'review_revenue_runtime_exposed',
+  FOCUS_STATE_ENTERED: 'focus_state_entered',
+  FOCUS_STATE_EXITED: 'focus_state_exited',
+  FOCUS_SHIELD_PROMPT_SHOWN: 'focus_shield_prompt_shown',
+  FOCUS_SHIELD_ACTIVATED: 'focus_shield_activated',
+  CINEMATIC_FLYTHROUGH_LANDED: 'cinematic_flythrough_landed',
+  INTERSTITIAL_POST_VICTORY_SHOWN: 'interstitial_post_victory_shown',
   ADMIN_DEBUG_PING: 'admin_debug_ping',
 });
 

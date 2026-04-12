@@ -135,6 +135,12 @@ function AdminScreen() {
     { key: APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED, label: 'Home Revenue Runtime Exposed' },
     { key: APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED, label: 'Review Revenue Runtime Exposed' },
     { key: APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, label: 'Variant Fallback Applied' },
+    { key: APP_EVENT_NAMES.FOCUS_STATE_ENTERED, label: 'Focus State Entered' },
+    { key: APP_EVENT_NAMES.FOCUS_STATE_EXITED, label: 'Focus State Exited' },
+    { key: APP_EVENT_NAMES.FOCUS_SHIELD_PROMPT_SHOWN, label: 'Focus Shield Prompt Shown' },
+    { key: APP_EVENT_NAMES.FOCUS_SHIELD_ACTIVATED, label: 'Focus Shield Activated' },
+    { key: APP_EVENT_NAMES.CINEMATIC_FLYTHROUGH_LANDED, label: 'Cinematic Fly-through Landed' },
+    { key: APP_EVENT_NAMES.INTERSTITIAL_POST_VICTORY_SHOWN, label: 'Post-Victory Interstitial' },
   ].map((row) => ({
     ...row,
     count: analyticsDebugEvents.filter((event) => event.eventName === row.key).length,
@@ -423,6 +429,7 @@ function AdminScreen() {
     : 'N/A';
 
   const analytics = adRuntime.analytics || {};
+  const focusTelemetry = adRuntime.focusTelemetry || {};
   const offerVariantStats = adRuntime.offerVariantStats || {};
   const autoOfferWinners = adRuntime.autoOfferWinners || {};
   const revenueExperiment = adRuntime?.experimentCohorts?.revenueIntelligence || {};
@@ -1915,6 +1922,11 @@ function AdminScreen() {
         <View style={styles.adminCard}>
           <Text style={styles.adminCardTitle}>Ad Analytics (Lightweight)</Text>
           <Text style={styles.analyticsLine}>Today key: {adRuntime.dayKey || 'N/A'}</Text>
+          <Text style={styles.analyticsLine}>Focus velocity (actions/min): {Number(focusTelemetry.focusVelocity || 0).toFixed(1)}</Text>
+          <Text style={styles.analyticsLine}>Accuracy streak: {focusTelemetry.accuracyStreak || 0}</Text>
+          <Text style={styles.analyticsLine}>Interaction latency (ms): {Math.round(Number(focusTelemetry.interactionLatencyMs || 0))}</Text>
+          <Text style={styles.analyticsLine}>Session fatigue score: {Number(focusTelemetry.sessionFatigueScore || 0).toFixed(2)}</Text>
+          <Text style={styles.analyticsLine}>Ad suppression active: {focusTelemetry.adSuppressionActive ? 'yes' : 'no'}</Text>
           <Text style={styles.analyticsLine}>Interstitial attempts: {analytics.interstitialAttempts || 0}</Text>
           <Text style={styles.analyticsLine}>Interstitial shown: {analytics.interstitialShown || 0}</Text>
           <Text style={styles.analyticsLine}>Shown from Resume: {analytics.interstitialResumeShown || 0}</Text>
@@ -1923,10 +1935,18 @@ function AdminScreen() {
           <Text style={styles.analyticsLine}>Quiz-complete skipped (short): {analytics.interstitialQuizCompleteSkippedShortSession || 0}</Text>
           <Text style={styles.analyticsLine}>Quiz-complete skipped (low score): {analytics.interstitialQuizCompleteSkippedLowScore || 0}</Text>
           <Text style={styles.analyticsLine}>Quiz-complete skipped (cadence): {analytics.interstitialQuizCompleteSkippedCadence || 0}</Text>
+          <Text style={styles.analyticsLine}>Quiz-complete skipped (natural break): {analytics.interstitialQuizCompleteSkippedNoNaturalBreak || 0}</Text>
           <Text style={styles.analyticsLine}>Skipped (cooldown): {analytics.interstitialSkippedCooldown || 0}</Text>
           <Text style={styles.analyticsLine}>Skipped (daily cap): {analytics.interstitialSkippedDailyCap || 0}</Text>
+          <Text style={styles.analyticsLine}>Skipped (rolling 10m cap): {analytics.interstitialSkippedRolling10mCap || 0}</Text>
+          <Text style={styles.analyticsLine}>Skipped (focus suppression): {analytics.interstitialSkippedFocusSuppression || 0}</Text>
+          <Text style={styles.analyticsLine}>Skipped (cinematic safety buffer): {analytics.interstitialSkippedCinematicSafetyBuffer || 0}</Text>
           <Text style={styles.analyticsLine}>Skipped (trigger cap): {analytics.interstitialSkippedTriggerCap || 0}</Text>
           <Text style={styles.analyticsLine}>Interstitial failures: {analytics.interstitialFailed || 0}</Text>
+          <Text style={styles.analyticsLine}>Focus enters: {analytics.focusStateEnterCount || 0}</Text>
+          <Text style={styles.analyticsLine}>Focus exits: {analytics.focusStateExitCount || 0}</Text>
+          <Text style={styles.analyticsLine}>Focus Shield prompts shown: {analytics.focusShieldPromptShownCount || 0}</Text>
+          <Text style={styles.analyticsLine}>Focus Shield activated: {analytics.focusShieldActivatedCount || 0}</Text>
           <Text style={styles.analyticsLine}>Rewarded attempts: {analytics.rewardedAttempts || 0}</Text>
           <Text style={styles.analyticsLine}>Rewarded completed: {analytics.rewardedCompleted || 0}</Text>
           <Text style={styles.analyticsLine}>Rewarded failed/closed: {analytics.rewardedFailedOrClosed || 0}</Text>
