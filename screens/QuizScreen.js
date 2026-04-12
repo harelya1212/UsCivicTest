@@ -343,6 +343,7 @@ function QuizScreen({ route, navigation }) {
     const answeredCount = history.length;
     if (answeredCount > 0 && answeredCount % 3 === 0 && lastStepGoalTrackedCountRef.current !== answeredCount) {
       lastStepGoalTrackedCountRef.current = answeredCount;
+      triggerSensoryEvent(sensoryEvents.QUIZ_PROGRESS_WAVE);
       trackAppEvent(APP_EVENT_NAMES.QUIZ_STEP_GOAL_REACHED, {
         quiz_type: type,
         answered_count: answeredCount,
@@ -350,7 +351,7 @@ function QuizScreen({ route, navigation }) {
         step_size: 3,
       });
     }
-  }, [history.length, pool.length, trackAppEvent, type]);
+  }, [history.length, pool.length, sensoryEvents.QUIZ_PROGRESS_WAVE, trackAppEvent, triggerSensoryEvent, type]);
 
   useEffect(() => {
     const answeredCount = history.length;
