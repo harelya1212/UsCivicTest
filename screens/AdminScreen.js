@@ -129,6 +129,9 @@ function AdminScreen() {
     { key: APP_EVENT_NAMES.INTERVIEW_FOLLOWUP_COMPLETED, label: 'Follow-Ups Completed' },
     { key: APP_EVENT_NAMES.INTERVIEW_SESSION_COMPLETED, label: 'Interview Session Completed' },
     { key: APP_EVENT_NAMES.INTERVIEW_SESSION_EXITED, label: 'Interview Session Exited' },
+    { key: APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED, label: 'Home Revenue Runtime Exposed' },
+    { key: APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED, label: 'Review Revenue Runtime Exposed' },
+    { key: APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED, label: 'Variant Fallback Applied' },
   ].map((row) => ({
     ...row,
     count: analyticsDebugEvents.filter((event) => event.eventName === row.key).length,
@@ -152,6 +155,9 @@ function AdminScreen() {
   const followUpCompletedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.INTERVIEW_FOLLOWUP_COMPLETED)?.count || 0;
   const interviewCompletedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.INTERVIEW_SESSION_COMPLETED)?.count || 0;
   const interviewExitedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.INTERVIEW_SESSION_EXITED)?.count || 0;
+  const homeRevenueRuntimeExposedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED)?.count || 0;
+  const reviewRevenueRuntimeExposedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED)?.count || 0;
+  const experimentVariantFallbackAppliedCount = analyticsFunnelRows.find((row) => row.key === APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED)?.count || 0;
   const quizAnswerRate = quizStartedCount ? Math.round((questionAnsweredCount / quizStartedCount) * 100) : 0;
   const interviewResponseRate = interviewStartedCount ? Math.round((interviewResponseCount / interviewStartedCount) * 100) : 0;
   const interviewRecordingStartRate = interviewStartedCount ? Math.round((interviewRecordingStartedCount / interviewStartedCount) * 100) : 0;
@@ -905,6 +911,32 @@ function AdminScreen() {
             ) : null}
 
             <View style={{ marginTop: 12 }}>
+              <Text style={styles.adminMetricLabel}>Revenue Runtime Instrumentation (Batch 1)</Text>
+              <Text style={styles.adminMetricSubtext}>Exposure and fallback volumes from mirrored analytics events.</Text>
+              <View style={{ marginTop: 8, marginBottom: 10 }}>
+                <View style={styles.adminMetricRow}>
+                  <View style={styles.adminMetricLabelBlock}>
+                    <Text style={styles.adminMetricLabel}>Home Runtime Exposed</Text>
+                    <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED}</Text>
+                  </View>
+                  <Text style={styles.adminMetricValue}>{homeRevenueRuntimeExposedCount}</Text>
+                </View>
+                <View style={styles.adminMetricRow}>
+                  <View style={styles.adminMetricLabelBlock}>
+                    <Text style={styles.adminMetricLabel}>Review Runtime Exposed</Text>
+                    <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED}</Text>
+                  </View>
+                  <Text style={styles.adminMetricValue}>{reviewRevenueRuntimeExposedCount}</Text>
+                </View>
+                <View style={styles.adminMetricRow}>
+                  <View style={styles.adminMetricLabelBlock}>
+                    <Text style={styles.adminMetricLabel}>Variant Fallback Applied</Text>
+                    <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED}</Text>
+                  </View>
+                  <Text style={styles.adminMetricValue}>{experimentVariantFallbackAppliedCount}</Text>
+                </View>
+              </View>
+
               <Text style={styles.adminMetricLabel}>Recent Funnel Snapshot</Text>
               <Text style={styles.adminMetricSubtext}>Based on the latest mirrored analytics events in Firestore.</Text>
               <View style={{ marginTop: 8, marginBottom: 10 }}>
