@@ -170,6 +170,8 @@ function AdminScreen() {
   const homeRuntimeExposureStale = homeRevenueRuntimeExposedLast24hCount === 0 && homeRevenueRuntimeExposedCount > 0;
   const reviewRuntimeExposureStale = reviewRevenueRuntimeExposedLast24hCount === 0 && reviewRevenueRuntimeExposedCount > 0;
   const variantFallbackStale = experimentVariantFallbackAppliedLast24hCount === 0 && experimentVariantFallbackAppliedCount > 0;
+  const staleInstrumentationCount = [homeRuntimeExposureStale, reviewRuntimeExposureStale, variantFallbackStale].filter(Boolean).length;
+  const hasStaleInstrumentation = staleInstrumentationCount > 0;
   const quizAnswerRate = quizStartedCount ? Math.round((questionAnsweredCount / quizStartedCount) * 100) : 0;
   const interviewResponseRate = interviewStartedCount ? Math.round((interviewResponseCount / interviewStartedCount) * 100) : 0;
   const interviewRecordingStartRate = interviewStartedCount ? Math.round((interviewRecordingStartedCount / interviewStartedCount) * 100) : 0;
@@ -961,6 +963,9 @@ function AdminScreen() {
                 </View>
               </View>
               <Text style={styles.adminMetricSubtext}>Format: Last 24h / All-time</Text>
+              <Text style={[styles.adminMetricSubtext, hasStaleInstrumentation ? { color: '#B45309' } : { color: '#047857' }]}>
+                Signal health: {hasStaleInstrumentation ? `stale (${staleInstrumentationCount}/3 counters)` : 'healthy (3/3 active within 24h)'}
+              </Text>
 
               <Text style={styles.adminMetricLabel}>Recent Funnel Snapshot</Text>
               <Text style={styles.adminMetricSubtext}>Based on the latest mirrored analytics events in Firestore.</Text>
