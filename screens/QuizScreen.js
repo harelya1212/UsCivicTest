@@ -126,6 +126,7 @@ function QuizScreen({ route, navigation }) {
   const [autoAdvancePhase, setAutoAdvancePhase] = useState(null); // 'reveal' | 'next' | null
   const autoAdvanceTimerRef = useRef(null);
   const autoAdvanceCounterRef = useRef(null);
+  const stepGoalPulse = useRef(new Animated.Value(0)).current;
   const showFeedbackRef = useRef(showFeedback);
   const latestSnapshotRef = useRef({
     current,
@@ -344,6 +345,13 @@ function QuizScreen({ route, navigation }) {
     if (answeredCount > 0 && answeredCount % 3 === 0 && lastStepGoalTrackedCountRef.current !== answeredCount) {
       lastStepGoalTrackedCountRef.current = answeredCount;
       triggerSensoryEvent(sensoryEvents.QUIZ_PROGRESS_WAVE);
+      stepGoalPulse.setValue(1);
+      Animated.spring(stepGoalPulse, {
+        toValue: 0,
+        friction: 5,
+        tension: 120,
+        useNativeDriver: true,
+      }).start();
       trackAppEvent(APP_EVENT_NAMES.QUIZ_STEP_GOAL_REACHED, {
         quiz_type: type,
         answered_count: answeredCount,
@@ -351,7 +359,7 @@ function QuizScreen({ route, navigation }) {
         step_size: 3,
       });
     }
-  }, [history.length, pool.length, sensoryEvents.QUIZ_PROGRESS_WAVE, trackAppEvent, triggerSensoryEvent, type]);
+  }, [history.length, pool.length, sensoryEvents.QUIZ_PROGRESS_WAVE, stepGoalPulse, trackAppEvent, triggerSensoryEvent, type]);
 
   useEffect(() => {
     const answeredCount = history.length;
@@ -421,6 +429,10 @@ function QuizScreen({ route, navigation }) {
     return arr.findIndex((entry) => String(entry || '').trim().toLowerCase() === normalized) === idx;
   });
   const isTwoAnswerQuestion = /name two|two important ideas|name 2|two ideas/i.test(question.question);
+  const stepGoalScale = stepGoalPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.06],
+  });
 
   // Speak the official answer aloud in listen mode, then schedule auto-next
   const speakAnswer = async () => {
@@ -630,12 +642,12 @@ function QuizScreen({ route, navigation }) {
             <Text style={styles.quizActionText}>{lowClutterMode ? 'Classic' : 'Focus'}</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.focusModeBadge}>
+        <Animated.View style={[styles.focusModeBadge, { transform: [{ scale: stepGoalScale }] }]}>
           <MaterialCommunityIcons name="progress-check" size={14} color="#6EE7B7" />
           <Text style={styles.focusModeBadgeText}>
             Step Goal: {Math.max(0, currentGoalProgress)}/{Math.max(1, Math.min(pacingStep, currentGoalTarget - currentGoalStart))} (to Q{currentGoalTarget})
           </Text>
-        </View>
+        </Animated.View>
         {listenMode && (
           <>
             <View style={styles.listenControlsRow}>
