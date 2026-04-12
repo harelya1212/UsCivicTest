@@ -41,15 +41,42 @@ Revenue should grow by increasing user-perceived value first:
 - milestone-based nudges
 - shared completion celebrations
 
+5. 3D Learning Path (Glass Ascent)
+- replace flat route view with a vertical helix or floating island chain presentation
+- use a 3/4 isometric perspective with depth motion and parallax
+- render each step of the existing auto-generated 3-step route as a glassmorphism squircle island
+- apply fog-of-war: unlocked islands are clear, future islands are blurred/translucent
+
+6. Haptic Scroll and Snap behavior
+- magnetic snapping: each island springs into center focus while scrolling
+- haptic dial click: emit Success Tock on each snap focus event
+- parallax depth: background stars/mesh blobs move slower than path layer
+
+7. Mastery signal fusion for 3D route
+- urgency glow under islands linked to weak-area urgency signals
+- trend indicators as energy lines between islands for 7-day trend continuity
+- effort badge ghost avatar for squad member presence on same island
+
+8. ADHD pacing layer on 3D route
+- adaptive pacing nudge: if user scrolls rapidly without entering a step, trigger Soft Thud and suggest slower progression
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
 - +12% weak-topic drill completion rate
+- +15% 3-step route entry rate from mastery surface
 
 ### Exit Criteria
 - all mission flows stable in manual QA
 - adaptive plans regenerate without regressions
 - metrics move positively vs Sprint 6 baseline
+- 3D route renders smoothly with snap/haptic feedback and no interaction regressions
+
+### Sprint 8 Implementation Tasks (3D Path)
+- [ ] 3D Path Component: build vertical scroll route using react-native-reanimated (or Three/Fiber if needed) for floating-island layout
+- [ ] Haptic Dial Logic: map route snap points to HapticProvider click events
+- [ ] Urgency Layer Integration: color islands dynamically from weak-area urgency map
+- [ ] Adaptive Pacing Nudges: if scroll speed exceeds threshold without step entry, emit Soft Thud and show low-stress guidance
 
 ---
 
