@@ -167,6 +167,9 @@ function AdminScreen() {
   const homeRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
   const reviewRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
   const experimentVariantFallbackAppliedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
+  const homeRuntimeExposureStale = homeRevenueRuntimeExposedLast24hCount === 0 && homeRevenueRuntimeExposedCount > 0;
+  const reviewRuntimeExposureStale = reviewRevenueRuntimeExposedLast24hCount === 0 && reviewRevenueRuntimeExposedCount > 0;
+  const variantFallbackStale = experimentVariantFallbackAppliedLast24hCount === 0 && experimentVariantFallbackAppliedCount > 0;
   const quizAnswerRate = quizStartedCount ? Math.round((questionAnsweredCount / quizStartedCount) * 100) : 0;
   const interviewResponseRate = interviewStartedCount ? Math.round((interviewResponseCount / interviewStartedCount) * 100) : 0;
   const interviewRecordingStartRate = interviewStartedCount ? Math.round((interviewRecordingStartedCount / interviewStartedCount) * 100) : 0;
@@ -928,21 +931,33 @@ function AdminScreen() {
                     <Text style={styles.adminMetricLabel}>Home Runtime Exposed</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{homeRevenueRuntimeExposedLast24hCount} / {homeRevenueRuntimeExposedCount}</Text>
+                  <Text style={styles.adminMetricValue}>
+                    <Text style={homeRuntimeExposureStale ? { color: '#B45309' } : null}>{homeRevenueRuntimeExposedLast24hCount}</Text>
+                    {' / '}
+                    <Text>{homeRevenueRuntimeExposedCount}</Text>
+                  </Text>
                 </View>
                 <View style={styles.adminMetricRow}>
                   <View style={styles.adminMetricLabelBlock}>
                     <Text style={styles.adminMetricLabel}>Review Runtime Exposed</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{reviewRevenueRuntimeExposedLast24hCount} / {reviewRevenueRuntimeExposedCount}</Text>
+                  <Text style={styles.adminMetricValue}>
+                    <Text style={reviewRuntimeExposureStale ? { color: '#B45309' } : null}>{reviewRevenueRuntimeExposedLast24hCount}</Text>
+                    {' / '}
+                    <Text>{reviewRevenueRuntimeExposedCount}</Text>
+                  </Text>
                 </View>
                 <View style={styles.adminMetricRow}>
                   <View style={styles.adminMetricLabelBlock}>
                     <Text style={styles.adminMetricLabel}>Variant Fallback Applied</Text>
                     <Text style={styles.adminMetricSubtext}>{APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED}</Text>
                   </View>
-                  <Text style={styles.adminMetricValue}>{experimentVariantFallbackAppliedLast24hCount} / {experimentVariantFallbackAppliedCount}</Text>
+                  <Text style={styles.adminMetricValue}>
+                    <Text style={variantFallbackStale ? { color: '#B45309' } : null}>{experimentVariantFallbackAppliedLast24hCount}</Text>
+                    {' / '}
+                    <Text>{experimentVariantFallbackAppliedCount}</Text>
+                  </Text>
                 </View>
               </View>
               <Text style={styles.adminMetricSubtext}>Format: Last 24h / All-time</Text>
