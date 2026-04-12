@@ -30,6 +30,12 @@ Elevate Civic Citizenship from a functional utility to a premium 2026 product by
   - Animate milestone headers with subtle glow/twist on study milestones.
 - Spring Animation Suite
   - Use elastic spring physics for card swipes and bento tilt interactions.
+- Ghost Progress Visualization
+  - Ambient social presence: when a squad member is studying, show a subtle pulsing aura around their shared Topic Radar segment.
+  - Effort heatmap: replace list-only social effort views with a squishy 3D tile grid whose glow intensity follows study-hours ranking.
+- Micro-Goal Confetti Logic
+  - Haptic-visual sync when a pacing micro-goal is reached: Success Wave haptic + kinetic score pop/ripple.
+  - Celebration style uses mesh gradients (moving soft color fields), not flat icon bursts.
 
 ### Batch 3: The Squad War Room (Advanced Social UX)
 - Live Presence Halos
@@ -40,12 +46,22 @@ Elevate Civic Citizenship from a functional utility to a premium 2026 product by
 - Squad Power-ups
   - Add shared boost monetization logic:
     - If one member completes rewarded ad, squad gets +20% effort points for 1 hour.
+- Squad Live Pulse Events
+  - Extend Firestore transport/session signaling so active card-swiping emits a lightweight live pulse event for presence/aura updates.
 
 ### Batch 4: The Brag-Ready Viral Layer
 - Dynamic Social Cards
   - Generate high-contrast shareables featuring Topic Radar in a tech-noir visual style.
 - Zero-Friction Invite
   - Optimize team invite lifecycle with rich media link previews including avatar + rank context.
+- Brag-Card Template
+  - Add a glassmorphism share-card template for high-energy group sharing moments.
+
+### Sprint 8/9 Expansion Hooks (ADHD-Specific Polish)
+- Focus Breathing UI
+  - When low-clutter mode is active, background motion should follow a slow breathing rhythm.
+- Adaptive Difficulty Nudges
+  - If Interview mode sees three failed checks in a row, trigger Soft Thud and offer a Listen-and-Go review card automatically.
 
 ## Technical Definition: Haptic and Audio Trigger Mapping
 
@@ -88,6 +104,9 @@ Elevate Civic Citizenship from a functional utility to a premium 2026 product by
 - [ ] Silent Mode Logic: haptics still fire when Quiz TTS is muted.
 - [ ] Interview Safety: interview haptics remain subtle to avoid microphone interference.
 - [ ] Squad Trigger Wiring: nudge receive path emits Double Knock + haptic pattern exactly once.
+- [ ] Visual Haptic Mirroring: each named haptic has matching micro-animation (ripple, blur, shake, or glow).
+- [ ] Squad Live State: Firestore transport emits live pulse events during active study swipes.
+- [ ] Brag-Card Template: glassmorphism shareable card finalized for viral sharing flow.
 
 ## Definition of Done
 - Sensory Check: 100% of correct/incorrect answers trigger the mapped sensory signature (sound + haptic).
