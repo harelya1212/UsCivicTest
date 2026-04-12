@@ -681,6 +681,17 @@ function normalizeSquadMember(member = {}) {
   } else {
     next.role = role || 'child';
   }
+
+  const ghostPresence = next?.ghostPresence && typeof next.ghostPresence === 'object'
+    ? next.ghostPresence
+    : {};
+  next.ghostPresence = {
+    streakIntensity: clampNumber(Number(ghostPresence.streakIntensity || 0), 0, 1),
+    focusVelocity: Math.max(0, Number(ghostPresence.focusVelocity || 0)),
+    isFlowState: Boolean(ghostPresence.isFlowState),
+    updatedAt: ghostPresence.updatedAt || null,
+  };
+
   return next;
 }
 
@@ -801,6 +812,13 @@ function getSeasonScore(member = {}) {
 
 function clampNumber(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function getGhostStreakIntensity({ focusVelocity = 0, streakDays = 0, isFlowState = false } = {}) {
+  const velocityScore = clampNumber(Number(focusVelocity || 0) / 10, 0, 1);
+  const streakScore = clampNumber(Number(streakDays || 0) / 10, 0, 1);
+  const flowBoost = isFlowState ? 0.08 : 0;
+  return Number(clampNumber((velocityScore * 0.65) + (streakScore * 0.35) + flowBoost, 0, 1).toFixed(3));
 }
 
 function getSeasonFairPlay(member = {}) {
@@ -1373,7 +1391,8 @@ export default function App() {
   const [adRuntime, setAdRuntime] = useState(createDefaultAdRuntime());
   const [masteryMap, setMasteryMap] = useState(createDefaultMasteryMap());
   const [userProfile, setUserProfile] = useState(createDefaultUserProfile());
-  const [squadSync, setSquadSync] = useState(createDefaultSquadSync());
+  const [squadSync, setSquadSync] = useState(createDefa
+  const lastGhostBroadcastRef = useRef({ at: 0, intensity: -1, isFlowState: false });ultSquadSync());
   const navigationRef = useRef(null);
   const routeNameRef = useRef(null);
   const localDeviceIdRef = useRef(`local-${Platform.OS}-${Math.random().toString(36).slice(2, 8)}`);
@@ -2814,6 +2833,58 @@ export default function App() {
       trackAppEvent(APP_EVENT_NAMES.FOCUS_SHIELD_PROMPT_SHOWN, {
         prompt: 'watch_ad_keep_ad_free_20m',
       });
+    }
+
+    const latestFlowState = enteredFocusState
+      ? true
+      : exitedFocusState
+        ? false
+        : Boolean(adRuntime?.focusTelemetry?.adSuppressionActive);
+    const streakDays = Number(squadSync?.streakChain?.currentDays || 0);
+    const streakIntensity = getGhostStreakIntensity({
+      focusVelocity: Number(payload.focusVelocity || 0),
+      streakDays,
+      isFlowState: latestFlowState,
+    });
+
+    const previousGhostBroadcast = lastGhostBroadcastRef.current || { at: 0, intensity: -1, isFlowState: false };
+    const shouldBroadcastGhostPresence = (
+      Math.abs(streakIntensity - Number(previousGhostBroadcast.intensity || 0)) >= 0.08
+      || previousGhostBroadcast.isFlowState !== latestFlowState
+      || (now - Number(previousGhostBroadcast.at || 0)) >= 10000
+    );
+
+    if (shouldBroadcastGhostPresence) {
+      lastGhostBroadcastRef.current = {
+        at: now,
+        intensity: streakIntensity,
+        isFlowState: latestFlowState,
+      };
+
+      const updatedAtIso = new Date(now).toISOString();
+      applySquadMutation((prev) => {
+        const members = Array.isArray(prev?.members) ? prev.members : [];
+        if (!members.length) return prev;
+
+        const nextMembers = members.map((member) => {
+          if (String(member?.id || '').trim() !== 'self') return member;
+          return {
+            ...member,
+            status: latestFlowState ? 'in_the_zone' : 'active',
+            ghostPresence: {
+              streakIntensity,
+              focusVelocity: Math.max(0, Number(payload.focusVelocity || 0)),
+              isFlowState: latestFlowState,
+              updatedAt: updatedAtIso,
+            },
+          };
+        });
+
+        return {
+          ...prev,
+          members: nextMembers,
+        };
+      }, ['members']);
     }
   };
 

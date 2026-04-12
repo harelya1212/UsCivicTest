@@ -2266,6 +2266,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
     gap: 6,
   },
+  threeDGhostParticleCanvasWrap: {
+    width: '100%',
+    height: 28,
+    justifyContent: 'center',
+  },
+  threeDGhostParticleFallbackTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
   threeDGhostRunner: {
     width: 14,
     height: 14,

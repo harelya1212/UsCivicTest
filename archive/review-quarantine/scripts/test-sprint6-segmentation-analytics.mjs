@@ -13,15 +13,19 @@ import {
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'REVOKED_USE_EXPO_PUBLIC_FIREBASE_API_KEY',
-  authDomain: 'civic-citizenship-app.firebaseapp.com',
-  projectId: 'civic-citizenship-app',
-  storageBucket: 'civic-citizenship-app.firebasestorage.app',
-  messagingSenderId: '1089484361825',
-  appId: '1:1089484361825:web:f5c7edcd3f5d55ee0c5a20',
-  databaseURL: 'https://civic-citizenship-app-default-rtdb.firebaseio.com/',
-  measurementId: 'G-CT4V0D1WZL',
+  apiKey: process.env.FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || 'civic-citizenship-app.firebaseapp.com',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'civic-citizenship-app',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || 'civic-citizenship-app.firebasestorage.app',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '1089484361825',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:1089484361825:web:f5c7edcd3f5d55ee0c5a20',
+  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL || 'https://civic-citizenship-app-default-rtdb.firebaseio.com/',
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-CT4V0D1WZL',
 };
+
+if (!firebaseConfig.apiKey) {
+  throw new Error('Missing FIREBASE_API_KEY/EXPO_PUBLIC_FIREBASE_API_KEY for segmentation analytics validation script.');
+}
 
 const DEBUG_COLLECTION = 'analytics_debug_events';
 const app = initializeApp(firebaseConfig, 'segmentation-analytics-validation');

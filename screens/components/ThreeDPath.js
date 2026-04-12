@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { useHapticEngine } from '../../context/HapticProvider';
+import GhostParticleLayer from './GhostParticleLayer';
 import styles from '../../styles';
 
 const CARD_HEIGHT = 148;
@@ -225,6 +226,7 @@ function ThreeDPath({
                         },
                       ]}
                     />
+                    <GhostParticleLayer intensity={ghostIntensity} color={ghostColor} width={132} height={28} />
                     <View style={styles.threeDGhostTrailTrack}>
                       <View
                         style={[

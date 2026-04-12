@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   SafeAreaView,
@@ -52,6 +52,7 @@ function HomeScreen({ navigation }) {
     trackAdEvent,
     trackAppEvent,
     adRuntime,
+    squadSync,
     unlockDailyFreePack,
     claimComebackReward,
     getOfferVariant,
@@ -144,6 +145,15 @@ function HomeScreen({ navigation }) {
     },
   };
   const homeSprintCopy = homeSprintCopyByVariant[homeSprintVariant] || homeSprintCopyByVariant.control;
+  const friendGhostIntensity = useMemo(() => {
+    const members = Array.isArray(squadSync?.members) ? squadSync.members : [];
+    const friendIntensities = members
+      .filter((member) => String(member?.id || '').trim() && String(member?.id || '').trim() !== 'self')
+      .map((member) => Number(member?.ghostPresence?.streakIntensity || 0))
+      .filter((value) => Number.isFinite(value) && value > 0);
+    if (!friendIntensities.length) return 0;
+    return Math.max(...friendIntensities);
+  }, [squadSync?.members]);
   const showSpatialPath = ENABLE_SPATIAL_HOME_PATH && !spatialPathFailed;
   const spatialStudyRoute = [
     {
@@ -446,7 +456,8 @@ function HomeScreen({ navigation }) {
             <Text style={styles.studyPlanCardLine}>Questions per day: {studyPlan.questionsPerDay}</Text>
             <Text style={styles.studyPlanCardLine}>Weekly target: {studyPlan.targetWeeklyQuestions}</Text>
             <Text style={styles.studyPlanCardHint}>Review every {studyPlan.reviewEvery} day(s). {studyPlan.focus}</Text>
-          </View>
+          </VifriendGhostIntensity={friendGhostIntensity}
+              ew>
         )}
 
         {showSpatialPath ? (
