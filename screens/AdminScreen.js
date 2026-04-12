@@ -77,6 +77,7 @@ function AdminScreen() {
     refreshSquadFromRemote,
     runModerationAdminAction,
     trackAppEvent,
+    getOfferVariant,
   } = useContext(AppDataContext);
   const [stateName, setStateName] = useState(testDetails?.state || 'California');
   const [president, setPresident] = useState(DYNAMIC_CIVICS_DATA.federal.president);
@@ -360,6 +361,12 @@ function AdminScreen() {
   const revenueCohort = (revenueOverrideCohort === 'treatment' || revenueOverrideCohort === 'holdout')
     ? revenueOverrideCohort
     : String(revenueExperiment?.cohort || 'unassigned');
+  const cohortAssignmentSource = revenueOverrideCohort
+    ? `override:${revenueOverrideCohort}`
+    : 'seeded';
+  const cohortSeed = String(revenueExperiment?.seed || '').trim() || 'n/a';
+  const cohortAssignedAt = String(revenueExperiment?.assignedAt || '').trim();
+  const cohortAssignedAtLabel = cohortAssignedAt ? new Date(cohortAssignedAt).toLocaleString() : 'n/a';
   const treatmentEnabled = revenueCohort !== 'holdout';
   const effectiveSegment = treatmentEnabled ? 'high-intent/segment-driven' : 'warming/baseline';
   const effectiveRewardedDailyMult = treatmentEnabled ? 1.25 : 1;
@@ -509,6 +516,10 @@ function AdminScreen() {
   const homeSprintAttemptCount = analytics.rewardedHomeSprintAttempts || 0;
   const homeSprintAttemptProgress = Math.min(30, homeSprintAttemptCount);
   const homeSprintAttemptPct = Math.round((homeSprintAttemptProgress / 30) * 100);
+  const activeHomeSprintOfferVariant = getOfferVariant('homeSprintOffer');
+  const activeHomeSprintRewardVariant = getOfferVariant('homeSprintReward');
+  const activeReviewBonusVariant = getOfferVariant('reviewBonusOffer');
+  const activeReviewWeakVariant = getOfferVariant('reviewWeakOffer');
   const homeSprintRewardGroup = offerVariantRows.find((group) => group.key === 'homeSprintReward');
   const rewardWinnerReady = Boolean(
     homeSprintRewardGroup?.leader
@@ -521,7 +532,9 @@ function AdminScreen() {
   const runRevenueRuntimeSelfCheck = () => {
     const snapshot = [
       `Path: ${treatmentEnabled ? 'treatment' : 'holdout-baseline'} (cohort=${revenueCohort})`,
+      `Assignment source: ${cohortAssignmentSource} • seed=${cohortSeed} • assignedAt=${cohortAssignedAt || 'n/a'}`,
       `Offer variant path: homeSprintOffer=${treatmentEnabled ? 'dynamic (pinned/auto/balanced)' : 'control baseline'}, homeSprintReward=${treatmentEnabled ? 'dynamic (pinned/auto/balanced)' : 'standard baseline'}`,
+      `Active variants now: homeSprintOffer=${activeHomeSprintOfferVariant}, homeSprintReward=${activeHomeSprintRewardVariant}, reviewBonusOffer=${activeReviewBonusVariant}, reviewWeakOffer=${activeReviewWeakVariant}`,
       `Cap policy path: segment=${effectiveSegment}, rewardedDailyMult=${effectiveRewardedDailyMult}, rewardedCooldownMult=${effectiveRewardedCooldownMult}, interstitialDailyMult=${effectiveInterstitialDailyMult}, interstitialCooldownMult=${effectiveInterstitialCooldownMult}`,
       `Comeback path: eligibleWindow=${comebackEligibleWindow || 'none'}, CTA=${treatmentEnabled ? 'enabled when eligible' : 'disabled for holdout'}`,
     ].join('\n');
@@ -1531,6 +1544,16 @@ function AdminScreen() {
               bucket {Number.isFinite(Number(revenueExperiment?.bucket)) ? Number(revenueExperiment.bucket) : 'n/a'}
               {' • '}
               holdout split {Number(revenueExperiment?.holdoutPct || 20)}%
+            </Text>
+            <Text style={styles.adminMetricSubtext}>
+              Assignment source: {cohortAssignmentSource}
+              {' • '}
+              seed {cohortSeed}
+              {' • '}
+              assigned {cohortAssignedAtLabel}
+            </Text>
+            <Text style={styles.adminMetricSubtext}>
+              Active variants now: homeSprintOffer={activeHomeSprintOfferVariant}, homeSprintReward={activeHomeSprintRewardVariant}, reviewBonusOffer={activeReviewBonusVariant}, reviewWeakOffer={activeReviewWeakVariant}
             </Text>
             <View style={[styles.pickerContainer, { marginTop: 8, marginBottom: 8 }]}>
               <Picker
