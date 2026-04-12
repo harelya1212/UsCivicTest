@@ -24,6 +24,10 @@ Revenue should grow by increasing user-perceived value first:
 - Raise session completion and next-day return
 - Improve weak-topic recovery completion
 
+### Sprint 8 Batch Framing (Blueprint Lock)
+- Batch 1: 3D Helix + Cinematic Entrance + magnetic haptic snapping
+- Batch 2: Social Layer + Nudge Back + Orbital Emoji + Ghost Sync
+
 ### Scope
 1. Smart mission engine
 - daily mission
@@ -113,6 +117,20 @@ Revenue should grow by increasing user-perceived value first:
 - color ramp shifts from calm blue to Miami-neon pink/purple as focus velocity climbs
 - sync friend streak_intensity so squad ghosts are visible and scaled by streak depth (e.g., 10-day streak aura boost)
 
+18. Implementation artifact: Ghost payload contract
+- use the following baseline runtime shape for ghost state and monetization tie-ins:
+
+```json
+{
+	"ghost_config": {
+		"base_color": "#00E5FF",
+		"active_color": "#FF00FF",
+		"particle_density": "dynamic",
+		"is_ignited": false
+	}
+}
+```
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
@@ -159,6 +177,10 @@ Revenue should grow by increasing user-perceived value first:
 ### Objectives
 - Increase revenue per active user while protecting retention
 
+### Sprint 9 Batch Framing (Blueprint Lock)
+- Batch 1: Deep Focus ad suppression + dynamic caps + natural-exit interstitial windows
+- Batch 2: Native revenue integration (Sponsor Islands, Streak Shield, Ambient Night Mode)
+
 ### Scope
 1. Value-based rewarded bundles
 - bonus drill bundle
@@ -173,12 +195,18 @@ Revenue should grow by increasing user-perceived value first:
 3. Dynamic pacing policy
 - adjust cap multipliers by intent segment + session depth
 - enforce cooldown/frequency safety limits
+- deploy flow detector with explicit threshold guidance (interaction latency < 2s + high focus velocity)
+- block interstitials while flow detector is active
+- allow full-screen interstitials only at natural exits (focus transition out or 3-step route completion)
 
 4. Context-aware monetization placement
 - integrated Sponsor Island ad format with same glass styling and explicit value exchange
 - Streak Shield prompt when streak-loss risk is detected (forgiving ad)
 - deep-focus suppression and ad-light recovery windows remain enforced to protect retention
 - Mass Nudge rewarded trade: watch 15s sponsor clip to nudge all queued friends + temporary squad effort bonus
+- Sponsor Islands: native 3D island ad variant that grants Ghost Boost or Squad Multiplier on engagement
+- Streak Shield: forgiving rewarded ad offer to preserve streak when a day is missed
+- Ambient Night Mode: location-aware/time-aware trigger at 9:00 PM to shift palette to Indigo and soften haptics
 
 5. Social monetization expansion
 - premium emoji packs (cosmetic reactions) as one-time or high-effort unlock
@@ -205,6 +233,11 @@ Revenue should grow by increasing user-perceived value first:
 - revenue lift achieved with guardrails green
 - no holdout contamination
 - audit panel fully populated and reviewed
+
+## Technical Guardrails (Definition of Done)
+- Performance: 3D Helix path must hold 60 FPS on mid-range devices in QA pass.
+- Sensory Lag: haptic confirmation should fire within 10ms of visual snap/selection trigger point.
+- Revenue Floor: suppression should not collapse ads/session below target floor; it must shift delivery to higher-conversion windows.
 
 ---
 

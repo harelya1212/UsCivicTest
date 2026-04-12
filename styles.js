@@ -2213,10 +2213,16 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 320,
   },
+  threeDPathIntroWrap: {
+    flex: 1,
+  },
   threeDPathContent: {
     paddingVertical: 18,
     paddingHorizontal: 6,
     gap: 10,
+  },
+  threeDIslandShell: {
+    width: '100%',
   },
   threeDIsland: {
     height: 132,
@@ -2231,6 +2237,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
+    overflow: 'hidden',
   },
   threeDIslandTitle: {
     fontSize: 17,
@@ -2254,6 +2261,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
     borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.35)',
+  },
+  threeDGhostCluster: {
+    marginTop: 10,
+    gap: 6,
+  },
+  threeDGhostRunner: {
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    shadowColor: '#FF00FF',
+    shadowOpacity: 0.32,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  threeDGhostTrailTrack: {
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(148, 163, 184, 0.20)',
+    overflow: 'hidden',
+  },
+  threeDGhostTrailFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  threeDSquadGhostBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(125, 211, 252, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.35)',
+  },
+  threeDSquadGhostBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#BAE6FD',
   },
   homeBetaFallbackBadge: {
     flexDirection: 'row',

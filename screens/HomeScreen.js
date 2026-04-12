@@ -455,6 +455,7 @@ function HomeScreen({ navigation }) {
             <Text style={styles.focusPresetSubtitle}>Snap through your 3-step path. If unavailable, Home falls back automatically.</Text>
             <ThreeDPath
               studyRoute={spatialStudyRoute}
+              focusVelocity={Number(adRuntime?.focusTelemetry?.focusVelocity || 0)}
               onStepEnter={handleSpatialStepEnter}
               onAdaptivePacingNudge={() => {
                 trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
