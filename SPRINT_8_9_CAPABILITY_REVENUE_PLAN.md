@@ -107,6 +107,12 @@ Revenue should grow by increasing user-perceived value first:
 - Mid-ground: Squad presence avatars with pulse halos
 - Background: Blurred Mastery Map mesh reacting to focus state
 
+17. Kinetic Streak Ghost (Love-at-First-Sight momentum entity)
+- render a Ghost Runner (semi-transparent pulsing orb/trail) that follows user progression along the 3D helix
+- map trail_intensity directly to focus_velocity telemetry for real-time momentum feedback
+- color ramp shifts from calm blue to Miami-neon pink/purple as focus velocity climbs
+- sync friend streak_intensity so squad ghosts are visible and scaled by streak depth (e.g., 10-day streak aura boost)
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
@@ -140,6 +146,11 @@ Revenue should grow by increasing user-perceived value first:
 - [ ] Nudge Response Payload: send nudge_response with response_type='gratitude' and optional reaction_id.
 - [ ] Haptic Profiles: Micro-Tick on reaction hover, Success Tock on local send, remote Double Knock on recipient.
 - [ ] Telemetry Additions: track nudge_back_sent, reaction_selected, queue_size_at_flush, and post-nudge session extension.
+- [ ] Kinetic Ghost Particle Engine: render dynamic trail using react-native-canvas or Skia behind active island.
+- [ ] Velocity Mapping Shader: bind trail_intensity to focus_velocity and update mesh-gradient tint in the same frame budget.
+- [ ] Social Ghost Sync: broadcast streak_intensity over Firestore transport and visualize squad ghost states on route.
+- [ ] Micro-Tick Streak Milestone: trigger Micro-Tick crackle on streak-of-5 momentum checkpoint.
+- [ ] Ghost Visibility Guardrails: gracefully degrade to static glow if GPU budget or animation runtime degrades.
 
 ---
 
@@ -172,6 +183,8 @@ Revenue should grow by increasing user-perceived value first:
 5. Social monetization expansion
 - premium emoji packs (cosmetic reactions) as one-time or high-effort unlock
 - reward-gated Gold Nudge for multi-friend acknowledgement without session interruption
+- reward-gated Ghost Ignite: watch 30s clip to boost ghost intensity (double XP-style bonus window)
+- vanity Ghost skins (including motorsport-inspired silhouettes) as cosmetic monetization pack
 
 6. Revenue quality scoring gate
 - if retention/fatigue risk is low, allow safe ad-frequency elevation

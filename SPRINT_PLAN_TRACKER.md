@@ -222,6 +222,8 @@ Plan file: [SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md](SPRINT_8_9_CAPABILITY_REVENUE
 - [ ] Add NudgeBack ghost pill on completed islands with one-tap gratitude response
 - [ ] Add long-press orbital emoji picker with micro-tick haptic dial and reaction payload tracking
 - [ ] Sync "In the Zone" focus status to squad presence layer
+- [ ] Add Kinetic Streak Ghost trail linked to focus_velocity (intensity + neon color ramp)
+- [ ] Add squad ghost sync so friend streak entities are visible on shared 3D route
 
 Definition of done:
 - [ ] Session completion and next-day return improve vs Sprint 6 baseline
@@ -236,6 +238,7 @@ Plan file: [SPRINT_8_9_CAPABILITY_REVENUE_PLAN.md](SPRINT_8_9_CAPABILITY_REVENUE
 - [ ] Add Admin monetization audit panel for pacing and holdout parity
 - [ ] Add rewarded Mass Nudge action (sponsor clip for multi-recipient social boost)
 - [ ] Add premium emoji packs as cosmetic social monetization option
+- [ ] Add Ghost Ignite rewarded boost and vanity Ghost skin monetization
 
 Definition of done:
 - [ ] Revenue per active user improves while churn/fatigue remain within guardrails
