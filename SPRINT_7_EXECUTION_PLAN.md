@@ -1,8 +1,16 @@
 # Sprint 7 Execution Plan
 
-Status: not started
+Status: in progress (Batch 2)
 Window: Weeks 13-14
 Objective: increase rewarded conversion and revenue efficiency without hurting retention or user trust.
+
+## Updated Sprint Sequence (Apr 12, 2026)
+- Sprint 7 (Batch 2) priority: Instrumentation
+  - Log Focus State entry/exit to define ad-suppression windows.
+- Sprint 8 priority: Cinematic UI
+  - Implement CameraFlyThrough targeting the 3D route experience.
+- Sprint 9 priority: Revenue Intelligence
+  - Enforce Dynamic Cap Policy + Intent Segmentation so interruptions occur only when retention risk is low.
 
 ## North-Star Targets
 - Primary: rewarded conversion rate +15% over Sprint 6 baseline
@@ -38,6 +46,12 @@ Objective: increase rewarded conversion and revenue efficiency without hurting r
   - evening (18-22)
 - Success metric:
   - comeback claim rate and next-session completion
+
+4. Focus-state instrumentation and guardrails
+- log focus state entry/exit events from Home/Quiz interaction cadence
+- define deep-focus suppression windows for interstitial avoidance
+- during suppression, shift surfaced value toward rewarded power-ups instead of interruption
+- enforce ad-light recovery paths inside focus windows
 
 ## Batch Plan
 

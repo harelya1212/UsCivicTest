@@ -66,6 +66,12 @@ Revenue should grow by increasing user-perceived value first:
 - if 3D assets fail or runtime errors occur, fallback instantly to bento route (no blank/white screen)
 - map active squad member pulse events from remote transport to island halo presence
 
+10. Cinematic Fly-through hook
+- trigger on APP_READY after Deep Swell signature
+- animate from bird's-eye Mastery Map view to first-person current 3D island focus
+- coordinate BlurView opacity + island scale/translate using reanimated
+- trigger Success Tock when camera lands to signal control handoff
+
 ### Success Metrics
 - +10% session completion rate
 - +8% next-day return rate
@@ -86,6 +92,8 @@ Revenue should grow by increasing user-perceived value first:
 - [ ] Home Layer Stack: blurred Topic Radar/Trend/Urgency background + sharp foreground route islands + overlay dock
 - [ ] Background Memoization: lock mastery background rerenders during active 3D scroll
 - [ ] Variant Guardrails: production-safe fallback path to bento route when 3D route cannot initialize
+- [ ] CameraFlyThrough: scripted landing transition from blurred data-engine layer to active route island
+- [ ] Home route mount: spatial route is default when flag is enabled, fallback route remains production-safe
 
 ---
 
@@ -109,7 +117,16 @@ Revenue should grow by increasing user-perceived value first:
 - adjust cap multipliers by intent segment + session depth
 - enforce cooldown/frequency safety limits
 
-4. Monetization audit panel
+4. Context-aware monetization placement
+- integrated Sponsor Island ad format with same glass styling and explicit value exchange
+- Streak Shield prompt when streak-loss risk is detected (forgiving ad)
+- deep-focus suppression and ad-light recovery windows remain enforced to protect retention
+
+5. Revenue quality scoring gate
+- if retention/fatigue risk is low, allow safe ad-frequency elevation
+- if retention/fatigue risk is high, reduce interruption pressure and prioritize optional rewarded surfaces
+
+6. Monetization audit panel
 - daily pacing
 - holdout parity
 - guardrail breaches
