@@ -2224,6 +2224,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(251, 146, 60, 0.35)',
   },
+  homeBetaFallbackBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(180, 83, 9, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.45)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  homeBetaFallbackBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FDE68A',
+  },
 
   // ─── QuizScreen: ADHD option buttons ──────────────────────────────────────────
   adhd_optionButton: {

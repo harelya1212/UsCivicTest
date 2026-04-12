@@ -31,7 +31,7 @@ const OFFER_VARIANT_ALLOWED = Object.freeze({
   homeSprintReward: ['standard', 'extended'],
 });
 
-const ENABLE_SPATIAL_HOME_PATH = false;
+const ENABLE_SPATIAL_HOME_PATH = true;
 
 function sanitizeVariant(variantKey, candidate) {
   const options = OFFER_VARIANT_ALLOWED[variantKey] || [];
@@ -446,6 +446,12 @@ function HomeScreen({ navigation }) {
           </View>
         ) : (
           <View style={styles.focusPresetCard}>
+            {ENABLE_SPATIAL_HOME_PATH && spatialPathFailed ? (
+              <View style={styles.homeBetaFallbackBadge}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={14} color="#FDE68A" />
+                <Text style={styles.homeBetaFallbackBadgeText}>Beta fallback active</Text>
+              </View>
+            ) : null}
             <Text style={styles.focusPresetTitle}>Focus Presets</Text>
             <Text style={styles.focusPresetSubtitle}>Pick the energy level you have right now.</Text>
             <View style={styles.focusPresetRow}>
