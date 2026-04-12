@@ -2177,6 +2177,54 @@ const styles = StyleSheet.create({
     color: '#6EE7B7',
   },
 
+  // ─── Spatial Route: 3D path scaffold ─────────────────────────────────────────
+  threeDPathContainer: {
+    flex: 1,
+    minHeight: 320,
+  },
+  threeDPathContent: {
+    paddingVertical: 18,
+    paddingHorizontal: 6,
+    gap: 10,
+  },
+  threeDIsland: {
+    height: 132,
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.20)',
+    justifyContent: 'center',
+    shadowColor: '#0EA5E9',
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  threeDIslandTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#E2E8F0',
+  },
+  threeDIslandSubtitle: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  threeDIslandUrgency: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FDBA74',
+    backgroundColor: 'rgba(251, 146, 60, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 146, 60, 0.35)',
+  },
+
   // ─── QuizScreen: ADHD option buttons ──────────────────────────────────────────
   adhd_optionButton: {
     flexDirection: 'row',
