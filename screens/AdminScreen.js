@@ -164,9 +164,21 @@ function AdminScreen() {
     const createdAtMs = Date.parse(String(event?.createdAtIso || '').trim());
     return Number.isFinite(createdAtMs) && createdAtMs >= last24hCutoffMs;
   }).length;
+  const getLastSeenTimestampByEventName = (eventName) => {
+    let latestMs = 0;
+    analyticsDebugEvents.forEach((event) => {
+      if (event?.eventName !== eventName) return;
+      const createdAtMs = Date.parse(String(event?.createdAtIso || '').trim());
+      if (Number.isFinite(createdAtMs) && createdAtMs > latestMs) latestMs = createdAtMs;
+    });
+    return latestMs > 0 ? new Date(latestMs).toLocaleString() : 'never';
+  };
   const homeRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
   const reviewRevenueRuntimeExposedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
   const experimentVariantFallbackAppliedLast24hCount = countEventsInLast24h(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
+  const homeRevenueRuntimeLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.HOME_REVENUE_RUNTIME_EXPOSED);
+  const reviewRevenueRuntimeLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.REVIEW_REVENUE_RUNTIME_EXPOSED);
+  const experimentVariantFallbackLastSeen = getLastSeenTimestampByEventName(APP_EVENT_NAMES.EXPERIMENT_VARIANT_FALLBACK_APPLIED);
   const homeRuntimeExposureStale = homeRevenueRuntimeExposedLast24hCount === 0 && homeRevenueRuntimeExposedCount > 0;
   const reviewRuntimeExposureStale = reviewRevenueRuntimeExposedLast24hCount === 0 && reviewRevenueRuntimeExposedCount > 0;
   const variantFallbackStale = experimentVariantFallbackAppliedLast24hCount === 0 && experimentVariantFallbackAppliedCount > 0;
@@ -972,7 +984,18 @@ function AdminScreen() {
                 Signal health: {hasStaleInstrumentation ? `stale (${staleInstrumentationCount}/3 counters)` : 'healthy (3/3 active within 24h)'}
               </Text>
               {hasStaleInstrumentation ? (
-                <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Stale counters: {staleInstrumentationLabels}</Text>
+                <>
+                  <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Stale counters: {staleInstrumentationLabels}</Text>
+                  {homeRuntimeExposureStale ? (
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen homeRuntime: {homeRevenueRuntimeLastSeen}</Text>
+                  ) : null}
+                  {reviewRuntimeExposureStale ? (
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen reviewRuntime: {reviewRevenueRuntimeLastSeen}</Text>
+                  ) : null}
+                  {variantFallbackStale ? (
+                    <Text style={[styles.adminMetricSubtext, { color: '#B45309' }]}>Last seen fallback: {experimentVariantFallbackLastSeen}</Text>
+                  ) : null}
+                </>
               ) : null}
 
               <Text style={styles.adminMetricLabel}>Recent Funnel Snapshot</Text>
