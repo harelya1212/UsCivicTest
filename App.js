@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -1391,8 +1392,8 @@ export default function App() {
   const [adRuntime, setAdRuntime] = useState(createDefaultAdRuntime());
   const [masteryMap, setMasteryMap] = useState(createDefaultMasteryMap());
   const [userProfile, setUserProfile] = useState(createDefaultUserProfile());
-  const [squadSync, setSquadSync] = useState(createDefa
-  const lastGhostBroadcastRef = useRef({ at: 0, intensity: -1, isFlowState: false });ultSquadSync());
+  const [squadSync, setSquadSync] = useState(createDefaultSquadSync());
+  const lastGhostBroadcastRef = useRef({ at: 0, intensity: -1, isFlowState: false });
   const navigationRef = useRef(null);
   const routeNameRef = useRef(null);
   const localDeviceIdRef = useRef(`local-${Platform.OS}-${Math.random().toString(36).slice(2, 8)}`);
@@ -1480,6 +1481,13 @@ export default function App() {
       };
     });
   };
+
+  // iOS App Tracking Transparency — must fire before any ad SDK initializes
+  useEffect(() => {
+    requestTrackingPermissionsAsync().catch(() => {
+      // ATT is iOS-only; silently skip on Android
+    });
+  }, []);
 
   useEffect(() => {
     const teamId = String(squadSync?.teamId || '').trim();

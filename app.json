@@ -20,8 +20,10 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "We need microphone access to record your civics interview responses. Audio is processed locally and not stored permanently.",
-        "NSLocationWhenInUseUsageDescription": "Location is not used by this app.",
+        "NSMicrophoneUsageDescription": "Civic Citizenship requires microphone access for the Interview Simulation mode to grade your spoken answers.",
+        "NSLocationWhenInUseUsageDescription": "Location enables the Ambient Night Mode feature to shift the app palette at 9:00 PM and load state-specific civics questions.",
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads and provide a Deep Focus experience that suppresses ads during intense study sessions.",
+        "UIBackgroundModes": ["remote-notification"],
         "UIRequiredDeviceCapabilities": [
           "microphone",
           "audio"
@@ -42,7 +44,8 @@
         "RECORD_AUDIO",
         "INTERNET",
         "VIBRATE",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "web": {
@@ -51,7 +54,8 @@
     "plugins": [
       "expo-notifications",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      "expo-tracking-transparency"
     ],
     "scheme": "civiceducation",
     "owner": "aharel",
