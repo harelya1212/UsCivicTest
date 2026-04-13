@@ -50,7 +50,9 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Location enables the Ambient Night Mode feature to shift the app palette at 9:00 PM and load state-specific civics questions.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Civic Citizenship requires microphone access for the Interview Simulation mode to grade your spoken answers.</string>
+    <string>We use your microphone to grade your verbal answers during the Citizenship Interview simulation.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This allows you to choose a profile picture for your Family Squad.</string>
     <key>NSUserTrackingUsageDescription</key>
     <string>This identifier will be used to deliver personalized ads and provide a Deep Focus experience that suppresses ads during intense study sessions.</string>
     <key>UIBackgroundModes</key>

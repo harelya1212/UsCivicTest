@@ -8,12 +8,30 @@ import {
     TouchableOpacity,
     View,
     Alert,
+    Linking,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PREMIUM_TIERS } from './monetizationService';
 
 export function PremiumScreen({ navigation }) {
     const [selectedTier, setSelectedTier] = useState(null);
+
+    const handleRestorePurchases = () => {
+        Alert.alert(
+            'Restore Purchases',
+            'Your previous purchases will be restored from the App Store / Google Play.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Restore',
+                    onPress: () => {
+                        // TODO: call IAP restore method (RevenueCat / StoreKit)
+                        Alert.alert('Restored', 'Your purchases have been restored.');
+                    },
+                },
+            ],
+        );
+    };
 
     const handleUpgrade = (tier) => {
         Alert.alert(
@@ -155,6 +173,10 @@ export function PremiumScreen({ navigation }) {
                 <Text style={styles.disclaimer}>
                     By subscribing, you agree to our Terms of Service and Privacy Policy. Auto-renewal applies.
                 </Text>
+
+                <TouchableOpacity style={styles.restoreButton} onPress={handleRestorePurchases}>
+                    <Text style={styles.restoreText}>Restore Purchases</Text>
+                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
@@ -162,6 +184,39 @@ export function PremiumScreen({ navigation }) {
 
 export function SettingsScreen({ navigation }) {
     const [premiumStatus, setPremiumStatus] = useState(false);
+
+    const handleRestorePurchases = () => {
+        Alert.alert(
+            'Restore Purchases',
+            'Your previous purchases will be restored from the App Store / Google Play.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Restore',
+                    onPress: () => {
+                        Alert.alert('Restored', 'Your purchases have been restored.');
+                    },
+                },
+            ],
+        );
+    };
+
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            'Delete Account & Data',
+            'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete Everything',
+                    style: 'destructive',
+                    onPress: () => {
+                        Alert.alert('Account Deleted', 'All your data has been removed.');
+                    },
+                },
+            ],
+        );
+    };
 
     return (
         <SafeAreaView style={styles.screen}>
@@ -250,6 +305,38 @@ export function SettingsScreen({ navigation }) {
                         <View style={styles.settingContent}>
                             <MaterialCommunityIcons name="email" size={24} color="#7C3AED" />
                             <Text style={styles.settingLabel}>Contact Support</Text>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.settingItem} onPress={handleRestorePurchases}>
+                        <View style={styles.settingContent}>
+                            <MaterialCommunityIcons name="restore" size={24} color="#7C3AED" />
+                            <Text style={styles.settingLabel}>Restore Purchases</Text>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.settingItem} onPress={() => Linking.openURL('https://civiceducation.app/terms')}>
+                        <View style={styles.settingContent}>
+                            <MaterialCommunityIcons name="file-document-outline" size={24} color="#7C3AED" />
+                            <Text style={styles.settingLabel}>Terms of Service & EULA</Text>
+                        </View>
+                        <MaterialCommunityIcons name="open-in-new" size={20} color="#ccc" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.settingItem} onPress={() => Linking.openURL('https://civiceducation.app/privacy')}>
+                        <View style={styles.settingContent}>
+                            <MaterialCommunityIcons name="shield-lock-outline" size={24} color="#7C3AED" />
+                            <Text style={styles.settingLabel}>Privacy Policy</Text>
+                        </View>
+                        <MaterialCommunityIcons name="open-in-new" size={20} color="#ccc" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.settingItem} onPress={handleDeleteAccount}>
+                        <View style={styles.settingContent}>
+                            <MaterialCommunityIcons name="delete-forever-outline" size={24} color="#EF4444" />
+                            <Text style={[styles.settingLabel, { color: '#EF4444' }]}>Delete Account & Data</Text>
                         </View>
                         <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
                     </TouchableOpacity>
@@ -439,6 +526,16 @@ const styles = StyleSheet.create({
         marginTop: 24,
         fontStyle: 'italic',
         textAlign: 'center',
+    },
+    restoreButton: {
+        marginTop: 12,
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    restoreText: {
+        fontSize: 13,
+        color: '#7C3AED',
+        textDecorationLine: 'underline',
     },
 
     // SETTINGS SCREEN

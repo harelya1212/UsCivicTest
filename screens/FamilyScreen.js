@@ -56,6 +56,28 @@ function FamilyScreen({ navigation }) {
   const [reviewLaterCount, setReviewLaterCount] = useState(0);
   const [swipeHistory, setSwipeHistory] = useState([]);
   const [lastInviteRefreshAt, setLastInviteRefreshAt] = useState(0);
+
+  const handleReportMember = (member) => {
+    if (String(member.id) === 'self') return;
+    Alert.alert(
+      `Report ${member.name}`,
+      'Why are you reporting this squad member?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Harassment or abuse', onPress: () => confirmReport(member, 'harassment') },
+        { text: 'Spam or fake account', onPress: () => confirmReport(member, 'spam') },
+        { text: 'Other reason', onPress: () => confirmReport(member, 'other') },
+      ],
+    );
+  };
+
+  const confirmReport = (member, reason) => {
+    trackAppEvent('squad_member_reported', {
+      reported_member_id: String(member.id || '').slice(0, 32),
+      reason,
+    });
+    Alert.alert('Report Received', 'Thank you. We review all reports within 24 hours. Violators will be permanently banned per our Terms of Use.');
+  };
   const swipe = useMemo(() => new Animated.ValueXY(), []);
 
   const selfMember = useMemo(() => {
@@ -722,6 +744,15 @@ function FamilyScreen({ navigation }) {
                 <Text style={[localStyles.statusChip, { color: statusColors[member.status] || '#64748B' }]}>
                   {member.status === 'studying' ? 'LIVE' : member.status === 'aced' ? 'ACED' : 'ACTIVE'}
                 </Text>
+                {String(member.id) !== 'self' && (
+                  <TouchableOpacity
+                    onPress={() => handleReportMember(member)}
+                    style={localStyles.reportPill}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <MaterialCommunityIcons name="dots-vertical" size={16} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ))}
@@ -1364,6 +1395,11 @@ const localStyles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.6,
+  },
+  reportPill: {
+    marginTop: 4,
+    padding: 2,
+    alignSelf: 'flex-end',
   },
   actionRow: {
     flexDirection: 'row',

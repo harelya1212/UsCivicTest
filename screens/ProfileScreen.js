@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   TextInput,
+  Linking,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +16,42 @@ import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
 
 function ProfileScreen({ navigation }) {
-  const { testDetails, userProfile, updateUserProfile } = useContext(AppDataContext);
+  const { testDetails, userProfile, updateUserProfile, resetAllData } = useContext(AppDataContext);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account & Data',
+      'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you sure?',
+              'This is your last chance. All data will be permanently deleted.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete My Account',
+                  style: 'destructive',
+                  onPress: () => {
+                    if (typeof resetAllData === 'function') {
+                      resetAllData();
+                    }
+                    Alert.alert('Account Deleted', 'All your data has been removed.');
+                    if (navigation.canGoBack()) navigation.goBack();
+                    else navigation.navigate('HomeTab');
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  };
 
   const [user, setUser] = useState({
     name: userProfile?.name || testDetails?.name || 'Future Citizen',
@@ -194,6 +230,36 @@ function ProfileScreen({ navigation }) {
             </View>
           </>
         )}
+
+        {/* Legal & Account */}
+        <Text style={[styles.pageTitle, { marginTop: 24, fontSize: 16, color: '#94A3B8' }]}>Legal & Account</Text>
+        <View style={styles.profileCard}>
+          <TouchableOpacity
+            style={styles.profileLegalRow}
+            onPress={() => Linking.openURL('https://civiceducation.app/terms')}
+          >
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#7C3AED" />
+            <Text style={styles.profileLegalLabel}>Terms of Service & EULA</Text>
+            <MaterialCommunityIcons name="open-in-new" size={16} color="#94A3B8" />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.profileLegalRow}
+            onPress={() => Linking.openURL('https://civiceducation.app/privacy')}
+          >
+            <MaterialCommunityIcons name="shield-lock-outline" size={20} color="#7C3AED" />
+            <Text style={styles.profileLegalLabel}>Privacy Policy</Text>
+            <MaterialCommunityIcons name="open-in-new" size={16} color="#94A3B8" />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={[styles.profileLegalRow, { paddingVertical: 14 }]}
+            onPress={handleDeleteAccount}
+          >
+            <MaterialCommunityIcons name="delete-forever-outline" size={20} color="#EF4444" />
+            <Text style={[styles.profileLegalLabel, { color: '#EF4444', fontWeight: '700' }]}>Delete Account & Data</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -9,6 +9,7 @@ import {
   ImageBackground,
   Alert,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
@@ -62,9 +63,17 @@ function HomeScreen({ navigation }) {
   const [nowTick, setNowTick] = useState(Date.now());
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [spatialPathFailed, setSpatialPathFailed] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const homeScrollRef = useRef(null);
   const runtimeExposureTrackedRef = useRef(false);
   const cinematicLandingTrackedRef = useRef(false);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected !== false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 30000);
@@ -463,21 +472,29 @@ function HomeScreen({ navigation }) {
           <View style={styles.focusPresetCard}>
             <Text style={styles.focusPresetTitle}>Spatial Study Route (Beta)</Text>
             <Text style={styles.focusPresetSubtitle}>Snap through your 3-step path. If unavailable, Home falls back automatically.</Text>
-            <ThreeDPath
-              studyRoute={spatialStudyRoute}
-              focusVelocity={Number(adRuntime?.focusTelemetry?.focusVelocity || 0)}
-              friendGhostIntensity={friendGhostIntensity}
-              onStepEnter={handleSpatialStepEnter}
-              onAdaptivePacingNudge={() => {
-                trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
-                  quiz_type: testDetails?.testType || 'naturalization128',
-                  from_screen: 'HomeTab',
-                  source: 'threeDPath',
-                  reason: 'fast-scroll-no-step-entry',
-                });
-              }}
-              onRuntimeFailure={handleSpatialPathRuntimeFailure}
-            />
+            {!isConnected ? (
+              <View style={styles.offlinePlaceholder}>
+                <MaterialCommunityIcons name="wifi-off" size={28} color="#94A3B8" />
+                <Text style={styles.offlinePlaceholderTitle}>You're Offline</Text>
+                <Text style={styles.offlinePlaceholderBody}>Study offline with your cached question cards! Squad sync will resume when you reconnect.</Text>
+              </View>
+            ) : (
+              <ThreeDPath
+                studyRoute={spatialStudyRoute}
+                focusVelocity={Number(adRuntime?.focusTelemetry?.focusVelocity || 0)}
+                friendGhostIntensity={friendGhostIntensity}
+                onStepEnter={handleSpatialStepEnter}
+                onAdaptivePacingNudge={() => {
+                  trackAppEvent(APP_EVENT_NAMES.QUIZ_BREAK_NUDGE_SHOWN, {
+                    quiz_type: testDetails?.testType || 'naturalization128',
+                    from_screen: 'HomeTab',
+                    source: 'threeDPath',
+                    reason: 'fast-scroll-no-step-entry',
+                  });
+                }}
+                onRuntimeFailure={handleSpatialPathRuntimeFailure}
+              />
+            )}
           </View>
         ) : (
           <View style={styles.focusPresetCard}>

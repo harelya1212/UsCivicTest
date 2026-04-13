@@ -2327,6 +2327,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FDE68A',
   },
+  offlinePlaceholder: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  offlinePlaceholderTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  offlinePlaceholderBody: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  profileLegalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 10,
+  },
+  profileLegalLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1E293B',
+    fontWeight: '600',
+  },
 
   // ─── QuizScreen: ADHD option buttons ──────────────────────────────────────────
   adhd_optionButton: {
