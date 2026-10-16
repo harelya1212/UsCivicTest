@@ -11,9 +11,28 @@
  * U.S. federal government work - public domain.
  * Verified 2026-10-16. Includes the official 65/20 special-consideration
  * flags (is_65_20) per USCIS 65-20q.txt.
+ *
+ * App-layer enrichment (curated distractors + explanations) lives in
+ * civics100.enrichment.js and is merged below, keeping the verbatim
+ * USCIS data file pristine.
  */
 import { CIVICS_100_QUESTIONS } from './civics100.questions.js';
+import { CIVICS_100_ENRICHMENT } from './civics100.enrichment.js';
 import { createPack } from './packSchema.js';
+
+const enrichedQuestions = CIVICS_100_QUESTIONS.map((q) => {
+  const enrichment = CIVICS_100_ENRICHMENT[q.id];
+  if (!enrichment) return q;
+  return {
+    ...q,
+    wrongAnswers: {
+      easy: [...enrichment.distractors],
+      medium: [...enrichment.distractors],
+      hard: [...enrichment.distractors],
+    },
+    whyThisAnswer: enrichment.why,
+  };
+});
 
 export const civics100Pack = createPack({
   id: 'civics-100',
@@ -25,5 +44,5 @@ export const civics100Pack = createPack({
   updatedAt: '2026-10-16',
   dynamicAnswerKinds: ['us-officeholder', 'state-officeholder', 'state-capital'],
   freshnessCheckDays: 90,
-  questions: CIVICS_100_QUESTIONS,
+  questions: enrichedQuestions,
 });

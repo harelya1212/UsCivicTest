@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 // ============ AD UNIT IDs (REPLACE WITH YOURS FROM AdMob) ============
 // https://admob.google.com -> Apps -> Ad units. Keep the 'ca-app-pub-' format.
@@ -28,7 +29,11 @@ export const TEST_AD_UNIT_IDS = {
 };
 
 // ============ BANNER ADS ============
-export const HomeBannerAd = () => null;
+export const HomeBannerAd = () => (
+  <View style={styles.placeholder}>
+    <Text style={styles.placeholderText}>Ad placeholder (banner)</Text>
+  </View>
+);
 
 // ============ INTERSTITIAL ADS ============
 export const preloadInterstitialAd = () => {};
@@ -64,3 +69,22 @@ export class AdScheduler {
     this.quizCount = 0;
   }
 }
+
+const styles = StyleSheet.create({
+  placeholder: {
+    width: '100%',
+    height: 52,
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#9aa0a6',
+    borderRadius: 8,
+    backgroundColor: '#f1f3f4',
+  },
+  placeholderText: {
+    fontSize: 12,
+    color: '#5f6368',
+  },
+});

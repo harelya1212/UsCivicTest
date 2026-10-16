@@ -194,7 +194,7 @@ function getCategoryType(question) {
  * Generates plausible wrong answers for a question
  * Creates 3 distractors: easy, medium, hard difficulty levels
  */
-export function generateWrongAnswers(question, correctAnswer, alternateAnswers = []) {
+export function generateWrongAnswers(question, correctAnswer, alternateAnswers = [], presetWrongAnswers = null) {
   const topicKey = inferTopicKey(question, correctAnswer);
   const categoryType = getCategoryType(question);
   const templates = DISTRACTOR_TEMPLATES[categoryType] || DISTRACTOR_TEMPLATES['Government Structure'];
@@ -206,9 +206,23 @@ export function generateWrongAnswers(question, correctAnswer, alternateAnswers =
   // All reference answers we must not closely resemble
   const allCorrect = [correctAnswer, ...alternateAnswers];
 
+  // Curated per-question distractors take priority when the pack provides them.
+  const presetPool = [];
+  if (presetWrongAnswers) {
+    const buckets = Array.isArray(presetWrongAnswers)
+      ? presetWrongAnswers
+      : [
+          ...(presetWrongAnswers.easy || []),
+          ...(presetWrongAnswers.medium || []),
+          ...(presetWrongAnswers.hard || []),
+        ];
+    presetPool.push(...buckets);
+  }
+
   // Build a broad candidate pool so each difficulty can still produce 3 wrong answers.
   const allTemplateValues = Object.values(DISTRACTOR_TEMPLATES).flat();
   const candidatePool = uniqueByNormalized([
+    ...presetPool,
     ...shuffleArray(officialTopicPool),
     ...templates,
     ...shuffleArray(templates),
@@ -265,19 +279,13 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
   const wrongAnswers = generateWrongAnswers(
     questionData.question,
     resolvedCorrectAnswer,
-    alternateAnswers
+    alternateAnswers,
+    questionData.wrongAnswers
   );
 
   const allAccepted = [resolvedCorrectAnswer, ...alternateAnswers];
 
-  // Build a unique wrong-answer pool across all difficulty levels, then pick 3.
-  const wrongPool = uniqueByNormalized([
-    ...(wrongAnswers[difficulty] || []),
-    ...wrongAnswers.easy,
-    ...wrongAnswers.medium,
-    ...wrongAnswers.hard,
-    ...GLOBAL_FALLBACK_DISTRACTORS,
-  ]).filter((option) => {
+  const isValidDistractor = (option) => {
     // Exact match
     if (normalizeText(option) === normalizeText(resolvedCorrectAnswer)) return false;
     // Exact match with any alternate
@@ -285,9 +293,29 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
     // Fuzzy match — strip parens/articles before comparing
     if (allAccepted.some((ref) => isTooSimilar(option, ref))) return false;
     return true;
-  });
+  };
 
-  const selectedWrong = shuffleArray(wrongPool).slice(0, 3);
+  // Curated per-question distractors (from the pack) always win: take up to 3
+  // of them first, then fill any remaining slots from the generic pools.
+  const curatedFirst = uniqueByNormalized([
+    ...(wrongAnswers[difficulty] || []),
+    ...wrongAnswers.easy,
+    ...wrongAnswers.medium,
+    ...wrongAnswers.hard,
+  ]).filter(isValidDistractor).slice(0, 3);
+
+  // Build a unique wrong-answer pool across all difficulty levels, then pick 3.
+  const wrongPool = uniqueByNormalized([
+    ...wrongAnswers.easy,
+    ...wrongAnswers.medium,
+    ...wrongAnswers.hard,
+    ...GLOBAL_FALLBACK_DISTRACTORS,
+  ]).filter(isValidDistractor);
+
+  const selectedWrong = [
+    ...curatedFirst,
+    ...shuffleArray(wrongPool.filter((o) => !curatedFirst.includes(o))).slice(0, Math.max(0, 3 - curatedFirst.length)),
+  ].slice(0, 3);
 
   // Safety net: never return fewer than 4 options.
   while (selectedWrong.length < 3) {

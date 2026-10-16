@@ -961,8 +961,8 @@ function QuizScreen({ route, navigation }) {
               )}
             </View>
 
-            {/* Visual explanation - reveal on demand */}
-            {!showExplanation && (
+            {/* Visual explanation - reveal on demand (only when a real explanation exists) */}
+            {!showExplanation && question.whyThisAnswer && (
               <TouchableOpacity
                 style={styles.adhd_explanationButton}
                 onPress={handleShowExplanation}
@@ -975,10 +975,10 @@ function QuizScreen({ route, navigation }) {
             )}
 
             {/* Memory tip placeholder (replaces duplicate image box) */}
-            {showExplanation && (
+            {showExplanation && question.whyThisAnswer && (
               <View style={styles.adhd_explanationBox}>
                 <Text style={styles.adhd_explanationText}>
-                  {question.subTopic ? `📌 Topic: ${question.topic} → ${question.subTopic}` : ''}
+                  {question.whyThisAnswer}
                 </Text>
               </View>
             )}
