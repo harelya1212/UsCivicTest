@@ -1,22 +1,33 @@
+/**
+ * ReviewScreen (rebuilt) - Duolingo-style quiz results.
+ *
+ * Celebratory hero with the score, focus-area cards for weak topics,
+ * the 3-session recovery path, and rewarded practice actions.
+ * All business logic (recovery campaign, offer variants, rewarded ads,
+ * personal best, analytics) is unchanged from the previous version.
+ */
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
   Share,
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
 import { AD_EVENT_NAMES, APP_EVENT_NAMES, RECOVERY_CAMPAIGN_STORAGE_PREFIX } from '../constants';
 import {
   showRewardedAd,
 } from '../adMobService';
 import { playAdStartFeedback, playHighScoreFeedback } from '../utils/audioHaptics';
+import Screen from '../components/ui/Screen';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import ProgressBar from '../components/ui/ProgressBar';
+import { colors, gradients, radius, spacing, typography, shadows } from '../theme';
 
 const OFFER_VARIANT_ALLOWED = Object.freeze({
   reviewBonusOffer: ['control', 'challenge'],
@@ -34,7 +45,7 @@ function sanitizeVariant(variantKey, candidate) {
 }
 
 function ReviewScreen({ route, navigation }) {
-  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime } = useContext(AppDataContext);
+  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank } = useContext(AppDataContext);
   const { score, total, type, weak } = route.params;
   const percentage = Math.round((score / total) * 100);
   const weakScoreThreshold = 70;
@@ -372,122 +383,261 @@ function ReviewScreen({ route, navigation }) {
     }
   };
 
+  const practiceAgain = () => {
+    trackAppEvent?.(APP_EVENT_NAMES.QUIZ_RESTARTED_FROM_REVIEW || 'quiz_restarted_from_review', {
+      quiz_type: type,
+    });
+    navigation.replace('Quiz', { type });
+  };
+
+  // ---- Presentation helpers ----
+  const heroGradient = percentage >= 80 ? gradients.success : percentage >= 60 ? gradients.primary : gradients.gold;
+  const heroEmoji = percentage >= 80 ? '🎉' : percentage >= 60 ? '👏' : '💪';
+  const praise = percentage >= 80
+    ? "Excellent work! You're crushing it!"
+    : percentage >= 60
+      ? 'Great effort! Keep practicing!'
+      : "Don't give up! Review your weak areas and try again!";
+
+  const weakTopics = Array.isArray(weak) ? weak : [];
+  const errorItems = Array.isArray(errorBank) ? errorBank : [];
+  const hasWeakSpots = weakTopics.length > 0 || errorItems.length > 0;
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.reviewContainer}>
-        <View style={styles.celebrationBox}>
-          <Text style={styles.celebrationEmoji}>{percentage >= 80 ? '🎉' : percentage >= 60 ? '👏' : '💪'}</Text>
-          <Text style={styles.scoreTitle}>Quiz Complete!</Text>
-          <Text style={styles.scoreValue}>{score}/{total}</Text>
-          <Text style={styles.scorePercent}>{percentage}%</Text>
-
-          {percentage >= 80 && <Text style={styles.praises}>Excellent work! You're crushing it!</Text>}
-          {percentage >= 60 && percentage < 80 && <Text style={styles.praises}>Great effort! Keep practicing!</Text>}
-          {percentage < 60 && <Text style={styles.praises}>Don't give up! Review weak areas and try again!</Text>}
+    <Screen>
+      {/* Celebration hero */}
+      <LinearGradient
+        colors={heroGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <Text style={styles.heroEmoji}>{heroEmoji}</Text>
+        <Text style={styles.heroTitle}>Quiz Complete!</Text>
+        <Text style={styles.heroScore}>{score}/{total}</Text>
+        <Text style={styles.heroPercent}>{percentage}%</Text>
+        <View style={styles.heroBarWrap}>
+          <ProgressBar progress={percentage / 100} height={10} style={styles.heroBar} />
         </View>
+        <Text style={styles.heroPraise}>{praise}</Text>
+      </LinearGradient>
 
-        {weak.length > 0 && (
-          <View style={[styles.card, styles.weakCard]}>
-            <Text style={styles.cardTitle}>📊 Focus Areas for Next Time</Text>
-            {weak.map((item) => (
-              <View key={item.topic} style={styles.weakItem}>
-                <Text style={styles.weakTopic}>{item.topic}</Text>
-                <View style={styles.weakBar}>
-                  <View style={[styles.weakBarFill, { width: `${item.ratio * 100}%` }]} />
+      {/* Focus areas */}
+      <Text style={styles.sectionTitle}>Focus areas</Text>
+      {!hasWeakSpots ? (
+        <Card style={styles.emptyCard}>
+          <Text style={styles.emptyEmoji}>🌟</Text>
+          <Text style={styles.emptyTitle}>Flawless round!</Text>
+          <Text style={styles.emptySubtitle}>
+            No weak spots this time. Keep the streak alive with another round.
+          </Text>
+        </Card>
+      ) : (
+        <>
+          {weakTopics.map((item) => (
+            <Card key={item.topic} style={styles.weakCard}>
+              <View style={styles.weakHeader}>
+                <View style={[styles.weakIcon, { backgroundColor: colors.dangerLight }]}>
+                  <MaterialCommunityIcons name="target" size={20} color={colors.danger} />
                 </View>
-                <Text style={styles.weakPercent}>{(item.ratio * 100).toFixed(0)}% needs work</Text>
+                <View style={styles.weakText}>
+                  <Text style={styles.weakTopic}>{item.topic}</Text>
+                  <Text style={styles.weakSub}>{Math.round(item.ratio * 100)}% needs work</Text>
+                </View>
               </View>
-            ))}
+              <ProgressBar progress={item.ratio} height={8} style={styles.weakBar} />
+            </Card>
+          ))}
+          {errorItems.map((item) => (
+            <Card key={item.id || item.question} style={styles.weakCard}>
+              <Text style={styles.errorQuestion}>{item.question || item.text}</Text>
+              {(item.correctAnswer || item.answer) && (
+                <View style={styles.errorAnswerRow}>
+                  <MaterialCommunityIcons name="check-circle" size={16} color={colors.success} />
+                  <Text style={styles.errorAnswer}>{item.correctAnswer || item.answer}</Text>
+                </View>
+              )}
+              {item.whyThisAnswer && (
+                <Text style={styles.errorWhy}>{item.whyThisAnswer}</Text>
+              )}
+            </Card>
+          ))}
+        </>
+      )}
+
+      {/* Weak-score upsell */}
+      {isWeakScoreSession && !showWeakScoreUpsell && (
+        <Card style={styles.infoCard}>
+          <View style={styles.cardHeaderRow}>
+            <MaterialCommunityIcons name="magnify" size={20} color={colors.info} />
+            <Text style={styles.cardTitle}>Checking your recovery path</Text>
           </View>
-        )}
+          <Text style={styles.cardBody}>
+            You had a tough session, so we're lining up a targeted recovery offer instead of a generic upsell.
+          </Text>
+        </Card>
+      )}
 
-        {isWeakScoreSession && !showWeakScoreUpsell && (
-          <View style={[styles.card, styles.reviewUpsellWaitCard]}>
-            <Text style={styles.cardTitle}>🔎 Checking your recovery path</Text>
-            <Text style={styles.bonusText}>You had a weak-score session, so we are prioritizing a targeted recovery offer instead of a generic upsell.</Text>
-          </View>
-        )}
-
-        {isWeakScoreSession && showWeakScoreUpsell && (
-          <View style={[styles.card, styles.bonusCard]}>
-            <View style={styles.reviewUpsellHeader}>
-              <Text style={styles.cardTitle}>🎯 Recovery Round Ready</Text>
-              <View style={styles.reviewUpsellTag}>
-                <Text style={styles.reviewUpsellTagText}>Weak-score only</Text>
-              </View>
-            </View>
-            <Text style={styles.bonusText}>{reviewBonusBody}</Text>
-            <View style={styles.rewardedOfferStack}>
-              <TouchableOpacity
-                style={styles.rewardedAdButton}
-                onPress={watchAdForBonusQuestions}
-              >
-                <MaterialCommunityIcons name="play-circle" size={20} color="#fff" />
-                <Text style={styles.rewardedAdText}>{reviewBonusLabel}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.rewardedAdButton, styles.rewardedAdButtonSecondary]}
-                onPress={watchAdForWeakAreaRescue}
-              >
-                <MaterialCommunityIcons name="target" size={20} color="#fff" />
-                <Text style={styles.rewardedAdText}>{reviewWeakLabel}</Text>
-              </TouchableOpacity>
+      {isWeakScoreSession && showWeakScoreUpsell && (
+        <Card style={styles.upsellCard}>
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.cardTitle}>Recovery round ready</Text>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>Weak-score only</Text>
             </View>
           </View>
-        )}
+          <Text style={styles.cardBody}>{reviewBonusBody}</Text>
+          <Button
+            title={reviewBonusLabel}
+            onPress={watchAdForBonusQuestions}
+            icon={<MaterialCommunityIcons name="play-circle" size={20} color="#fff" />}
+            style={styles.upsellButton}
+          />
+          <Button
+            title={reviewWeakLabel}
+            onPress={watchAdForWeakAreaRescue}
+            variant="secondary"
+            icon={<MaterialCommunityIcons name="target" size={20} color={colors.primary} />}
+            style={styles.upsellButton}
+          />
+        </Card>
+      )}
 
-        {(isWeakScoreSession || recoveryCampaign.completedSessions > 0) && (
-          <View style={[styles.card, styles.bonusCard]}>
-            <View style={styles.reviewUpsellHeader}>
-              <Text style={styles.cardTitle}>🧭 3-Session Recovery Path</Text>
-              <View style={styles.reviewUpsellTag}>
-                <Text style={styles.reviewUpsellTagText}>{recoveryCampaign.completedSessions}/3 complete</Text>
-              </View>
+      {/* Recovery path */}
+      {(isWeakScoreSession || recoveryCampaign.completedSessions > 0) && (
+        <Card style={styles.recoveryCard}>
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.cardTitle}>3-session recovery path</Text>
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{recoveryCampaign.completedSessions}/3 done</Text>
             </View>
-            <Text style={styles.bonusText}>
-              Session 1 is ad-light. Sessions 2-3 use rewarded unlock to keep recovery high-intent.
-            </Text>
-            <Text style={styles.bonusText}>
-              Target topic: {weakestTopic || recoveryCampaign.lastTopic || 'pending weak-topic detection'}
-            </Text>
-            <View style={{ marginTop: 6, marginBottom: 10 }}>
-              <Text style={styles.bonusText}>Step 1 completed: {formatRecoveryTs(recoveryCampaign.stepTimestamps?.[1])}</Text>
-              <Text style={styles.bonusText}>Step 2 completed: {formatRecoveryTs(recoveryCampaign.stepTimestamps?.[2])}</Text>
-              <Text style={styles.bonusText}>Step 3 completed: {formatRecoveryTs(recoveryCampaign.stepTimestamps?.[3])}</Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.rewardedAdButton, recoveryComplete && styles.rewardedAdButtonSecondary]}
-              onPress={startRecoveryCampaignStep}
-              disabled={isRecoveryLoading}
-            >
-              <MaterialCommunityIcons name={recoveryComplete ? 'check-circle' : 'rocket-launch'} size={20} color="#fff" />
-              <Text style={styles.rewardedAdText}>
-                {isRecoveryLoading ? 'Loading Recovery State...' : recoveryStepLabel}
-              </Text>
-            </TouchableOpacity>
           </View>
-        )}
+          <Text style={styles.cardBody}>
+            Session 1 is ad-light. Sessions 2-3 use rewarded unlock to keep recovery high-intent.
+          </Text>
+          <Text style={styles.recoveryTopic}>
+            Target topic: {weakestTopic || recoveryCampaign.lastTopic || 'detecting...'}
+          </Text>
+          <View style={styles.recoverySteps}>
+            {[1, 2, 3].map((step) => {
+              const done = Boolean(recoveryCampaign.stepTimestamps?.[step]);
+              return (
+                <View key={step} style={styles.recoveryStep}>
+                  <View style={[styles.recoveryDot, done && styles.recoveryDotDone]}>
+                    {done && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
+                  </View>
+                  <Text style={styles.recoveryStepText}>
+                    Step {step}: {done ? formatRecoveryTs(recoveryCampaign.stepTimestamps[step]) : 'Pending'}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <Button
+            title={isRecoveryLoading ? 'Loading...' : recoveryStepLabel}
+            onPress={startRecoveryCampaignStep}
+            disabled={isRecoveryLoading}
+            icon={<MaterialCommunityIcons name={recoveryComplete ? 'check-circle' : 'rocket-launch'} size={20} color="#fff" />}
+          />
+        </Card>
+      )}
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.buttonText}>Back Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonPrimary]}
-            onPress={handleShare}
-          >
-            <MaterialCommunityIcons name="share-variant" size={20} color="#fff" />
-            <Text style={[styles.buttonText, { color: '#fff', marginLeft: 8 }]}>Share</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Actions */}
+      <Button
+        title="Practice again"
+        onPress={practiceAgain}
+        icon={<MaterialCommunityIcons name="refresh" size={20} color="#fff" />}
+        style={styles.actionButton}
+      />
+      <View style={styles.actionRow}>
+        <Button
+          title="Back home"
+          onPress={() => navigation.navigate('Home')}
+          variant="secondary"
+          style={styles.halfButton}
+        />
+        <Button
+          title="Share"
+          onPress={handleShare}
+          variant="outline"
+          icon={<MaterialCommunityIcons name="share-variant" size={18} color={colors.text} />}
+          style={styles.halfButton}
+        />
+      </View>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  hero: {
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    ...shadows.raised,
+  },
+  heroEmoji: { fontSize: 56, marginBottom: spacing.sm },
+  heroTitle: { fontSize: typography.title, fontWeight: typography.bold, color: '#fff' },
+  heroScore: { fontSize: typography.subtitle, fontWeight: typography.semibold, color: 'rgba(255,255,255,0.9)', marginTop: 2 },
+  heroPercent: { fontSize: 64, fontWeight: typography.bold, color: '#fff', marginVertical: spacing.sm },
+  heroBarWrap: { width: '100%', marginBottom: spacing.sm },
+  heroBar: { backgroundColor: 'rgba(255,255,255,0.3)' },
+  heroPraise: { fontSize: typography.body, fontWeight: typography.medium, color: '#fff', textAlign: 'center' },
+
+  sectionTitle: {
+    fontSize: typography.subtitle,
+    fontWeight: typography.bold,
+    color: colors.text,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+
+  emptyCard: { alignItems: 'center', paddingVertical: spacing.xl, marginBottom: spacing.md },
+  emptyEmoji: { fontSize: 48, marginBottom: spacing.sm },
+  emptyTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text },
+  emptySubtitle: { fontSize: typography.caption, color: colors.textSecondary, textAlign: 'center', marginTop: 4 },
+
+  weakCard: { marginBottom: spacing.sm },
+  weakHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  weakIcon: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginRight: spacing.sm },
+  weakText: { flex: 1 },
+  weakTopic: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text },
+  weakSub: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  weakBar: { marginTop: 2 },
+
+  errorQuestion: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginBottom: spacing.sm },
+  errorAnswerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },
+  errorAnswer: { fontSize: typography.caption, color: colors.success, fontWeight: typography.semibold, marginLeft: 6 },
+  errorWhy: { fontSize: typography.caption, color: colors.textSecondary, lineHeight: 20 },
+
+  infoCard: { marginBottom: spacing.md, borderLeftWidth: 4, borderLeftColor: colors.info },
+  upsellCard: { marginBottom: spacing.md, borderColor: colors.primary, borderWidth: 1.5 },
+  recoveryCard: { marginBottom: spacing.md },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  cardTitle: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text, flex: 1 },
+  cardBody: { fontSize: typography.caption, color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm },
+  tag: { backgroundColor: colors.primaryLight, borderRadius: radius.full, paddingVertical: 4, paddingHorizontal: 10 },
+  tagText: { fontSize: typography.small, fontWeight: typography.semibold, color: colors.primary },
+  upsellButton: { marginTop: spacing.sm },
+
+  recoveryTopic: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.text, marginBottom: spacing.sm },
+  recoverySteps: { marginBottom: spacing.md },
+  recoveryStep: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },
+  recoveryDot: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  recoveryDotDone: { backgroundColor: colors.success },
+  recoveryStepText: { fontSize: typography.caption, color: colors.textSecondary },
+
+  actionButton: { marginTop: spacing.sm, marginBottom: spacing.sm },
+  actionRow: { flexDirection: 'row', marginHorizontal: -4 },
+  halfButton: { flex: 1, marginHorizontal: 4 },
+});
 
 export default ReviewScreen;

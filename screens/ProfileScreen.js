@@ -1,10 +1,13 @@
-import React, { useState, useContext } from 'react';
+/**
+ * ProfileScreen (rebuilt) - Clean profile with avatar, real stats,
+ * test details, and account actions. New design system.
+ */
+import React, { useState, useContext, useMemo } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
+  View,
   Text,
   TouchableOpacity,
-  View,
+  StyleSheet,
   Image,
   Alert,
   TextInput,
@@ -12,11 +15,113 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
+import Screen from '../components/ui/Screen';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { colors, radius, spacing, typography, shadows } from '../theme';
+
+const TEST_TYPE_LABELS = {
+  naturalization128: 'Citizenship Test (128)',
+  naturalization100: 'Citizenship Test (100)',
+  highschool: 'High School Civics',
+};
 
 function ProfileScreen({ navigation }) {
-  const { testDetails, userProfile, updateUserProfile, resetAllData } = useContext(AppDataContext);
+  const { testDetails, userProfile, updateUserProfile, masteryMap, resetAllData } =
+    useContext(AppDataContext);
+
+  const profileName = userProfile?.name || testDetails?.name || 'Future Citizen';
+  const [editableName, setEditableName] = useState(profileName);
+  const [avatarUri, setAvatarUri] = useState(userProfile?.avatarUri || '');
+
+  const stats = useMemo(() => {
+    const byQ = masteryMap?.byQuestion || {};
+    const ids = Object.keys(byQ);
+    let correct = 0;
+    let answered = 0;
+    ids.forEach((id) => {
+      const q = byQ[id] || {};
+      answered += Number(q.asked || 0);
+      correct += Number(q.correct || 0);
+    });
+    const totalQuestions = Number(masteryMap?.totalQuestions || 0);
+    const totalSessions = Number(masteryMap?.totalSessions || 0);
+    const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+    return { answered: totalQuestions || answered, accuracy, sessions: totalSessions };
+  }, [masteryMap]);
+
+  const testLabel = TEST_TYPE_LABELS[testDetails?.testType] || 'Civics Test';
+  const email = userProfile?.email || '';
+
+  const goBack = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('HomeTab');
+  };
+
+  const commitProfile = (patch) => {
+    updateUserProfile({
+      name: String(editableName || '').trim() || profileName,
+      avatarUri,
+      email,
+      ...patch,
+    });
+  };
+
+  const handleCommitDisplayName = () => {
+    const trimmed = String(editableName || '').trim();
+    if (!trimmed) {
+      setEditableName(profileName);
+      return;
+    }
+    if (trimmed !== profileName) {
+      commitProfile({ name: trimmed });
+    }
+  };
+
+  const handleAvatarPicked = (uri) => {
+    setAvatarUri(uri);
+    updateUserProfile({
+      name: String(editableName || '').trim() || profileName,
+      avatarUri: uri,
+      email,
+    });
+  };
+
+  const handlePickFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission Needed', 'Please allow photo library access to set your profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.75,
+    });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    handleAvatarPicked(result.assets[0].uri);
+  };
+
+  const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission Needed', 'Please allow camera access to take a profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.75,
+    });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    handleAvatarPicked(result.assets[0].uri);
+  };
+
+  const handleRemovePhoto = () => {
+    handleAvatarPicked('');
+  };
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -41,8 +146,7 @@ function ProfileScreen({ navigation }) {
                       resetAllData();
                     }
                     Alert.alert('Account Deleted', 'All your data has been removed.');
-                    if (navigation.canGoBack()) navigation.goBack();
-                    else navigation.navigate('HomeTab');
+                    goBack();
                   },
                 },
               ],
@@ -53,216 +157,254 @@ function ProfileScreen({ navigation }) {
     );
   };
 
-  const [user, setUser] = useState({
-    name: userProfile?.name || testDetails?.name || 'Future Citizen',
-    email: userProfile?.email || 'user@example.com',
-    points: 260,
-    level: 3,
-    avatar: userProfile?.avatarUri || '',
-  });
-  const [editableName, setEditableName] = useState(userProfile?.name || testDetails?.name || '');
-
-  const handlePickFromLibrary = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission Needed', 'Please allow photo library access to set your profile picture.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.75,
-    });
-
-    if (result.canceled || !result.assets?.[0]?.uri) return;
-    const avatarUri = result.assets[0].uri;
-    setUser((prev) => ({ ...prev, avatar: avatarUri }));
-    updateUserProfile({ avatarUri, name: user.name, email: user.email });
-  };
-
-  const handleTakePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission Needed', 'Please allow camera access to take a profile picture.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.75,
-    });
-
-    if (result.canceled || !result.assets?.[0]?.uri) return;
-    const avatarUri = result.assets[0].uri;
-    setUser((prev) => ({ ...prev, avatar: avatarUri }));
-    updateUserProfile({ avatarUri, name: user.name, email: user.email });
-  };
-
-  const handleRemovePhoto = () => {
-    setUser((prev) => ({ ...prev, avatar: '' }));
-    updateUserProfile({ avatarUri: '', name: user.name, email: user.email });
-  };
-
-  const handleCommitDisplayName = () => {
-    const trimmed = String(editableName || '').trim();
-    if (!trimmed) {
-      setEditableName(user.name);
-      return;
-    }
-
-    if (trimmed === user.name) return;
-
-    setUser((prev) => ({ ...prev, name: trimmed }));
-    updateUserProfile({ name: trimmed, avatarUri: user.avatar, email: user.email });
-  };
+  const initial = (String(editableName || profileName || 'F').trim()[0] || 'F').toUpperCase();
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
-          <TouchableOpacity
-            style={[styles.editButton, { paddingVertical: 10, paddingHorizontal: 14 }]}
-            onPress={() => {
-              if (navigation.canGoBack()) navigation.goBack();
-              else navigation.navigate('HomeTab');
-            }}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={18} color="#fff" />
-            <Text style={styles.editButtonText}>Exit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.editButton, { paddingVertical: 10, paddingHorizontal: 14 }]}
-            onPress={() => navigation.navigate('HomeTab')}
-          >
-            <MaterialCommunityIcons name="home" size={18} color="#fff" />
-            <Text style={styles.editButtonText}>Home</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.pageTitle}>Your Profile</Text>
+    <Screen>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={styles.backBtn} />
+      </View>
 
-        <View style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            {user.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.profileAvatarImage} />
-            ) : (
-              <Text style={styles.profileAvatarText}>👤</Text>
-            )}
-          </View>
-          <View style={styles.profileAvatarActions}>
-            <TouchableOpacity style={styles.profileAvatarActionBtn} onPress={handleTakePhoto}>
-              <MaterialCommunityIcons name="camera" size={16} color="#C4B5FD" />
-              <Text style={styles.profileAvatarActionText}>Take</Text>
+      {/* Identity card */}
+      <Card style={styles.identityCard}>
+        <TouchableOpacity onPress={handlePickFromLibrary} activeOpacity={0.8}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TextInput
+          style={styles.nameInput}
+          value={editableName}
+          onChangeText={setEditableName}
+          placeholder="Display name or nickname"
+          placeholderTextColor={colors.textTertiary}
+          maxLength={32}
+          autoCapitalize="words"
+          returnKeyType="done"
+          onBlur={handleCommitDisplayName}
+          onSubmitEditing={handleCommitDisplayName}
+        />
+        {email ? <Text style={styles.email}>{email}</Text> : null}
+        <View style={styles.testBadge}>
+          <MaterialCommunityIcons name="flag" size={12} color={colors.primary} />
+          <Text style={styles.testBadgeText}>{testLabel}</Text>
+        </View>
+
+        <View style={styles.avatarActions}>
+          <TouchableOpacity style={styles.avatarAction} onPress={handleTakePhoto} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="camera" size={18} color={colors.primary} />
+            <Text style={styles.avatarActionText}>Camera</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.avatarAction} onPress={handlePickFromLibrary} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="image" size={18} color={colors.primary} />
+            <Text style={styles.avatarActionText}>Library</Text>
+          </TouchableOpacity>
+          {avatarUri ? (
+            <TouchableOpacity style={styles.avatarAction} onPress={handleRemovePhoto} activeOpacity={0.7}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.danger} />
+              <Text style={[styles.avatarActionText, { color: colors.danger }]}>Remove</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileAvatarActionBtn} onPress={handlePickFromLibrary}>
-              <MaterialCommunityIcons name="image-multiple" size={16} color="#C4B5FD" />
-              <Text style={styles.profileAvatarActionText}>Library</Text>
-            </TouchableOpacity>
-            {user.avatar ? (
-              <TouchableOpacity style={styles.profileAvatarActionBtn} onPress={handleRemovePhoto}>
-                <MaterialCommunityIcons name="close-circle" size={16} color="#FCA5A5" />
-                <Text style={styles.profileAvatarActionText}>Remove</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          <View style={styles.profileNameEditorWrap}>
-            <TextInput
-              style={styles.profileNameInput}
-              value={editableName}
-              onChangeText={setEditableName}
-              placeholder="Display name or nickname"
-              placeholderTextColor="#64748B"
-              maxLength={32}
-              autoCapitalize="words"
-              returnKeyType="done"
-              onBlur={handleCommitDisplayName}
-              onSubmitEditing={handleCommitDisplayName}
-            />
-          </View>
-
-          <Text style={styles.profileName}>{user.name}</Text>
-          <Text style={styles.profileEmail}>{user.email}</Text>
-
-          <View style={styles.profileStats}>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>{user.points}</Text>
-              <Text style={styles.profileStatLabel}>Points</Text>
-            </View>
-            <View style={styles.profileStat}>
-              <Text style={styles.profileStatValue}>{user.level}</Text>
-              <Text style={styles.profileStatLabel}>Level</Text>
-            </View>
-          </View>
+          ) : null}
         </View>
+      </Card>
 
-        {/* Test Details Section */}
-        {testDetails && (
-          <>
-            <Text style={[styles.pageTitle, { marginTop: 20, fontSize: 18 }]}>Test Details</Text>
-            <View style={styles.profileCard}>
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Type</Text>
-                <Text style={styles.testDetailValue}>
-                  {testDetails.testType === 'highschool' ? '🏫 High School Civics' : testDetails.testType === 'naturalization100' ? '🏛️ Naturalization (100Q)' : '🇺🇸 Naturalization (128Q)'}
-                </Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Location</Text>
-                <Text style={styles.testDetailValue}>📍 {testDetails.state}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.testDetailRow}>
-                <Text style={styles.testDetailLabel}>Test Date</Text>
-                <Text style={styles.testDetailValue}>📅 {testDetails.testDate}</Text>
-              </View>
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <Card style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.answered}</Text>
+          <Text style={styles.statLabel}>Answered</Text>
+        </Card>
+        <Card style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.accuracy}%</Text>
+          <Text style={styles.statLabel}>Accuracy</Text>
+        </Card>
+        <Card style={styles.statCard}>
+          <Text style={styles.statValue}>{stats.sessions}</Text>
+          <Text style={styles.statLabel}>Sessions</Text>
+        </Card>
+      </View>
 
-              <TouchableOpacity
-                style={[styles.editButton, { marginTop: 16 }]}
-                onPress={() => navigation.navigate('EditTestDetails')}
-              >
-                <MaterialCommunityIcons name="pencil" size={20} color="#fff" />
-                <Text style={styles.editButtonText}>Edit Test Details</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
+      {/* Test details */}
+      {testDetails && (
+        <>
+          <Text style={styles.sectionTitle}>Test details</Text>
+          <Card style={styles.detailsCard} padded={false}>
+            <DetailRow label="Test type" value={testLabel} />
+            <View style={styles.divider} />
+            <DetailRow label="Location" value={testDetails.state || testDetails.location || '-'} />
+            <View style={styles.divider} />
+            <DetailRow label="Test date" value={testDetails.testDate || 'Not set'} />
+          </Card>
+          <Button
+            title="Edit test details"
+            variant="secondary"
+            onPress={() => navigation.navigate('EditTestDetails')}
+            style={styles.editBtn}
+          />
+        </>
+      )}
 
-        {/* Legal & Account */}
-        <Text style={[styles.pageTitle, { marginTop: 24, fontSize: 16, color: '#94A3B8' }]}>Legal & Account</Text>
-        <View style={styles.profileCard}>
-          <TouchableOpacity
-            style={styles.profileLegalRow}
-            onPress={() => Linking.openURL('https://civiceducation.app/terms')}
-          >
-            <MaterialCommunityIcons name="file-document-outline" size={20} color="#7C3AED" />
-            <Text style={styles.profileLegalLabel}>Terms of Service & EULA</Text>
-            <MaterialCommunityIcons name="open-in-new" size={16} color="#94A3B8" />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.profileLegalRow}
-            onPress={() => Linking.openURL('https://civiceducation.app/privacy')}
-          >
-            <MaterialCommunityIcons name="shield-lock-outline" size={20} color="#7C3AED" />
-            <Text style={styles.profileLegalLabel}>Privacy Policy</Text>
-            <MaterialCommunityIcons name="open-in-new" size={16} color="#94A3B8" />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={[styles.profileLegalRow, { paddingVertical: 14 }]}
-            onPress={handleDeleteAccount}
-          >
-            <MaterialCommunityIcons name="delete-forever-outline" size={20} color="#EF4444" />
-            <Text style={[styles.profileLegalLabel, { color: '#EF4444', fontWeight: '700' }]}>Delete Account & Data</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Legal & account */}
+      <Text style={styles.sectionTitle}>Legal & account</Text>
+      <Card style={styles.detailsCard} padded={false}>
+        <ActionRow
+          icon="file-document-outline"
+          iconColor={colors.primary}
+          label="Terms of Service & EULA"
+          onPress={() => Linking.openURL('https://civiceducation.app/terms')}
+        />
+        <View style={styles.divider} />
+        <ActionRow
+          icon="shield-lock-outline"
+          iconColor={colors.primary}
+          label="Privacy Policy"
+          onPress={() => Linking.openURL('https://civiceducation.app/privacy')}
+        />
+        <View style={styles.divider} />
+        <ActionRow
+          icon="delete-forever-outline"
+          iconColor={colors.danger}
+          label="Delete Account & Data"
+          labelColor={colors.danger}
+          bold
+          onPress={handleDeleteAccount}
+        />
+      </Card>
+    </Screen>
   );
 }
+
+function DetailRow({ label, value }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
+  );
+}
+
+function ActionRow({ icon, iconColor, label, labelColor, bold, onPress }) {
+  return (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <MaterialCommunityIcons name={icon} size={20} color={iconColor} style={styles.rowIcon} />
+      <Text
+        style={[
+          styles.rowLabel,
+          { color: labelColor || colors.text },
+          bold && { fontWeight: typography.bold },
+        ]}
+      >
+        {label}
+      </Text>
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text },
+
+  identityCard: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+    ...shadows.card,
+  },
+  avatarFallback: {
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: 36, fontWeight: typography.bold, color: colors.primary },
+  nameInput: {
+    fontSize: typography.title,
+    fontWeight: typography.bold,
+    color: colors.text,
+    textAlign: 'center',
+    paddingVertical: spacing.xs,
+    minWidth: 200,
+  },
+  email: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  testBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    marginTop: spacing.sm,
+  },
+  testBadgeText: {
+    fontSize: typography.small,
+    fontWeight: typography.semibold,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  avatarActions: { flexDirection: 'row', marginTop: spacing.md },
+  avatarAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  avatarActionText: {
+    fontSize: typography.caption,
+    fontWeight: typography.medium,
+    color: colors.primary,
+    marginLeft: 6,
+  },
+
+  statsRow: { flexDirection: 'row', marginBottom: spacing.md },
+  statCard: { flex: 1, alignItems: 'center', marginHorizontal: 4, paddingVertical: spacing.md },
+  statValue: { fontSize: typography.title, fontWeight: typography.bold, color: colors.text },
+  statLabel: { fontSize: typography.small, color: colors.textSecondary, marginTop: 2 },
+
+  sectionTitle: {
+    fontSize: typography.subtitle,
+    fontWeight: typography.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  detailsCard: { marginBottom: spacing.sm, overflow: 'hidden' },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+  },
+  rowIcon: { marginRight: spacing.sm },
+  rowLabel: { flex: 1, fontSize: typography.body, color: colors.text },
+  rowValue: { fontSize: typography.caption, color: colors.textSecondary, fontWeight: typography.medium },
+  divider: { height: 1, backgroundColor: colors.borderLight, marginLeft: spacing.md },
+  editBtn: { marginBottom: spacing.md },
+});
 
 export default ProfileScreen;

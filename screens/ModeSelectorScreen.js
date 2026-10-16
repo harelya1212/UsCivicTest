@@ -1,52 +1,118 @@
-import React, { useState, useEffect, useContext } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+/**
+ * ModeSelectorScreen (rebuilt) - Duolingo-style practice setup.
+ *
+ * Pick a test type, optionally narrow by topic/subtopic chips, then start.
+ * Business logic is unchanged from the original: same state, same filters,
+ * same Quiz navigation params. Only the visual layer is new.
+ */
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
-import {
-  ALL_TOPICS_VALUE,
-  ALL_SUBTOPICS_VALUE,
-} from '../constants';
-import {
-  getQuestionTopic,
-  getQuestionSubTopic,
-} from '../utils/helpers';
-import {
-  getQuestionBank,
-} from '../quizHelpers';
+import Screen from '../components/ui/Screen';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { ALL_TOPICS_VALUE, ALL_SUBTOPICS_VALUE } from '../constants';
+import { getQuestionTopic, getQuestionSubTopic } from '../utils/helpers';
+import { getQuestionBank } from '../quizHelpers';
+import { colors, radius, spacing, typography } from '../theme';
+
+const MODES = [
+  {
+    type: 'naturalization128',
+    title: 'Citizenship Test',
+    subtitle: '128 questions - 2025 test',
+    icon: 'flag',
+    tint: colors.primaryLight,
+    iconColor: colors.primary,
+  },
+  {
+    type: 'naturalization100',
+    title: 'Citizenship Test',
+    subtitle: '100 questions - 2008 test',
+    icon: 'bank',
+    tint: colors.infoLight,
+    iconColor: colors.info,
+  },
+  {
+    type: 'highschool',
+    title: 'High School Civics',
+    subtitle: 'Arizona graduation test',
+    icon: 'school',
+    tint: colors.goldLight,
+    iconColor: colors.gold,
+  },
+];
+
+function FilterChips({ options, selected, onSelect, allLabel, allValue }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+      <Chip label={allLabel} selected={selected === allValue} onPress={() => onSelect(allValue)} />
+      {options.map((option) => (
+        <Chip key={option} label={option} selected={selected === option} onPress={() => onSelect(option)} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function Chip({ label, selected, onPress }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[styles.chip, selected && styles.chipSelected]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
 function ModeSelectorScreen({ navigation }) {
   const { testDetails } = useContext(AppDataContext);
-  const modes = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫', color: '#EC4899' },
-    { type: 'naturalization100', title: 'Naturalization (100Q)', icon: '🏛️', color: '#3B82F6' },
-    { type: 'naturalization128', title: 'Naturalization (128Q)', icon: '🇺🇸', color: '#10B981' },
-  ];
+
   const defaultType = testDetails?.testType || 'naturalization128';
   const [selectedType, setSelectedType] = useState(defaultType);
   const [selectedTopic, setSelectedTopic] = useState(ALL_TOPICS_VALUE);
   const [selectedSubTopic, setSelectedSubTopic] = useState(ALL_SUBTOPICS_VALUE);
 
-  const fullPool = getQuestionBank(selectedType);
-  const topicOptions = Array.from(new Set(fullPool.map((question) => getQuestionTopic(question)).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b));
-  const subTopicSourcePool = selectedTopic === ALL_TOPICS_VALUE
-    ? fullPool
-    : fullPool.filter((question) => getQuestionTopic(question) === selectedTopic);
-  const subTopicOptions = Array.from(new Set(subTopicSourcePool.map((question) => getQuestionSubTopic(question)).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b));
-  const filteredPool = fullPool.filter((question) => {
-    const topicMatch = selectedTopic === ALL_TOPICS_VALUE || getQuestionTopic(question) === selectedTopic;
-    const subTopicMatch = selectedSubTopic === ALL_SUBTOPICS_VALUE || getQuestionSubTopic(question) === selectedSubTopic;
+  const fullPool = useMemo(() => getQuestionBank(selectedType), [selectedType]);
+
+  const topicOptions = useMemo(() => (
+    Array.from(new Set(fullPool.map((q) => getQuestionTopic(q)).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b))
+  ), [fullPool]);
+
+  const subTopicOptions = useMemo(() => {
+    const sourcePool = selectedTopic === ALL_TOPICS_VALUE
+      ? fullPool
+      : fullPool.filter((q) => getQuestionTopic(q) === selectedTopic);
+    return Array.from(new Set(sourcePool.map((q) => getQuestionSubTopic(q)).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b));
+  }, [fullPool, selectedTopic]);
+
+  const filteredPool = useMemo(() => fullPool.filter((q) => {
+    const topicMatch = selectedTopic === ALL_TOPICS_VALUE || getQuestionTopic(q) === selectedTopic;
+    const subTopicMatch = selectedSubTopic === ALL_SUBTOPICS_VALUE || getQuestionSubTopic(q) === selectedSubTopic;
     return topicMatch && subTopicMatch;
-  });
+  }), [fullPool, selectedTopic, selectedSubTopic]);
+
+  const modeCounts = useMemo(() => {
+    const counts = {};
+    MODES.forEach((m) => {
+      try {
+        counts[m.type] = getQuestionBank(m.type).length;
+      } catch {
+        counts[m.type] = 0;
+      }
+    });
+    return counts;
+  }, []);
+
+  useEffect(() => {
+    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
+  }, [selectedTopic]);
 
   const handleSelectType = (type) => {
     setSelectedType(type);
@@ -62,78 +128,140 @@ function ModeSelectorScreen({ navigation }) {
     });
   };
 
-  useEffect(() => {
-    setSelectedSubTopic(ALL_SUBTOPICS_VALUE);
-  }, [selectedTopic]);
-
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#A78BFA" />
-          <Text style={{ color: '#A78BFA', fontWeight: '600', marginLeft: 4 }}>Back</Text>
-        </TouchableOpacity>
+    <Screen>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} activeOpacity={0.7}>
+        <MaterialCommunityIcons name="arrow-left" size={20} color={colors.primary} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
 
-        <Text style={styles.pageTitle}>Practice Setup</Text>
-        <Text style={styles.pageSubtitle}>Choose test type, topic, and subtopic before you start</Text>
+      <Text style={styles.pageTitle}>Practice Setup</Text>
+      <Text style={styles.pageSubtitle}>Pick your test, then focus on what you want to drill.</Text>
 
-        {modes.map((mode) => {
-          const isSelected = mode.type === selectedType;
-          return (
-            <TouchableOpacity
-              key={mode.type}
-              style={[styles.modeCard, { borderLeftColor: mode.color, borderLeftWidth: isSelected ? 6 : 3, backgroundColor: isSelected ? 'rgba(139,92,246,0.12)' : '#12121E' }]}
-              onPress={() => handleSelectType(mode.type)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.modeIcon}>
-                <Text style={styles.modeIconText}>{mode.icon}</Text>
-              </View>
-              <View style={styles.modeContent}>
-                <Text style={[styles.modeTitle, isSelected && { color: '#A78BFA' }]}>{mode.title}</Text>
-                <Text style={styles.modeDesc}>{isSelected ? '✅ Selected test type' : 'Tap to select this test'}</Text>
-              </View>
-              <MaterialCommunityIcons name={isSelected ? 'check-circle' : 'chevron-right'} size={24} color={mode.color} />
-            </TouchableOpacity>
-          );
-        })}
+      <Text style={styles.sectionTitle}>Test type</Text>
+      {MODES.map((mode) => {
+        const isSelected = mode.type === selectedType;
+        return (
+          <Card
+            key={mode.type}
+            onPress={() => handleSelectType(mode.type)}
+            style={[styles.modeCard, isSelected && styles.modeCardSelected]}
+          >
+            <View style={[styles.modeIcon, { backgroundColor: mode.tint }]}>
+              <MaterialCommunityIcons name={mode.icon} size={26} color={mode.iconColor} />
+            </View>
+            <View style={styles.modeText}>
+              <Text style={styles.modeTitle}>{mode.title}</Text>
+              <Text style={styles.modeSubtitle}>
+                {mode.subtitle}{modeCounts[mode.type] ? ` - ${modeCounts[mode.type]} questions` : ''}
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name={isSelected ? 'check-circle' : 'chevron-right'}
+              size={24}
+              color={isSelected ? colors.primary : colors.textTertiary}
+            />
+          </Card>
+        );
+      })}
 
-        <View style={styles.modeFilterCard}>
-          <Text style={styles.modeFilterTitle}>Filter Questions</Text>
-          <Text style={styles.modeFilterHint}>Use these filters to focus practice on one area.</Text>
+      <Text style={styles.sectionTitle}>Topic</Text>
+      <FilterChips
+        options={topicOptions}
+        selected={selectedTopic}
+        onSelect={setSelectedTopic}
+        allLabel="All topics"
+        allValue={ALL_TOPICS_VALUE}
+      />
 
-          <Text style={styles.modeFilterLabel}>Topic</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={selectedTopic} onValueChange={(value) => setSelectedTopic(value)} style={styles.picker}>
-              <Picker.Item label="All topics" value={ALL_TOPICS_VALUE} />
-              {topicOptions.map((topic) => (
-                <Picker.Item key={topic} label={topic} value={topic} />
-              ))}
-            </Picker>
-          </View>
+      {subTopicOptions.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Subtopic</Text>
+          <FilterChips
+            options={subTopicOptions}
+            selected={selectedSubTopic}
+            onSelect={setSelectedSubTopic}
+            allLabel="All subtopics"
+            allValue={ALL_SUBTOPICS_VALUE}
+          />
+        </>
+      )}
 
-          <Text style={[styles.modeFilterLabel, { marginTop: 12 }]}>Subtopic</Text>
-          <View style={styles.pickerContainer}>
-            <Picker selectedValue={selectedSubTopic} onValueChange={(value) => setSelectedSubTopic(value)} style={styles.picker}>
-              <Picker.Item label="All subtopics" value={ALL_SUBTOPICS_VALUE} />
-              {subTopicOptions.map((subTopic) => (
-                <Picker.Item key={subTopic} label={subTopic} value={subTopic} />
-              ))}
-            </Picker>
-          </View>
+      <Card style={styles.summaryCard}>
+        <MaterialCommunityIcons name="filter-variant" size={20} color={colors.primary} />
+        <Text style={styles.summaryText}>
+          {filteredPool.length} question{filteredPool.length === 1 ? '' : 's'} match your filters
+        </Text>
+      </Card>
 
-          <Text style={styles.modeFilterSummary}>
-            {filteredPool.length} question{filteredPool.length === 1 ? '' : 's'} match your filters
-          </Text>
-        </View>
-
-        <TouchableOpacity style={styles.modeStartButton} onPress={startPractice}>
-          <MaterialCommunityIcons name="play-circle" size={20} color="#fff" />
-          <Text style={styles.modeStartButtonText}>Start Practice</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      <Button
+        title="Start Practice"
+        size="lg"
+        onPress={startPractice}
+        disabled={filteredPool.length === 0}
+        icon={<MaterialCommunityIcons name="play" size={20} color="#fff" style={{ marginRight: 6 }} />}
+        style={styles.startButton}
+      />
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  backRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  backText: { color: colors.primary, fontWeight: typography.semibold, marginLeft: 4, fontSize: typography.caption },
+
+  pageTitle: { fontSize: typography.title, fontWeight: typography.bold, color: colors.text },
+  pageSubtitle: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2, marginBottom: spacing.md },
+
+  sectionTitle: {
+    fontSize: typography.caption,
+    fontWeight: typography.semibold,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+
+  modeCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  modeCardSelected: { borderColor: colors.primary, borderWidth: 1.5, backgroundColor: colors.primaryLight },
+  modeIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  modeText: { flex: 1 },
+  modeTitle: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text },
+  modeSubtitle: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+
+  chipsRow: { paddingRight: spacing.md },
+  chip: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.full,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginRight: spacing.sm,
+    maxWidth: 220,
+  },
+  chipSelected: { backgroundColor: colors.primary },
+  chipText: { fontSize: typography.caption, fontWeight: typography.medium, color: colors.textSecondary },
+  chipTextSelected: { color: '#fff', fontWeight: typography.semibold },
+
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+    borderWidth: 1,
+  },
+  summaryText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.primaryDark, marginLeft: spacing.sm },
+
+  startButton: { marginTop: spacing.sm },
+});
 
 export default ModeSelectorScreen;

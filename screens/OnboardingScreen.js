@@ -1,26 +1,42 @@
+/**
+ * OnboardingScreen (rebuilt) - Duolingo-style onboarding.
+ *
+ * One focused card per step, friendly copy, gradient CTA.
+ * Same data collection + navigation contract as before:
+ * onComplete({ name, testType, state, testDate }) on the final step.
+ */
 import React, { useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TouchableOpacity,
   View,
-  Alert,
+  Text,
   TextInput,
   Platform,
   Modal,
   Image,
+  StyleSheet,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DatePicker from 'react-datepicker';
 import '../assets/react-datepicker.min.css';
-import styles from '../styles';
-import {
-  usStates,
-} from '../constants';
+import Screen from '../components/ui/Screen';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import ProgressBar from '../components/ui/ProgressBar';
+import { usStates } from '../constants';
 import { getStateCodeAndFlag } from '../utils/stateFlags';
+import { colors, radius, spacing, typography, shadows } from '../theme';
+
+const TOTAL_STEPS = 4;
+
+const STEP_META = {
+  1: { icon: '👋', bg: colors.primaryLight, title: 'What should we call you?', subtitle: "This is how we'll cheer you on." },
+  2: { icon: '🎯', bg: colors.goldLight, title: 'Which test are you taking?', subtitle: "We'll build your practice around it." },
+  3: { icon: '📍', bg: colors.infoLight, title: 'Which state are you in?', subtitle: 'Some answers depend on your state.' },
+  4: { icon: '📅', bg: colors.successLight, title: "When's test day?", subtitle: "We'll count down with you." },
+};
 
 function OnboardingScreen({ navigation, route }) {
   const onComplete = route?.params?.onComplete;
@@ -33,26 +49,26 @@ function OnboardingScreen({ navigation, route }) {
   const selectedStateMeta = getStateCodeAndFlag(selectedState, 64);
 
   const testOptions = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫', description: 'U.S. Civics high school curriculum' },
-    { type: 'naturalization100', title: 'Naturalization (100 Questions)', icon: '🏛️', description: 'U.S. Citizenship Test - 100 questions' },
-    { type: 'naturalization128', title: 'Naturalization (128 Questions)', icon: '🇺🇸', description: 'U.S. Citizenship Test - 128 questions' },
+    { type: 'highschool', title: 'High School Civics', icon: '🏫', description: 'Ace your school civics test' },
+    { type: 'naturalization100', title: 'Citizenship (100)', icon: '🏛️', description: 'The classic 100-question test' },
+    { type: 'naturalization128', title: 'Citizenship (128)', icon: '🇺🇸', description: 'The new 2025 test format' },
   ];
 
   const handleContinue = () => {
     if (step === 1 && !name.trim()) {
-      Alert.alert('Error', 'Please enter your name');
+      Alert.alert('Almost there', 'Tell us your name so we can personalize your practice.');
       return;
     }
     if (step === 2 && !testType) {
-      Alert.alert('Error', 'Please select a test type');
+      Alert.alert('Pick a test', 'Choose the test you are preparing for.');
       return;
     }
     if (step === 3 && !selectedState.trim()) {
-      Alert.alert('Error', 'Please select your state');
+      Alert.alert('Pick a state', 'Select the state where you will take the test.');
       return;
     }
     if (step === 4 && !testDate) {
-      Alert.alert('Error', 'Please select your test date');
+      Alert.alert('Pick a date', 'Select your expected test date.');
       return;
     }
 
@@ -64,210 +80,302 @@ function OnboardingScreen({ navigation, route }) {
     }
   };
 
+  const meta = STEP_META[step];
+  const daysToPrepare = Math.max(1, Math.floor((testDate - new Date()) / 86400000));
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Progress */}
-        <View style={styles.onboardingProgress}>
-          <Text style={styles.onboardingProgressText}>Step {step} of 4</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressBarFill, { width: `${(step / 4) * 100}%` }]} />
-          </View>
+    <Screen contentStyle={styles.screenContent}>
+      {/* Progress */}
+      <View style={styles.progressWrap}>
+        <Text style={styles.progressText}>Step {step} of {TOTAL_STEPS}</Text>
+        <ProgressBar progress={step / TOTAL_STEPS} height={8} />
+      </View>
+
+      {/* Step header */}
+      <View style={styles.stepHeader}>
+        <View style={[styles.iconCircle, { backgroundColor: meta.bg }]}>
+          <Text style={styles.iconText}>{meta.icon}</Text>
         </View>
+        <Text style={styles.title}>{meta.title}</Text>
+        <Text style={styles.subtitle}>{meta.subtitle}</Text>
+      </View>
 
-        {/* STEP 1: NAME */}
-        {step === 1 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>👋</Text>
-            <Text style={styles.onboardingTitle}>Welcome! What's your name?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll personalize your learning experience</Text>
+      {/* STEP 1: NAME */}
+      {step === 1 && (
+        <Card>
+          <Text style={styles.label}>Your name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Alex"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor={colors.textTertiary}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={handleContinue}
+          />
+        </Card>
+      )}
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Your Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your full name"
-                value={name}
-                onChangeText={setName}
-                placeholderTextColor="#ccc"
-              />
-            </View>
-          </View>
-        )}
-
-        {/* STEP 2: TEST TYPE */}
-        {step === 2 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📚</Text>
-            <Text style={styles.onboardingTitle}>Which test are you preparing for?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll customize questions based on your test</Text>
-
-            {testOptions.map((option) => (
-              <TouchableOpacity
+      {/* STEP 2: TEST TYPE */}
+      {step === 2 && (
+        <View>
+          {testOptions.map((option) => {
+            const selected = testType === option.type;
+            return (
+              <Card
                 key={option.type}
-                style={[
-                  styles.onboardingOption,
-                  testType === option.type && styles.onboardingOptionSelected,
-                ]}
                 onPress={() => setTestType(option.type)}
+                style={[styles.option, selected && styles.optionSelected]}
               >
-                <View style={styles.optionIcon}>
-                  <Text style={styles.optionIconText}>{option.icon}</Text>
-                </View>
-                <View style={styles.optionContent}>
+                <Text style={styles.optionIcon}>{option.icon}</Text>
+                <View style={styles.optionText}>
                   <Text style={styles.optionTitle}>{option.title}</Text>
                   <Text style={styles.optionDesc}>{option.description}</Text>
                 </View>
-                {testType === option.type && (
-                  <MaterialCommunityIcons name="check-circle" size={24} color="#A78BFA" />
+                {selected ? (
+                  <MaterialCommunityIcons name="check-circle" size={26} color={colors.primary} />
+                ) : (
+                  <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={26} color={colors.border} />
                 )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* STEP 3: STATE */}
-        {step === 3 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📍</Text>
-            <Text style={styles.onboardingTitle}>Which state will you take the test in?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll tailor questions to your state</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>State</Text>
-              <View style={[
-                styles.pickerContainer,
-                selectedState ? styles.pickerContainerActive : null,
-              ]}>
-                <Picker
-                  selectedValue={selectedState}
-                  onValueChange={(itemValue) => setSelectedState(itemValue)}
-                  style={styles.picker}
-                  dropdownIconColor="#A78BFA"
-                  prompt="Select your state"
-                  mode={Platform.OS === 'android' ? 'dropdown' : undefined}
-                >
-                  <Picker.Item label="Select a state" value="" color="#64748B" />
-                  {usStates.map(state => <Picker.Item key={state} label={state} value={state} />)}
-                </Picker>
-              </View>
-              {selectedState ? (
-                <View style={styles.selectedStatePill}>
-                  <Image
-                    source={{ uri: selectedStateMeta.flagUri }}
-                    style={styles.selectedStateFlag}
-                    resizeMode="cover"
-                  />
-                  <MaterialCommunityIcons name="check-circle" size={14} color="#67E8F9" />
-                  <Text style={styles.selectedStatePillText}>
-                    Selected: {selectedStateMeta.code ? `${selectedStateMeta.code} • ` : ''}{selectedState}
-                  </Text>
-                </View>
-              ) : null}
-              <Text style={styles.inputHint}>This helps us tailor questions to your state</Text>
-            </View>
-          </View>
-        )}
-
-        {/* STEP 4: TEST DATE */}
-        {step === 4 && (
-          <View style={styles.onboardingStep}>
-            <Text style={styles.onboardingIcon}>📅</Text>
-            <Text style={styles.onboardingTitle}>When's your test scheduled?</Text>
-            <Text style={styles.onboardingSubtitle}>We'll create a personalized study plan</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Expected Test Date</Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                <Text style={styles.dateText}>{testDate.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-              <Text style={styles.inputHint}>Tap to select date</Text>
-            </View>
-
-            {Platform.OS === 'web' ? (
-              <Modal
-                visible={showDatePicker}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowDatePicker(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Select Test Date</Text>
-                    <DatePicker
-                      selected={testDate}
-                      onChange={(date) => {
-                        setTestDate(date);
-                        setShowDatePicker(false);
-                      }}
-                      inline
-                      minDate={new Date()}
-                      showMonthDropdown
-                      showYearDropdown
-                      dropdownMode="select"
-                      scrollableYearDropdown
-                      yearDropdownItemNumber={3}
-                      todayButton="Today"
-                      dateFormat="MM/dd/yyyy"
-                    />
-                    <TouchableOpacity
-                      style={styles.modalCloseButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.modalCloseText}>Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
-            ) : (
-              showDatePicker && (
-                <DateTimePicker
-                  value={testDate}
-                  mode="date"
-                  display="default"
-                  minimumDate={new Date()}
-                  onChange={(event, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate) setTestDate(selectedDate);
-                  }}
-                />
-              )
-            )}
-
-            <View style={styles.studyPlanPreview}>
-              <Text style={styles.studyPlanTitle}>📊 Your Study Plan</Text>
-              {testDate && (
-                <Text style={styles.studyPlanText}>
-                  {`You have ~${Math.max(1, Math.floor((testDate - new Date()) / (1000 * 60 * 60 * 24)))} days to prepare`}
-                </Text>
-              )}
-              <Text style={styles.studyPlanSmall}>We'll adjust daily goals based on available time</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.onboardingActions}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => step > 1 && setStep(step - 1)}
-            disabled={step === 1}
-          >
-            <Text style={styles.buttonText}>{step === 1 ? 'Skip' : 'Back'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, styles.buttonPrimary]}
-            onPress={handleContinue}
-          >
-            <Text style={[styles.buttonText, { color: '#fff' }]}>
-              {step === 4 ? 'Complete Setup' : 'Continue'}
-            </Text>
-          </TouchableOpacity>
+              </Card>
+            );
+          })}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      )}
+
+      {/* STEP 3: STATE */}
+      {step === 3 && (
+        <Card>
+          <Text style={styles.label}>State</Text>
+          <View style={styles.pickerWrap}>
+            <Picker
+              selectedValue={selectedState}
+              onValueChange={(itemValue) => setSelectedState(itemValue)}
+              style={styles.picker}
+              dropdownIconColor={colors.primary}
+              prompt="Select your state"
+              mode={Platform.OS === 'android' ? 'dropdown' : undefined}
+            >
+              <Picker.Item label="Select a state" value="" color={colors.textTertiary} />
+              {usStates.map((state) => (
+                <Picker.Item key={state} label={state} value={state} />
+              ))}
+            </Picker>
+          </View>
+          {selectedState ? (
+            <View style={styles.statePill}>
+              {selectedStateMeta.flagUri ? (
+                <Image
+                  source={{ uri: selectedStateMeta.flagUri }}
+                  style={styles.stateFlag}
+                  resizeMode="cover"
+                />
+              ) : null}
+              <Text style={styles.statePillText}>
+                {selectedStateMeta.code ? `${selectedStateMeta.code} - ` : ''}{selectedState}
+              </Text>
+              <MaterialCommunityIcons name="check-circle" size={16} color={colors.success} />
+            </View>
+          ) : null}
+          <Text style={styles.hint}>Questions like "who is your governor" depend on this.</Text>
+        </Card>
+      )}
+
+      {/* STEP 4: TEST DATE */}
+      {step === 4 && (
+        <View>
+          <Card onPress={() => setShowDatePicker(true)} style={styles.dateCard}>
+            <MaterialCommunityIcons name="calendar-month" size={26} color={colors.primary} />
+            <Text style={styles.dateText}>{testDate.toLocaleDateString()}</Text>
+            <MaterialCommunityIcons name="chevron-down" size={24} color={colors.textTertiary} />
+          </Card>
+
+          <Card style={styles.planCard}>
+            <Text style={styles.planTitle}>🔥 {daysToPrepare} day{daysToPrepare === 1 ? '' : 's'} to prepare</Text>
+            <Text style={styles.planSubtitle}>We'll build daily goals that fit your timeline.</Text>
+          </Card>
+
+          {Platform.OS === 'web' ? (
+            <Modal
+              visible={showDatePicker}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setShowDatePicker(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select test date</Text>
+                  <DatePicker
+                    selected={testDate}
+                    onChange={(date) => {
+                      setTestDate(date);
+                      setShowDatePicker(false);
+                    }}
+                    inline
+                    minDate={new Date()}
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={3}
+                    todayButton="Today"
+                    dateFormat="MM/dd/yyyy"
+                  />
+                  <Button
+                    title="Close"
+                    variant="secondary"
+                    onPress={() => setShowDatePicker(false)}
+                    style={styles.modalClose}
+                  />
+                </View>
+              </View>
+            </Modal>
+          ) : (
+            showDatePicker && (
+              <DateTimePicker
+                value={testDate}
+                mode="date"
+                display="default"
+                minimumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) setTestDate(selectedDate);
+                }}
+              />
+            )
+          )}
+        </View>
+      )}
+
+      <View style={styles.spacer} />
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <Button
+          title={step === 1 ? 'Skip' : 'Back'}
+          variant="ghost"
+          onPress={() => step > 1 && setStep(step - 1)}
+          disabled={step === 1}
+          style={styles.backButton}
+        />
+        <Button
+          title={step === 4 ? "Let's do this" : 'Continue'}
+          onPress={handleContinue}
+          style={styles.continueButton}
+        />
+      </View>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  screenContent: { flexGrow: 1 },
+  progressWrap: { marginBottom: spacing.lg },
+  progressText: {
+    fontSize: typography.small,
+    fontWeight: typography.semibold,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+
+  stepHeader: { alignItems: 'center', marginBottom: spacing.lg },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  iconText: { fontSize: 34 },
+  title: {
+    fontSize: typography.title,
+    fontWeight: typography.bold,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+  },
+
+  label: {
+    fontSize: typography.small,
+    fontWeight: typography.semibold,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  input: {
+    fontSize: typography.subtitle,
+    fontWeight: typography.medium,
+    color: colors.text,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  hint: { fontSize: typography.small, color: colors.textTertiary, marginTop: spacing.sm },
+
+  option: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  optionSelected: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.primaryLight },
+  optionIcon: { fontSize: 30, marginRight: spacing.md },
+  optionText: { flex: 1 },
+  optionTitle: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text },
+  optionDesc: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+
+  pickerWrap: {
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  picker: { color: colors.text },
+  statePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.successLight,
+    borderRadius: radius.full,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  stateFlag: { width: 28, height: 20, borderRadius: 4, marginRight: spacing.sm },
+  statePillText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.text, marginRight: 6 },
+
+  dateCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  dateText: { flex: 1, fontSize: typography.subtitle, fontWeight: typography.semibold, color: colors.text, marginLeft: spacing.md },
+  planCard: { backgroundColor: colors.goldLight, borderColor: colors.gold, alignItems: 'center' },
+  planTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text },
+  planSubtitle: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 4, textAlign: 'center' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(16, 24, 40, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    alignItems: 'center',
+    ...shadows.raised,
+  },
+  modalTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, marginBottom: spacing.md },
+  modalClose: { marginTop: spacing.md, minWidth: 140 },
+
+  spacer: { flex: 1, minHeight: spacing.lg },
+  actions: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
+  backButton: { flex: 1, marginRight: spacing.sm },
+  continueButton: { flex: 2 },
+});
 
 export default OnboardingScreen;

@@ -979,3 +979,5 @@ const quizStyles = StyleSheet.create({
 
   helperText: { textAlign: 'center', fontSize: typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
 });
+
+export default QuizScreen;
