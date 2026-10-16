@@ -31,6 +31,7 @@ function HomeScreen({ navigation }) {
     userProfile,
     masteryMap,
     pausedSession,
+    clearPausedSession,
     errorBank,
     trackAppEvent,
   } = useContext(AppDataContext);
@@ -44,7 +45,7 @@ function HomeScreen({ navigation }) {
     let answered = 0;
     ids.forEach((id) => {
       const q = byQ[id] || {};
-      answered += Number(q.asked || 0);
+      answered += Number(q.attempts || 0);
       correct += Number(q.correct || 0);
     });
     const totalQuestions = Number(masteryMap?.totalQuestions || 0);
@@ -91,6 +92,8 @@ function HomeScreen({ navigation }) {
 
   const handlePickTopic = (topic) => {
     setShowTopicModal(false);
+    // Clear any stale paused session from a previous quiz
+    clearPausedSession?.();
     const params = {
       type: testDetails?.testType || 'naturalization128',
       forceQuestionCount: pickedLength || 0,
