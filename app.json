@@ -61,12 +61,13 @@
       "expo-sharing",
       "expo-font",
       "expo-tracking-transparency",
-      {
-        "react-native-google-mobile-ads": {
+      [
+        "react-native-google-mobile-ads",
+        {
           "androidAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy",
           "iosAppId": "ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"
         }
-      }
+      ]
     ],
     "scheme": "civiceducation",
     "owner": "aharel",
