@@ -76,6 +76,14 @@ function ModeSelectorScreen({ navigation }) {
   const [selectedType, setSelectedType] = useState(defaultType);
   const [selectedTopic, setSelectedTopic] = useState(ALL_TOPICS_VALUE);
   const [selectedSubTopic, setSelectedSubTopic] = useState(ALL_SUBTOPICS_VALUE);
+  const [sessionLength, setSessionLength] = useState('all');
+
+  const SESSION_LENGTHS = [
+    { value: '10', label: '10', hint: 'Quick drill' },
+    { value: '20', label: '20', hint: 'Short session' },
+    { value: '50', label: '50', hint: 'Deep practice' },
+    { value: 'all', label: 'All', hint: 'Full test' },
+  ];
 
   const fullPool = useMemo(() => getQuestionBank(selectedType), [selectedType]);
 
@@ -125,6 +133,7 @@ function ModeSelectorScreen({ navigation }) {
       type: selectedType,
       topicFilter: selectedTopic === ALL_TOPICS_VALUE ? null : selectedTopic,
       subTopicFilter: selectedSubTopic === ALL_SUBTOPICS_VALUE ? null : selectedSubTopic,
+      forceQuestionCount: sessionLength === 'all' ? 0 : parseInt(sessionLength, 10),
     });
   };
 
@@ -186,6 +195,28 @@ function ModeSelectorScreen({ navigation }) {
           />
         </>
       )}
+
+      <Text style={styles.sectionTitle}>Session length</Text>
+      <View style={styles.lengthRow}>
+        {SESSION_LENGTHS.map((opt) => {
+          const isSelected = sessionLength === opt.value;
+          return (
+            <TouchableOpacity
+              key={opt.value}
+              onPress={() => setSessionLength(opt.value)}
+              activeOpacity={0.8}
+              style={[styles.lengthChip, isSelected && styles.lengthChipSelected]}
+            >
+              <Text style={[styles.lengthLabel, isSelected && styles.lengthLabelSelected]}>
+                {opt.label}
+              </Text>
+              <Text style={[styles.lengthHint, isSelected && styles.lengthHintSelected]}>
+                {opt.hint}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       <Card style={styles.summaryCard}>
         <MaterialCommunityIcons name="filter-variant" size={20} color={colors.primary} />
@@ -260,6 +291,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   summaryText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.primaryDark, marginLeft: spacing.sm },
+
+  lengthRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  lengthChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lengthChipSelected: { backgroundColor: colors.primaryLight, borderColor: colors.primary, borderWidth: 1.5 },
+  lengthLabel: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
+  lengthLabelSelected: { color: colors.primaryDark },
+  lengthHint: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  lengthHintSelected: { color: colors.primary },
 
   startButton: { marginTop: spacing.sm },
 });
