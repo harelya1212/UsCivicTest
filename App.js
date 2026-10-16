@@ -69,6 +69,7 @@ import {
   AD_RUNTIME_STORAGE_KEY,
   MASTERY_MAP_STORAGE_KEY,
   USER_PROFILE_STORAGE_KEY,
+  TEST_DETAILS_STORAGE_KEY,
   SQUAD_SYNC_STORAGE_KEY,
   DAILY_FREE_PACK_LIMIT,
   FREE_PACK_QUESTION_COUNT,
@@ -526,6 +527,23 @@ export default function App() {
       }
     };
 
+    const loadTestDetails = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(TEST_DETAILS_STORAGE_KEY);
+        if (!stored || !isMounted) return;
+
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object' && parsed.testType) {
+          setTestDetails(parsed);
+          setOnboardingComplete(true);
+        }
+      } catch (error) {
+        console.log('Failed to load test details:', error);
+      }
+    };
+
+    loadTestDetails();
+
     const loadSquadSync = async () => {
       try {
         const stored = await AsyncStorage.getItem(SQUAD_SYNC_STORAGE_KEY);
@@ -899,16 +917,27 @@ export default function App() {
   }, [adRuntime.dayKey, adRuntime.currentDayInterstitialShown, adRuntime.currentDayRewardedCompleted]);
 
   const handleOnboardingComplete = (details) => {
-    setTestDetails(withAutoStudyPlan(details));
+    const withPlan = withAutoStudyPlan(details);
+    setTestDetails(withPlan);
     setUserProfile((prev) => ({
       ...prev,
       name: prev.name || details?.name || '',
     }));
     setOnboardingComplete(true);
+    // Persist so returning users skip onboarding
+    AsyncStorage.setItem(TEST_DETAILS_STORAGE_KEY, JSON.stringify(withPlan)).catch((e) =>
+      console.log('Failed to persist test details:', e)
+    );
   };
 
   const handleEditTestDetails = (details) => {
-    setTestDetails((prev) => withAutoStudyPlan(details, prev));
+    setTestDetails((prev) => {
+      const withPlan = withAutoStudyPlan(details, prev);
+      AsyncStorage.setItem(TEST_DETAILS_STORAGE_KEY, JSON.stringify(withPlan)).catch((e) =>
+        console.log('Failed to persist test details:', e)
+      );
+      return withPlan;
+    });
   };
 
   const addErrorItem = (item) => {

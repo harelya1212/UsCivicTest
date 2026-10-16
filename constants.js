@@ -1,5 +1,6 @@
 export const PAUSED_SESSION_STORAGE_KEY = 'civics.pausedSession.v1';
 export const AD_RUNTIME_STORAGE_KEY = 'civics.adRuntime.v1';
+export const TEST_DETAILS_STORAGE_KEY = 'civics.testDetails.v1';
 export const CASE_PROGRESS_STORAGE_PREFIX = 'civics.caseProgress.v1';
 export const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
 export const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
