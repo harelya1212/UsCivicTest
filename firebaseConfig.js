@@ -20,16 +20,20 @@ const firebaseConfig = {
     measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-CT4V0D1WZL'
 };
 
-if (!firebaseConfig.apiKey) {
-    console.warn('Firebase apiKey missing. Set EXPO_PUBLIC_FIREBASE_API_KEY in your local environment.');
+export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey);
+
+if (!isFirebaseConfigured) {
+    console.warn('Firebase apiKey missing. Set EXPO_PUBLIC_FIREBASE_API_KEY in your local environment. Firebase features (auth, sync) are disabled; the quiz works offline.');
 }
 
-// Initialize Firebase
-export const firebaseApp = initializeApp(firebaseConfig);
+// Initialize Firebase only when an API key is present. Without it the app
+// runs in offline mode: firebaseApp/auth/db/realtimeDb are null and the
+// service layer (which try/catches all Firebase calls) degrades gracefully.
+export const firebaseApp = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 
 // Initialize services
-export const auth = getAuth(firebaseApp);
-export const db = getFirestore(firebaseApp);
-export const realtimeDb = getDatabase(firebaseApp);
+export const auth = firebaseApp ? getAuth(firebaseApp) : null;
+export const db = firebaseApp ? getFirestore(firebaseApp) : null;
+export const realtimeDb = firebaseApp ? getDatabase(firebaseApp) : null;
 
 export default firebaseConfig;
