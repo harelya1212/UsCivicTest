@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+import { requestTrackingPermissionsAsync } from './utils/trackingTransparency';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
