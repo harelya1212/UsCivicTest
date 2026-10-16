@@ -760,15 +760,8 @@ function QuizScreen({ route, navigation }) {
         contentContainerStyle={quizStyles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* Question card */}
+        {/* Question card - image hidden until after answering to avoid spoiling */}
         <View style={quizStyles.questionCard}>
-          {!lowClutterMode && visualImageUrl ? (
-            <Image
-              source={{ uri: visualImageUrl }}
-              style={quizStyles.questionImage}
-              resizeMode="contain"
-            />
-          ) : null}
           <Text style={quizStyles.questionText}>
             {question.question}
           </Text>
@@ -876,6 +869,14 @@ function QuizScreen({ route, navigation }) {
               </View>
             )}
 
+            {!lowClutterMode && visualImageUrl ? (
+              <Image
+                source={{ uri: visualImageUrl }}
+                style={quizStyles.feedbackImage}
+                resizeMode="contain"
+              />
+            ) : null}
+
             <TouchableOpacity
               style={quizStyles.nextBtn}
               onPress={handleNextQuestion}
@@ -930,6 +931,7 @@ const quizStyles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.borderLight, ...shadows.card,
   },
   questionImage: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: spacing.md, backgroundColor: '#f1f5f9' },
+  feedbackImage: { width: '100%', height: 180, borderRadius: radius.md, marginTop: spacing.md, marginBottom: spacing.md, backgroundColor: '#f1f5f9' },
   questionText: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, lineHeight: 26 },
   multiHint: { fontSize: typography.caption, color: colors.textSecondary, marginTop: spacing.sm, fontStyle: 'italic' },
 
