@@ -5,14 +5,18 @@
  * quick actions to the rest of the app. No experiment clutter.
  * Previous version backed up at screens/HomeScreen.old.js.
  */
-import React, { useContext, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useContext, useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 import { HomeBannerAd } from '../adMobService';
+import { getQuestionBank } from '../quizHelpers';
+import { getQuestionTopic } from '../utils/helpers';
+import { ALL_TOPICS_VALUE } from '../constants';
 import { colors, gradients, radius, spacing, typography, shadows } from '../theme';
 
 const TEST_TYPE_LABELS = {
@@ -52,9 +56,48 @@ function HomeScreen({ navigation }) {
   const weakCount = Array.isArray(errorBank) ? errorBank.length : 0;
   const testLabel = TEST_TYPE_LABELS[testDetails?.testType] || 'Civics Test';
 
+  // Quick-start popup flow: length -> topic -> quiz
+  const [showLengthModal, setShowLengthModal] = useState(false);
+  const [showTopicModal, setShowTopicModal] = useState(false);
+  const [pickedLength, setPickedLength] = useState(null);
+
+  const LENGTH_OPTIONS = [
+    { value: 10, label: '10', hint: 'Quick drill', icon: 'lightning-bolt' },
+    { value: 20, label: '20', hint: 'Short session', icon: 'timer' },
+    { value: 50, label: '50', hint: 'Deep practice', icon: 'target' },
+    { value: 0, label: 'All', hint: 'Full test', icon: 'flag' },
+  ];
+
+  const topicOptions = useMemo(() => {
+    try {
+      const pool = getQuestionBank(testDetails?.testType || 'naturalization128');
+      return Array.from(new Set(pool.map((q) => getQuestionTopic(q)).filter(Boolean))).sort();
+    } catch {
+      return [];
+    }
+  }, [testDetails?.testType]);
+
   const startQuiz = (params = {}) => {
     trackAppEvent?.('quiz_started_from_home', { test_type: testDetails?.testType || 'unknown' });
-    navigation.navigate('ModeSelector', params);
+    // Open the quick-start popup flow instead of navigating away
+    setShowLengthModal(true);
+  };
+
+  const handlePickLength = (value) => {
+    setPickedLength(value);
+    setShowLengthModal(false);
+    setShowTopicModal(true);
+  };
+
+  const handlePickTopic = (topic) => {
+    setShowTopicModal(false);
+    const params = {
+      type: testDetails?.testType || 'naturalization128',
+      forceQuestionCount: pickedLength || 0,
+      topicFilter: topic === ALL_TOPICS_VALUE ? null : topic,
+    };
+    setPickedLength(null);
+    navigation.navigate('Quiz', params);
   };
 
   const daysUntilTest = testDetails?.testDate
@@ -180,6 +223,69 @@ function HomeScreen({ navigation }) {
       </Card>
 
       <HomeBannerAd />
+
+      {/* Session length popup */}
+      <Modal visible={showLengthModal} transparent animationType="fade" onRequestClose={() => setShowLengthModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>How many questions?</Text>
+            <Text style={styles.modalSubtitle}>Pick a session length to get started</Text>
+            <View style={styles.modalGrid}>
+              {LENGTH_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.label}
+                  activeOpacity={0.8}
+                  style={styles.lengthOption}
+                  onPress={() => handlePickLength(opt.value)}
+                >
+                  <View style={styles.lengthIconWrap}>
+                    <MaterialCommunityIcons name={opt.icon} size={24} color={colors.primary} />
+                  </View>
+                  <Text style={styles.lengthNumber}>{opt.label}</Text>
+                  <Text style={styles.lengthHint}>{opt.hint}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity onPress={() => setShowLengthModal(false)} style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Topic popup */}
+      <Modal visible={showTopicModal} transparent animationType="fade" onRequestClose={() => setShowTopicModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>What do you want to drill?</Text>
+            <Text style={styles.modalSubtitle}>Mix everything or focus on one topic</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.topicOption, styles.topicOptionHighlight]}
+              onPress={() => handlePickTopic(ALL_TOPICS_VALUE)}
+            >
+              <MaterialCommunityIcons name="shuffle" size={22} color="#fff" />
+              <Text style={styles.topicOptionHighlightText}>Mix of everything</Text>
+            </TouchableOpacity>
+            {topicOptions.map((topic) => (
+              <TouchableOpacity
+                key={topic}
+                activeOpacity={0.8}
+                style={styles.topicOption}
+                onPress={() => handlePickTopic(topic)}
+              >
+                <MaterialCommunityIcons name="bookmark-outline" size={20} color={colors.primary} />
+                <Text style={styles.topicOptionText}>{topic}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => { setShowTopicModal(false); setShowLengthModal(true); }} style={styles.modalCancel}>
+              <Text style={styles.modalCancelText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -254,6 +360,72 @@ const styles = StyleSheet.create({
   testCard: { marginBottom: spacing.md },
   testRow: { flexDirection: 'row', alignItems: 'center' },
   testText: { flex: 1, fontSize: typography.caption, color: colors.textSecondary, marginLeft: spacing.sm },
+
+  // Quick-start popups
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+    ...shadows.card,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: { fontSize: typography.title, fontWeight: typography.bold, color: colors.text, textAlign: 'center' },
+  modalSubtitle: { fontSize: typography.caption, color: colors.textSecondary, textAlign: 'center', marginTop: 4, marginBottom: spacing.lg },
+  modalGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  lengthOption: {
+    width: '47%',
+    margin: '1.5%',
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lengthIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  lengthNumber: { fontSize: 24, fontWeight: typography.bold, color: colors.text },
+  lengthHint: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  topicOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
+  },
+  topicOptionHighlight: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  topicOptionText: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginLeft: spacing.sm },
+  topicOptionHighlightText: { fontSize: typography.body, fontWeight: typography.bold, color: '#fff', marginLeft: spacing.sm },
+  modalCancel: { alignItems: 'center', paddingVertical: spacing.sm, marginTop: spacing.sm },
+  modalCancelText: { fontSize: typography.body, color: colors.textSecondary },
 });
 
 export default HomeScreen;
