@@ -54,7 +54,7 @@ function HomeScreen({ navigation }) {
 
   const startQuiz = (params = {}) => {
     trackAppEvent?.('quiz_started_from_home', { test_type: testDetails?.testType || 'unknown' });
-    navigation.navigate('Quiz', { type: testDetails?.testType || 'naturalization100', ...params });
+    navigation.navigate('ModeSelector', params);
   };
 
   const daysUntilTest = testDetails?.testDate
