@@ -30,6 +30,7 @@ import {
   getVisualImage,
   getQuestionBank,
   isAnswerCorrect as checkAnswerCorrect,
+  shuffleArray,
 } from '../quizHelpers';
 import { ttsManager } from '../utils/ttsWrapper';
 import { useHapticEngine } from '../context/HapticProvider';
@@ -94,7 +95,7 @@ function QuizScreen({ route, navigation }) {
   const listenMode = requestedListenMode || restoredListenMode;
   const initialPool = shouldResumeSession
     ? pausedSession.pool
-    : effectivePool.slice(0, forcedQuestionCount > 0 ? Math.min(effectivePool.length, forcedQuestionCount) : sessionQuestionCount);
+    : shuffleArray(effectivePool).slice(0, forcedQuestionCount > 0 ? Math.min(effectivePool.length, forcedQuestionCount) : sessionQuestionCount);
   const initialCurrent = shouldResumeSession ? pausedSession.current || 0 : 0;
   const initialScore = shouldResumeSession ? pausedSession.score || 0 : 0;
   const initialHistory = shouldResumeSession ? pausedSession.history || [] : [];
