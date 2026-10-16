@@ -185,9 +185,21 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#A78BFA',
-        tabBarInactiveTintColor: '#475569',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#F2F4F7',
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 64,
+        },
+        tabBarActiveTintColor: '#4F46E5',
+        tabBarInactiveTintColor: '#98A2B3',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
+        },
       }}
     >
       <Tab.Screen
