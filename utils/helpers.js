@@ -24,6 +24,21 @@ export function daysSince(value) {
   return Math.floor(deltaMs / (1000 * 60 * 60 * 24));
 }
 
+/**
+ * computeDueDays - spaced repetition interval for a question.
+ * Lower accuracy = sooner due. Returns days until the question is due for review.
+ */
+export function computeDueDays(entry = {}) {
+  const attempts = Number(entry.attempts || 0);
+  const correct = Number(entry.correct || 0);
+  if (attempts === 0) return 0;
+  const accuracy = correct / attempts;
+  if (accuracy >= 0.9) return 7;   // mastered: weekly review
+  if (accuracy >= 0.7) return 3;   // good: every 3 days
+  if (accuracy >= 0.5) return 1;   // shaky: daily
+  return 0;                        // weak: due now
+}
+
 export function parseDateSafe(value) {
   if (!value) return null;
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
