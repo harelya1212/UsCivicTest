@@ -125,13 +125,12 @@ function QuizScreen({ route, navigation }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [lowClutterMode, setLowClutterMode] = useState(initialLowClutterMode);
   const [speechRateIndex, setSpeechRateIndex] = useState(initialSpeechRateIndex);
-  // Store generated question in state so options don't reshuffle on every re-render
+  // Store generated question in state so options don't reshuffle on every re-render.
+  // On resume, regenerate with current logic (saved questions may have stale distractors).
   const [currentQuestion, setCurrentQuestion] = useState(() =>
-    shouldResumeSession && pausedSession.currentQuestion
-      ? pausedSession.currentQuestion
-      : pool && pool.length
-        ? generateQuizQuestion(pool[initialCurrent], initialDifficulty, { userState: testDetails?.state })
-        : null
+    pool && pool.length
+      ? generateQuizQuestion(pool[initialCurrent], initialDifficulty, { userState: testDetails?.state })
+      : null
   );
   const [justRestoredSession, setJustRestoredSession] = useState(shouldResumeSession);
   const lastStepGoalTrackedCountRef = useRef(0);
