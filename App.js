@@ -235,6 +235,7 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
         options={{
           tabBarLabel: 'Admin',
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="shield-account" size={size} color={color} />,
+          tabBarButton: __DEV__ ? undefined : () => null,
         }}
       />
     </Tab.Navigator>
