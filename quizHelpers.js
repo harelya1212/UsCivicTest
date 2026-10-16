@@ -1,7 +1,7 @@
 // Quiz Helper Utilities for ADHD-Friendly Interaction
 // Generates plausible wrong answers and manages quiz progression
 
-import { CIVICS_QUESTION_BANK } from './civicsQuestionBank.js';
+import { listPacks, getPackQuestions } from './data/packs/index.js';
 import { getDynamicCivicsAnswer, STATE_CAPITALS } from './civicsDynamicData.js';
 
 /**
@@ -165,11 +165,7 @@ const TOPIC_TO_TEMPLATE = {
   general: 'Government Structure',
 };
 
-const ALL_OFFICIAL_QUESTIONS = [
-  ...CIVICS_QUESTION_BANK.naturalization128,
-  ...CIVICS_QUESTION_BANK.naturalization100,
-  ...CIVICS_QUESTION_BANK.highschool,
-];
+const ALL_OFFICIAL_QUESTIONS = listPacks().flatMap((pack) => getPackQuestions(pack.id));
 
 const OFFICIAL_DISTRACTOR_POOLS = ALL_OFFICIAL_QUESTIONS.reduce((acc, item) => {
   const topicKey = inferTopicKey(item.question, item.correctAnswer);
@@ -456,11 +452,7 @@ export function getRandomQuestion(questionSet) {
  * Gets a question bank by type
  */
 export function getQuestionBank(type) {
-  const banks = {
-    'highschool': CIVICS_QUESTION_BANK.highschool,
-    'naturalization100': CIVICS_QUESTION_BANK.naturalization100,
-    'naturalization128': CIVICS_QUESTION_BANK.naturalization128,
-  };
-  
-  return banks[type] || banks.naturalization128;
+  // Routed through the pack registry (data/packs). Accepts a pack id
+  // ('civics-128') or a legacy test-type key ('naturalization128').
+  return getPackQuestions(type);
 }

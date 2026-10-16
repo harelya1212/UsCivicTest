@@ -6,6 +6,10 @@ export const QUESTIONS_BY_TEST_TYPE = {
   naturalization128: 128,
 };
 
+export function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function getDayKey(value = new Date()) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return new Date().toISOString().slice(0, 10);
