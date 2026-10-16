@@ -46,7 +46,7 @@ function sanitizeVariant(variantKey, candidate) {
 
 function ReviewScreen({ route, navigation }) {
   const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank } = useContext(AppDataContext);
-  const { score, total, type, weak } = route.params;
+  const { score = 0, total = 0, type = 'unknown', weak = [] } = route.params || {};
   const percentage = Math.round((score / total) * 100);
   const weakScoreThreshold = 70;
   const isWeakScoreSession = percentage < weakScoreThreshold;
@@ -552,7 +552,7 @@ function ReviewScreen({ route, navigation }) {
       <View style={styles.actionRow}>
         <Button
           title="Back home"
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'HomeTab' })}
           variant="secondary"
           style={styles.halfButton}
         />
