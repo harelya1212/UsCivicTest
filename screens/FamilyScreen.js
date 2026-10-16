@@ -802,7 +802,7 @@ function FamilyScreen({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity style={[styles.button, localStyles.backButton]} onPress={() => navigation.navigate('HomeTab')}>
+          <TouchableOpacity style={[styles.button, localStyles.backButton]} onPress={() => navigation.navigate('MainTabs', { screen: 'HomeTab' })}>
             <MaterialCommunityIcons name="arrow-left" size={18} color="#A78BFA" />
             <Text style={[styles.buttonText, localStyles.backButtonText]}>Back to Home</Text>
           </TouchableOpacity>
