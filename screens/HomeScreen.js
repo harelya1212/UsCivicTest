@@ -130,7 +130,7 @@ function HomeScreen({ navigation }) {
             </View>
             <View style={styles.resumeText}>
               <Text style={styles.resumeTitle}>Continue where you left off</Text>
-              <Text style={styles.resumeSubtitle}>Question {(pausedSession.currentIndex || 0) + 1} of {pausedSession.total || '?'}</Text>
+              <Text style={styles.resumeSubtitle}>Question {(pausedSession.current || 0) + 1} of {pausedSession.pool?.length || pausedSession.resumeContext?.queueLength || '?'}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textTertiary} />
           </View>
