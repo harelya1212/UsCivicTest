@@ -10,10 +10,13 @@ import {
   Animated,
   AppState,
   StatusBar,
+  StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
+import ProgressBar from '../components/ui/ProgressBar';
+import { colors, radius, spacing, typography, shadows } from '../theme';
 import {
   getQuestionTopic,
   getQuestionSubTopic,
@@ -703,18 +706,16 @@ function QuizScreen({ route, navigation }) {
   const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer);
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <Animated.View pointerEvents="none" style={[styles.focusMeshBreathingLayer, { opacity: meshBreathingPulse }]} />
-      {/* 📊 Progress Bar */}
-      <View style={styles.quizHeader}>
-        <View style={styles.quizTopActions}>
-          <TouchableOpacity style={styles.quizActionButton} onPress={handlePauseQuiz}>
-            <MaterialCommunityIcons name="pause-circle-outline" size={20} color="#A78BFA" />
-            <Text style={styles.quizActionText}>Pause</Text>
+    <SafeAreaView style={quizStyles.screen}>
+      {/* Clean header: actions + progress */}
+      <View style={quizStyles.header}>
+        <View style={quizStyles.headerActions}>
+          <TouchableOpacity style={quizStyles.headerBtn} onPress={handlePauseQuiz}>
+            <MaterialCommunityIcons name="pause" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           {!focusModeMinimal && (
             <TouchableOpacity
-              style={styles.quizActionButton}
+              style={quizStyles.headerBtn}
               onPress={() => {
                 if (current + 1 < pool.length) {
                   savePausedSession(buildSessionSnapshot('home_button'));
@@ -722,152 +723,65 @@ function QuizScreen({ route, navigation }) {
                 navigation.navigate('MainTabs');
               }}
             >
-              <MaterialCommunityIcons name="home-outline" size={20} color="#A78BFA" />
-              <Text style={styles.quizActionText}>Home</Text>
+              <MaterialCommunityIcons name="home-outline" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.quizActionButton}
-            onPress={() => {
-              const nextLowClutterMode = !lowClutterMode;
-              setLowClutterMode(nextLowClutterMode);
-              trackAppEvent(APP_EVENT_NAMES.QUIZ_FOCUS_MODE_TOGGLED, {
-                quiz_type: type,
-                low_clutter_mode: nextLowClutterMode,
-                question_index: current,
-                total_questions: pool.length,
-              });
-            }}
-          >
-            <MaterialCommunityIcons name={lowClutterMode ? 'view-agenda-outline' : 'target-variant'} size={20} color="#A78BFA" />
-            <Text style={styles.quizActionText}>{lowClutterMode ? 'Classic' : 'Focus'}</Text>
-          </TouchableOpacity>
-        </View>
-        <Animated.View style={[styles.focusModeBadge, { transform: [{ scale: stepGoalScale }] }]}>
-          <MaterialCommunityIcons name="progress-check" size={14} color="#6EE7B7" />
-          <Text style={styles.focusModeBadgeText}>
-            Step Goal: {Math.max(0, currentGoalProgress)}/{Math.max(1, Math.min(pacingStep, currentGoalTarget - currentGoalStart))} (to Q{currentGoalTarget})
+          <View style={quizStyles.headerSpacer} />
+          <Text style={quizStyles.counter}>
+            {current + 1} / {pool.length}
           </Text>
-        </Animated.View>
-        {listenMode && (
-          <>
-            <View style={styles.listenControlsRow}>
-              <TouchableOpacity
-                style={styles.listenControlButton}
-                onPress={() => { clearAutoAdvance(); speakCurrentQuestion({ repeated: true }); }}
-                disabled={isSpeaking}
-              >
-                <MaterialCommunityIcons name={isSpeaking ? 'volume-high' : 'play-circle-outline'} size={18} color="#2DD4BF" />
-                <Text style={styles.listenControlText}>{isSpeaking ? 'Playing' : 'Play / Repeat'}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.listenControlButton}
-                onPress={() => {
-                  const nextIndex = (speechRateIndex + 1) % speechRates.length;
-                  setSpeechRateIndex(nextIndex);
-                  trackAppEvent(APP_EVENT_NAMES.QUIZ_TTS_SPEED_CHANGED, {
-                    quiz_type: type,
-                    question_id: String(question.id),
-                    question_index: current,
-                    total_questions: pool.length,
-                    from_rate: speechRates[speechRateIndex],
-                    to_rate: speechRates[nextIndex],
-                  });
-                }}
-              >
-                <MaterialCommunityIcons name="speedometer" size={18} color="#67E8F9" />
-                <Text style={styles.listenControlText}>Speed {speechRates[speechRateIndex]}x</Text>
-              </TouchableOpacity>
-            </View>
-
-            {autoAdvancePhase != null && autoAdvanceCountdown > 0 && (
-              <View style={styles.listenAutoAdvanceBar}>
-                <MaterialCommunityIcons name="timer-outline" size={14} color="#A78BFA" />
-                <Text style={styles.listenAutoAdvanceText}>
-                  {autoAdvancePhase === 'reveal' ? 'Auto-answering' : 'Next question'} in {autoAdvanceCountdown}s
-                </Text>
-                <TouchableOpacity onPress={clearAutoAdvance} style={styles.listenAutoAdvanceCancelBtn}>
-                  <Text style={styles.listenAutoAdvanceCancelText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </>
-        )}
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
-        <Text style={styles.progressText}>
-          Question {current + 1} of {pool.length}
-        </Text>
-        {explicitQueuePool.length > 0 && (
-          <View style={styles.smartQueueBadge}>
-            <MaterialCommunityIcons name="brain" size={14} color="#67E8F9" />
-            <Text style={styles.smartQueueBadgeText}>Smart Queue: mixed weak + due topics</Text>
+        <ProgressBar progress={(current + 1) / pool.length} height={8} />
+        {listenMode && (
+          <View style={quizStyles.listenRow}>
+            <TouchableOpacity
+              style={quizStyles.listenBtn}
+              onPress={() => { clearAutoAdvance(); speakCurrentQuestion({ repeated: true }); }}
+              disabled={isSpeaking}
+            >
+              <MaterialCommunityIcons name={isSpeaking ? 'volume-high' : 'play'} size={18} color={colors.primary} />
+              <Text style={quizStyles.listenText}>{isSpeaking ? 'Playing' : 'Listen'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={quizStyles.listenBtn}
+              onPress={() => {
+                const nextIndex = (speechRateIndex + 1) % speechRates.length;
+                setSpeechRateIndex(nextIndex);
+              }}
+            >
+              <MaterialCommunityIcons name="speedometer" size={18} color={colors.primary} />
+              <Text style={quizStyles.listenText}>{speechRates[speechRateIndex]}x</Text>
+            </TouchableOpacity>
           </View>
         )}
-        {focusModeMinimal && (
-          <View style={styles.focusModeBadge}>
-            <MaterialCommunityIcons name="target-variant" size={14} color="#6EE7B7" />
-            <Text style={styles.focusModeBadgeText}>Focus Mode: minimal distractions</Text>
-          </View>
-        )}
-        {adRuntime?.focusTelemetry?.adSuppressionActive && adRuntime?.focusTelemetry?.focusShieldEligible ? (
-          <TouchableOpacity
-            style={styles.focusShieldFloatingButton}
-            onPress={handleFocusRewardedAction}
-            disabled={focusActionBusy}
-          >
-            <MaterialCommunityIcons name="shield-star-outline" size={16} color="#FDE68A" />
-            <Text style={styles.focusShieldFloatingButtonText}>
-              {focusActionBusy ? 'Loading...' : 'Watch 1 ad: Keep ad-free 20m'}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-        {adRuntime?.focusTelemetry?.recoveryRewardedPrompt ? (
-          <TouchableOpacity
-            style={[styles.focusShieldFloatingButton, styles.focusRecoveryButton]}
-            onPress={handleFocusRewardedAction}
-            disabled={focusActionBusy}
-          >
-            <MaterialCommunityIcons name="rocket-launch-outline" size={16} color="#86EFAC" />
-            <Text style={styles.focusShieldFloatingButtonText}>
-              {focusActionBusy ? 'Loading...' : 'Rewarded boost: get back on track'}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
       </View>
 
-      <ScrollView 
-        style={styles.quizContent} 
-        contentContainerStyle={styles.quizContainer}
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={true}
+      <ScrollView
+        style={quizStyles.content}
+        contentContainerStyle={quizStyles.container}
+        showsVerticalScrollIndicator={false}
       >
-        {/* 🎯 Question */}
-        <View style={styles.questionCard}>
-          {/* Visual memory hook — always visible before answering */}
+        {/* Question card */}
+        <View style={quizStyles.questionCard}>
           {!lowClutterMode && visualImageUrl ? (
             <Image
               source={{ uri: visualImageUrl }}
-              style={styles.questionImage}
+              style={quizStyles.questionImage}
               resizeMode="cover"
             />
           ) : null}
-          <View style={{ padding: 20, paddingTop: visualImageUrl ? 16 : 20 }}>
-            <Text style={[styles.questionText, { marginTop: 0 }]}>
-              {question.question}
+          <Text style={quizStyles.questionText}>
+            {question.question}
+          </Text>
+          {isTwoAnswerQuestion && (
+            <Text style={quizStyles.multiHint}>
+              Choose one valid idea. In the interview, give any two accepted ideas.
             </Text>
-            {isTwoAnswerQuestion && (
-              <Text style={styles.multiAnswerHint}>
-                In this quiz, choose one valid idea. In the interview, give any two accepted ideas.
-              </Text>
-            )}
-          </View>
+          )}
         </View>
 
-        {/* 4-answer options with large buttons */}
-        <View style={styles.optionsContainer}>
+        {/* Options */}
+        <View style={quizStyles.options}>
           {question.options && question.options.map((option, idx) => {
             const isSelected = selectedOption === option;
             const optionIsCorrect = option === question.answer;
@@ -881,137 +795,96 @@ function QuizScreen({ route, navigation }) {
                 onPress={() => handleSelectAnswer(option)}
                 activeOpacity={0.7}
                 style={[
-                  styles.adhd_optionButton,
-                  showFeedback && showCorrect && styles.adhd_optionCorrect,
-                  showFeedback && showWrong && styles.adhd_optionWrong,
-                  isSelected && !showFeedback && styles.adhd_optionSelected,
+                  quizStyles.option,
+                  isSelected && !showFeedback && quizStyles.optionSelected,
+                  showCorrect && quizStyles.optionCorrect,
+                  showWrong && quizStyles.optionWrong,
                 ]}
               >
-                {/* Visual Indicators */}
-                <View
-                  style={[
-                    styles.optionDot,
-                    showFeedback && showCorrect && styles.dotCorrect,
-                    showFeedback && showWrong && styles.dotWrong,
-                  ]}
-                />
-
-                {/* Option Text */}
                 <Text
                   style={[
-                    styles.adhd_optionText,
-                    showFeedback && showCorrect && styles.adhd_textCorrect,
-                    showFeedback && showWrong && styles.adhd_textWrong,
+                    quizStyles.optionText,
+                    (showCorrect || showWrong) && quizStyles.optionTextFeedback,
                   ]}
                 >
                   {option}
                 </Text>
-
-                {/* Check/X Icons */}
-                {showFeedback && showCorrect && (
-                  <MaterialCommunityIcons
-                    name="check-circle"
-                    size={28}
-                    color="#34D399"
-                    style={{ marginLeft: 8 }}
-                  />
+                {showCorrect && (
+                  <MaterialCommunityIcons name="check-circle" size={26} color={colors.success} />
                 )}
-                {showFeedback && showWrong && (
-                  <MaterialCommunityIcons
-                    name="close-circle"
-                    size={28}
-                    color="#F87171"
-                    style={{ marginLeft: 8 }}
-                  />
+                {showWrong && (
+                  <MaterialCommunityIcons name="close-circle" size={26} color={colors.danger} />
                 )}
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* 💬 Feedback Section (After answer selected) */}
+        {/* Feedback */}
         {showFeedback && (
-          <Animated.View style={[styles.adhd_feedbackBox, { opacity: 1 }]}>
-            {/* Emoji + Message */}
-            <View style={styles.feedbackHeader}>
-              <Text style={styles.feedbackEmoji}>
+          <View style={[
+            quizStyles.feedback,
+            isAnswerCorrect ? quizStyles.feedbackGood : quizStyles.feedbackBad,
+          ]}>
+            <View style={quizStyles.feedbackHeader}>
+              <Text style={quizStyles.feedbackEmoji}>
                 {isAnswerCorrect ? '🎉' : '📚'}
               </Text>
-              <Text style={[styles.feedbackMessage, isAnswerCorrect ? styles.feedbackSuccess : styles.feedbackInfo]}>
-                {feedbackMessage}
+              <Text style={quizStyles.feedbackMessage}>
+                {isAnswerCorrect ? 'Correct! Amazing job!' : 'Good try! Here is the correct answer:'}
               </Text>
             </View>
 
-            {/* Official Correct Answer - Always visible after answer */}
-            <View style={styles.correctAnswerBox}>
-              <Text style={styles.correctAnswerLabel}>
-                {isTwoAnswerQuestion ? '✅ Accepted Answers:' : '✅ The Official Correct Answer:'}
+            <View style={quizStyles.answerBox}>
+              <Text style={quizStyles.answerLabel}>
+                {isTwoAnswerQuestion ? 'Accepted answers:' : 'Correct answer:'}
               </Text>
-              <Text style={styles.correctAnswerText}>{question.answer}</Text>
-
+              <Text style={quizStyles.answerText}>{question.answer}</Text>
               {acceptedAnswers.length > 1 && (
-                <View style={styles.alternateAnswersBox}>
-                  <Text style={styles.alternateAnswersLabel}>
-                    {isTwoAnswerQuestion ? 'Give any two of these:' : 'Also accepted:'}
-                  </Text>
-                  {acceptedAnswers.map((alt, idx) => (
-                    <Text key={idx} style={styles.alternateAnswerItem}>• {alt}</Text>
+                <View style={quizStyles.alternates}>
+                  {acceptedAnswers.filter(a => a !== question.answer).map((alt, idx) => (
+                    <Text key={idx} style={quizStyles.alternateItem}>- {alt}</Text>
                   ))}
                 </View>
               )}
             </View>
 
-            {/* Visual explanation - reveal on demand (only when a real explanation exists) */}
-            {!showExplanation && question.whyThisAnswer && (
-              <TouchableOpacity
-                style={styles.adhd_explanationButton}
-                onPress={handleShowExplanation}
-              >
-                <MaterialCommunityIcons name="lightbulb-on" size={20} color="#fff" />
-                <Text style={styles.adhd_explanationButtonText}>
-                  � Why This Answer?
-                </Text>
-              </TouchableOpacity>
+            {question.whyThisAnswer && (
+              <>
+                {!showExplanation ? (
+                  <TouchableOpacity
+                    style={quizStyles.whyBtn}
+                    onPress={handleShowExplanation}
+                  >
+                    <MaterialCommunityIcons name="lightbulb-on" size={18} color={colors.primary} />
+                    <Text style={quizStyles.whyBtnText}>Why this answer?</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={quizStyles.whyBox}>
+                    <Text style={quizStyles.whyText}>{question.whyThisAnswer}</Text>
+                  </View>
+                )}
+              </>
             )}
 
-            {/* Memory tip placeholder (replaces duplicate image box) */}
-            {showExplanation && question.whyThisAnswer && (
-              <View style={styles.adhd_explanationBox}>
-                <Text style={styles.adhd_explanationText}>
-                  {question.whyThisAnswer}
-                </Text>
-              </View>
-            )}
-
-            {/* Continue Button - shows auto-advance countdown in listen mode */}
             <TouchableOpacity
-              style={styles.adhd_continueButton}
+              style={quizStyles.nextBtn}
               onPress={handleNextQuestion}
             >
-              <Text style={styles.adhd_continueButtonText}>
+              <Text style={quizStyles.nextBtnText}>
                 {listenMode && autoAdvancePhase === 'next' && autoAdvanceCountdown > 0
-                  ? `➡️ Next in ${autoAdvanceCountdown}s  (tap to skip)`
-                  : current + 1 >= pool.length ? '📊 See Results' : '➡️ Next Question'}
+                  ? `Next in ${autoAdvanceCountdown}s (tap to skip)`
+                  : current + 1 >= pool.length ? 'See Results' : 'Next Question'}
               </Text>
+              <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
             </TouchableOpacity>
-
-            {shouldShowBreakNudge && (
-              <View style={styles.helperTextBox}>
-                <MaterialCommunityIcons name="coffee-outline" size={16} color="#64748B" />
-                <Text style={styles.helperText}>Great consistency. Consider a short break before the next set.</Text>
-              </View>
-            )}
-          </Animated.View>
+          </View>
         )}
 
-        {/* Helper text when no answer selected yet */}
-        {!showFeedback && !focusModeMinimal && !lowClutterMode && (
-          <View style={styles.helperTextBox}>
-            <MaterialCommunityIcons name="information-outline" size={16} color="#64748B" />
-            <Text style={styles.helperText}>
-              Take your time. There's no rush. Choose the best answer. ✨
-            </Text>
-          </View>
+        {!showFeedback && !lowClutterMode && (
+          <Text style={quizStyles.helperText}>
+            Take your time. Choose the best answer.
+          </Text>
         )}
       </ScrollView>
 
@@ -1020,4 +893,89 @@ function QuizScreen({ route, navigation }) {
   );
 }
 
-export default QuizScreen;
+const quizStyles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  headerBtn: {
+    width: 40, height: 40, borderRadius: radius.full,
+    backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',
+    marginRight: spacing.sm, ...shadows.card,
+  },
+  headerSpacer: { flex: 1 },
+  counter: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.textSecondary },
+  listenRow: { flexDirection: 'row', marginTop: spacing.sm },
+  listenBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.primaryLight, borderRadius: radius.full,
+    paddingVertical: 8, paddingHorizontal: 14, marginRight: spacing.sm,
+  },
+  listenText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.primary, marginLeft: 6 },
+
+  content: { flex: 1 },
+  container: { padding: spacing.md, paddingBottom: spacing.xl },
+
+  questionCard: {
+    backgroundColor: colors.surface, borderRadius: radius.xl,
+    padding: spacing.lg, marginBottom: spacing.md,
+    borderWidth: 1, borderColor: colors.borderLight, ...shadows.card,
+  },
+  questionImage: { width: '100%', height: 160, borderRadius: radius.md, marginBottom: spacing.md },
+  questionText: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, lineHeight: 26 },
+  multiHint: { fontSize: typography.caption, color: colors.textSecondary, marginTop: spacing.sm, fontStyle: 'italic' },
+
+  options: { marginBottom: spacing.md },
+  option: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    padding: spacing.md, marginBottom: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1.5, borderColor: colors.borderLight, ...shadows.card,
+  },
+  optionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  optionCorrect: { borderColor: colors.success, backgroundColor: colors.successLight },
+  optionWrong: { borderColor: colors.danger, backgroundColor: colors.dangerLight },
+  optionText: { flex: 1, fontSize: typography.body, color: colors.text, fontWeight: typography.medium },
+  optionTextFeedback: { fontWeight: typography.semibold },
+
+  feedback: {
+    borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.md,
+    borderWidth: 1.5,
+  },
+  feedbackGood: { backgroundColor: colors.successLight, borderColor: colors.success },
+  feedbackBad: { backgroundColor: colors.infoLight, borderColor: colors.info },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  feedbackEmoji: { fontSize: 28, marginRight: spacing.sm },
+  feedbackMessage: { flex: 1, fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
+
+  answerBox: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    padding: spacing.md, marginBottom: spacing.md,
+  },
+  answerLabel: { fontSize: typography.small, fontWeight: typography.semibold, color: colors.textSecondary, marginBottom: 4 },
+  answerText: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
+  alternates: { marginTop: spacing.sm },
+  alternateItem: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+
+  whyBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    padding: spacing.md, marginBottom: spacing.md,
+    borderWidth: 1, borderColor: colors.primary,
+  },
+  whyBtnText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.primary, marginLeft: 6 },
+  whyBox: {
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    padding: spacing.md, marginBottom: spacing.md,
+    borderLeftWidth: 3, borderLeftColor: colors.primary,
+  },
+  whyText: { fontSize: typography.caption, color: colors.text, lineHeight: 20 },
+
+  nextBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.primary, borderRadius: radius.md,
+    paddingVertical: 14,
+  },
+  nextBtnText: { fontSize: typography.body, fontWeight: typography.bold, color: '#fff', marginRight: 6 },
+
+  helperText: { textAlign: 'center', fontSize: typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
+});
