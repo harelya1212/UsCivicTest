@@ -866,6 +866,16 @@ function QuizScreen({ route, navigation }) {
               </>
             )}
 
+            {question.mnemonic && (
+              <View style={quizStyles.mnemonicBox}>
+                <View style={quizStyles.mnemonicHeader}>
+                  <MaterialCommunityIcons name="brain" size={18} color={colors.accent} />
+                  <Text style={quizStyles.mnemonicLabel}>Memory hook</Text>
+                </View>
+                <Text style={quizStyles.mnemonicText}>{question.mnemonic}</Text>
+              </View>
+            )}
+
             <TouchableOpacity
               style={quizStyles.nextBtn}
               onPress={handleNextQuestion}
@@ -968,6 +978,15 @@ const quizStyles = StyleSheet.create({
     borderLeftWidth: 3, borderLeftColor: colors.primary,
   },
   whyText: { fontSize: typography.caption, color: colors.text, lineHeight: 20 },
+
+  mnemonicBox: {
+    backgroundColor: colors.xpLight, borderRadius: radius.md,
+    padding: spacing.md, marginBottom: spacing.md,
+    borderLeftWidth: 3, borderLeftColor: colors.accent,
+  },
+  mnemonicHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  mnemonicLabel: { fontSize: typography.small, fontWeight: typography.bold, color: colors.accent, marginLeft: 6, textTransform: 'uppercase' },
+  mnemonicText: { fontSize: typography.caption, color: colors.text, lineHeight: 20, fontStyle: 'italic' },
 
   nextBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

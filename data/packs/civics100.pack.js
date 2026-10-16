@@ -18,19 +18,29 @@
  */
 import { CIVICS_100_QUESTIONS } from './civics100.questions.js';
 import { CIVICS_100_ENRICHMENT } from './civics100.enrichment.js';
+import { CIVICS_100_IMAGES } from './civics100.images.js';
+import { CIVICS_100_MNEMONICS } from './civics100.mnemonics.js';
 import { createPack } from './packSchema.js';
 
 const enrichedQuestions = CIVICS_100_QUESTIONS.map((q) => {
   const enrichment = CIVICS_100_ENRICHMENT[q.id];
-  if (!enrichment) return q;
+  const imageUrl = CIVICS_100_IMAGES[q.id] || null;
+  const mnemonic = CIVICS_100_MNEMONICS[q.id] || null;
+  if (!enrichment && !imageUrl && !mnemonic) return q;
   return {
     ...q,
-    wrongAnswers: {
-      easy: [...enrichment.distractors],
-      medium: [...enrichment.distractors],
-      hard: [...enrichment.distractors],
-    },
-    whyThisAnswer: enrichment.why,
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(mnemonic ? { mnemonic } : {}),
+    ...(enrichment
+      ? {
+          wrongAnswers: {
+            easy: [...enrichment.distractors],
+            medium: [...enrichment.distractors],
+            hard: [...enrichment.distractors],
+          },
+          whyThisAnswer: enrichment.why,
+        }
+      : {}),
   };
 });
 

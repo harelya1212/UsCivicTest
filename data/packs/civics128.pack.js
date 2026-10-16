@@ -7,7 +7,13 @@
  * see dynamicAnswerKinds + freshnessCheckDays.
  */
 import { CIVICS_QUESTION_BANK } from '../../civicsQuestionBank.js';
+import { CIVICS_128_MNEMONICS } from './civics128.mnemonics.js';
 import { createPack } from './packSchema.js';
+
+const enrichedQuestions = CIVICS_QUESTION_BANK.naturalization128.map((q) => {
+  const mnemonic = CIVICS_128_MNEMONICS[q.id];
+  return mnemonic ? { ...q, mnemonic } : q;
+});
 
 export const civics128Pack = createPack({
   id: 'civics-128',
@@ -19,5 +25,5 @@ export const civics128Pack = createPack({
   updatedAt: '2026-02-06',
   dynamicAnswerKinds: ['us-officeholder', 'state-officeholder', 'state-capital'],
   freshnessCheckDays: 90,
-  questions: CIVICS_QUESTION_BANK.naturalization128,
+  questions: enrichedQuestions,
 });
