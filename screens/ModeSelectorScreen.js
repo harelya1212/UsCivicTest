@@ -37,7 +37,7 @@ const MODES = [
   {
     type: 'highschool',
     title: 'High School Civics',
-    subtitle: 'Arizona graduation test',
+    subtitle: 'Arizona graduation test - 70% to pass',
     icon: 'school',
     tint: colors.goldLight,
     iconColor: colors.gold,
