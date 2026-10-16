@@ -41,6 +41,7 @@ function QuizScreen({ route, navigation }) {
     pausedSession,
     savePausedSession,
     clearPausedSession,
+    addErrorItem,
     maybeShowInterstitial,
     recordMasterySession,
     trackAppEvent,
@@ -587,6 +588,14 @@ function QuizScreen({ route, navigation }) {
     } else {
       consecutiveIncorrectRef.current += 1;
       consecutiveCorrectRef.current = 0;
+      // Track wrong answers for weak spots review
+      addErrorItem?.({
+        id: question.id,
+        question: question.question,
+        correctAnswer: question.correctAnswer,
+        topic: question.topic || question.category || 'General',
+        timestamp: new Date().toISOString(),
+      });
     }
 
     recentAllAnswerTsRef.current = [...recentAllAnswerTsRef.current, now]
