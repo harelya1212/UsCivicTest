@@ -99,7 +99,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'U.S. senators serve six-year terms.',
   },
   'CIVICS_023': {
-    distractors: ['your state\'s governor', 'your U.S. representative', 'the Vice President'],
+    distractors: ['Barack Obama', 'George W. Bush', 'Bill Clinton'],
     why: 'Each state elects two U.S. senators - look up the current officeholders for your state.',
   },
   'CIVICS_024': {
@@ -251,7 +251,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'The 10th Amendment reserves powers not given to the federal government for the states (or the people).',
   },
   'CIVICS_061': {
-    distractors: ['your state\'s lieutenant governor', 'one of your U.S. senators', 'your state\'s attorney general'],
+    distractors: ['Barack Obama', 'Joe Biden', 'Donald Trump'],
     why: 'The governor is your state\'s chief executive - look up your current one.',
   },
   'CIVICS_062': {
