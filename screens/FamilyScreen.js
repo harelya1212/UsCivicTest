@@ -19,7 +19,7 @@ import { colors, spacing, typography, radius } from '../theme';
 
 const TEST_TYPES = [
   { type: 'naturalization128', label: '128Q', icon: 'flag' },
-  { type: 'naturalization100', label: '100Q', icon: 'landmark' },
+  { type: 'naturalization100', label: '100Q', icon: 'bank' },
   { type: 'highschool', label: 'High School', icon: 'school' },
 ];
 
