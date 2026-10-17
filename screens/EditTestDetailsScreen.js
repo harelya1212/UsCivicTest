@@ -21,6 +21,7 @@ import styles from '../styles';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import HomeButton from '../components/ui/HomeButton';
 
 function EditTestDetailsScreen({ navigation, testDetails, onSave }) {
   const [name, setName] = useState(testDetails?.name || '');
@@ -60,7 +61,7 @@ function EditTestDetailsScreen({ navigation, testDetails, onSave }) {
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Edit Test Details</Text>
-        <View style={styles.spacer} />
+        <HomeButton />
       </View>
 
       {/* Name */}
