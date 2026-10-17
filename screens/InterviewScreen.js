@@ -17,6 +17,7 @@ import { scoreAnswer } from '../utils/interviewScoringEngine';
 import civicsData from '../civics_128.json';
 import { followUpQuestions } from '../data/followUpQuestions';
 import { APP_EVENT_NAMES } from '../constants';
+import HomeButton from '../components/ui/HomeButton';
 
 /**
  * InterviewScreen - Main container for interview mode
@@ -108,7 +109,7 @@ const InterviewScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error('[Interview] Error initializing session:', error);
       Alert.alert('Error', 'Failed to initialize interview session. Please try again.');
-      navigation.goBack();
+      navigation.navigate('MainTabs', { screen: 'HomeTab' });
     }
   };
 
@@ -371,7 +372,8 @@ const InterviewScreen = ({ route, navigation }) => {
             phase: currentPhase,
             exitEarly: true,
           });
-          navigation.goBack();
+          // Use navigate instead of goBack for reliability
+          navigation.navigate('MainTabs', { screen: 'HomeTab' });
         },
       },
     ]);
@@ -391,12 +393,17 @@ const InterviewScreen = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          Interview Mode
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          Question {currentQuestionIndex + 1} of {questions.length}
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={styles.headerTitle}>
+              Interview Mode
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              Question {currentQuestionIndex + 1} of {questions.length}
+            </Text>
+          </View>
+          <HomeButton />
+        </View>
       </View>
 
       <View style={styles.phaseContainer}>
