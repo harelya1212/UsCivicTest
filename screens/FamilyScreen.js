@@ -9,10 +9,12 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Share, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import HomeButton from '../components/ui/HomeButton';
 import { colors, spacing, typography, radius } from '../theme';
 
 const TEST_TYPES = [
@@ -150,22 +152,32 @@ function FamilyScreen({ navigation }) {
           <Text style={styles.squadName}>{teamName}</Text>
           <Text style={styles.squadMeta}>{members.length} member{members.length === 1 ? '' : 's'}</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={22} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <HomeButton />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <MaterialCommunityIcons name="arrow-left" size={22} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Invite */}
-      <Card style={styles.inviteCard} onPress={handleShare}>
-        <View style={styles.inviteRow}>
-          <View>
-            <Text style={styles.inviteLabel}>Invite Code</Text>
-            <Text style={styles.inviteCode}>{inviteCode}</Text>
+      {/* Invite - gradient card for TikTok energy */}
+      <TouchableOpacity onPress={handleShare} activeOpacity={0.85}>
+        <LinearGradient
+          colors={[colors.primary, '#7C3AED']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.inviteGradient}
+        >
+          <View style={styles.inviteRow}>
+            <View>
+              <Text style={styles.inviteLabelWhite}>Invite Code</Text>
+              <Text style={styles.inviteCodeWhite}>{inviteCode}</Text>
+            </View>
+            <MaterialCommunityIcons name="share-variant" size={28} color="#fff" />
           </View>
-          <MaterialCommunityIcons name="share-variant" size={24} color={colors.primary} />
-        </View>
-        <Text style={styles.inviteHint}>Tap to share with friends</Text>
-      </Card>
+          <Text style={styles.inviteHintWhite}>Tap to share with friends 🚀</Text>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* Leaderboard */}
       <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
@@ -175,7 +187,13 @@ function FamilyScreen({ navigation }) {
         </Card>
       ) : (
         leaderboard.slice(0, 5).map((entry, idx) => (
-          <Card key={entry.id || idx} style={styles.boardRow}>
+          <Card
+            key={entry.id || idx}
+            style={[
+              styles.boardRow,
+              idx === 0 && styles.boardRowGold,
+            ]}
+          >
             <Text style={styles.rank}>
               {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
             </Text>
@@ -272,6 +290,19 @@ const styles = StyleSheet.create({
   squadMeta: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
   backBtn: { padding: spacing.sm },
 
+  inviteGradient: {
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  inviteLabelWhite: { fontSize: typography.caption, color: 'rgba(255,255,255,0.8)' },
+  inviteCodeWhite: { fontSize: 28, fontWeight: typography.bold, color: '#fff', letterSpacing: 3, marginTop: 2 },
+  inviteHintWhite: { fontSize: typography.small, color: 'rgba(255,255,255,0.9)', marginTop: spacing.sm },
   inviteCard: { marginBottom: spacing.md, backgroundColor: colors.primaryLight },
   inviteRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   inviteLabel: { fontSize: typography.caption, color: colors.textSecondary },
@@ -282,6 +313,16 @@ const styles = StyleSheet.create({
   emptyBoard: { alignItems: 'center', paddingVertical: spacing.lg },
   emptyText: { fontSize: typography.body, color: colors.textSecondary },
   boardRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, paddingVertical: spacing.md },
+  boardRowGold: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#F59E0B',
+    borderWidth: 1.5,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   rank: { fontSize: 20, minWidth: 36 },
   boardName: { flex: 1, fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginLeft: spacing.sm },
   boardScore: { fontSize: typography.body, fontWeight: typography.bold, color: colors.primary },
