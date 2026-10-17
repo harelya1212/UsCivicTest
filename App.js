@@ -1035,7 +1035,7 @@ export default function App() {
     }));
   };
 
-  const createSquad = (teamNameInput = '') => {
+  const createSquad = async (teamNameInput = '') => {
     const trimmedName = String(teamNameInput || '').trim();
     const nextTeamName = trimmedName || squadSync.teamName || 'Civics Squad';
     const selfMember = buildMemberFromProfile(userProfile, 'You');
@@ -1062,6 +1062,25 @@ export default function App() {
       () => nextState,
       ['teamId', 'teamName', 'inviteCode', 'members'],
     );
+
+    // Sync to Firestore for real invite codes (production)
+    try {
+      const { db } = await import('./firebaseConfig.js');
+      if (db) {
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'squads', nextState.teamId), {
+          teamId: nextState.teamId,
+          teamName: nextState.teamName,
+          inviteCode: nextState.inviteCode,
+          members: nextMembers,
+          createdAt: new Date().toISOString(),
+          updatedAt: nextState.updatedAt,
+        });
+      }
+    } catch (e) {
+      // Offline - local only
+    }
+
     trackAppEvent(APP_EVENT_NAMES.TEAM_CREATED, {
       team_name: nextTeamName,
       member_count: nextMembers.length,
@@ -1081,6 +1100,50 @@ export default function App() {
       has_team: Boolean(squadSync.teamId),
     });
     return nextCode;
+  };
+
+  const joinSquad = async (inviteCodeInput = '') => {
+    const code = String(inviteCodeInput || '').trim().toUpperCase();
+    if (!code) return null;
+
+    // Try Firestore first (production), fall back to local
+    try {
+      const { db } = await import('./firebaseConfig.js');
+      if (db) {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const q = query(collection(db, 'squads'), where('inviteCode', '==', code));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const squadData = snapshot.docs[0].data();
+          const selfMember = buildMemberFromProfile(userProfile, 'You');
+          const nextState = {
+            ...createDefaultSquadSync(),
+            ...squadData,
+            members: [...(squadData.members || []), selfMember],
+            updatedAt: new Date().toISOString(),
+          };
+          applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+          trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code });
+          return nextState;
+        }
+      }
+    } catch (e) {
+      // Firestore unavailable, fall through to local
+    }
+
+    // Local fallback: create a squad with the entered code (demo mode)
+    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const nextState = {
+      ...createDefaultSquadSync(),
+      teamId: `team-${Date.now()}`,
+      teamName: 'Joined Squad',
+      inviteCode: code,
+      members: [selfMember],
+      updatedAt: new Date().toISOString(),
+    };
+    applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code, offline: true });
+    return nextState;
   };
 
   const updateSquadWeeklyGoal = (patch = {}) => {
@@ -2273,6 +2336,7 @@ export default function App() {
           updateUserProfile,
           squadSync,
           createSquad,
+          joinSquad,
           refreshSquadInviteCode,
           updateSquadWeeklyGoal,
           updateSquadChallengeProgress,
