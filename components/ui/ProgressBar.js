@@ -6,12 +6,13 @@ import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, gradients, radius } from '../../theme';
 
-export default function ProgressBar({ progress = 0, height = 8, style }) {
+export default function ProgressBar({ progress = 0, height = 8, style, color }) {
   const pct = Math.max(0, Math.min(1, progress));
+  const gradientColors = color ? [color, color] : gradients.primary;
   return (
     <View style={[styles.track, { height }, style]}>
       <LinearGradient
-        colors={gradients.primary}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.fill, { width: `${pct * 100}%`, borderRadius: radius.full }]}
