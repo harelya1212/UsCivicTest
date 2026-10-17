@@ -7,6 +7,7 @@
 import React, { useContext, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
@@ -14,6 +15,7 @@ import Button from '../components/ui/Button';
 import ProgressBar from '../components/ui/ProgressBar';
 import { getQuestionTopic } from '../utils/helpers';
 import { getQuestionBank } from '../quizHelpers';
+import HomeButton from '../components/ui/HomeButton';
 import { colors, spacing, typography, radius } from '../theme';
 
 const TOPIC_EMOJI = {
@@ -91,28 +93,42 @@ function MasteryMapScreen({ navigation }) {
 
   return (
     <Screen>
-      {/* Overall progress ring (simplified as big number) */}
-      <Card style={styles.heroCard}>
-        <Text style={styles.heroEmoji}>🎯</Text>
-        <Text style={styles.heroNumber}>{stats.overallAccuracy}%</Text>
-        <Text style={styles.heroLabel}>Overall Accuracy</Text>
-        <Text style={styles.heroSub}>{stats.totalAttempts} questions answered</Text>
-      </Card>
+      {/* Header with home */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+        <Text style={styles.sectionTitle}>Mastery Map</Text>
+        <HomeButton />
+      </View>
 
-      {/* Topic bars */}
+      {/* Overall progress - gradient hero for TikTok energy */}
+      <LinearGradient
+        colors={[colors.primary, '#7C3AED', '#4F46E5']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroGradient}
+      >
+        <Text style={styles.heroEmoji}>🎯</Text>
+        <Text style={styles.heroNumberWhite}>{stats.overallAccuracy}%</Text>
+        <Text style={styles.heroLabelWhite}>Overall Accuracy</Text>
+        <Text style={styles.heroSubWhite}>{stats.totalAttempts} questions answered</Text>
+      </LinearGradient>
+
+      {/* Topic bars - color-coded by mastery */}
       <Text style={styles.sectionTitle}>By Topic</Text>
-      {stats.topics.map((t) => (
-        <Card key={t.topic} style={styles.topicCard}>
-          <View style={styles.topicRow}>
-            <Text style={styles.topicEmoji}>{t.emoji}</Text>
-            <View style={styles.topicInfo}>
-              <Text style={styles.topicName}>{t.topic}</Text>
-              <ProgressBar progress={t.accuracy / 100} style={styles.topicBar} />
+      {stats.topics.map((t) => {
+        const barColor = t.accuracy >= 80 ? colors.success : t.accuracy >= 60 ? '#F59E0B' : colors.error;
+        return (
+          <Card key={t.topic} style={styles.topicCard}>
+            <View style={styles.topicRow}>
+              <Text style={styles.topicEmoji}>{t.emoji}</Text>
+              <View style={styles.topicInfo}>
+                <Text style={styles.topicName}>{t.topic}</Text>
+                <ProgressBar progress={t.accuracy / 100} style={styles.topicBar} color={barColor} />
+              </View>
+              <Text style={[styles.topicPct, { color: barColor }]}>{t.accuracy}%</Text>
             </View>
-            <Text style={styles.topicPct}>{t.accuracy}%</Text>
-          </View>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
 
       {/* CTA */}
       {stats.dueCount > 0 ? (
@@ -134,11 +150,25 @@ function MasteryMapScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  heroGradient: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   heroCard: { alignItems: 'center', paddingVertical: spacing.xl, marginBottom: spacing.md },
   heroEmoji: { fontSize: 48, marginBottom: spacing.sm },
   heroNumber: { fontSize: 56, fontWeight: typography.bold, color: colors.primary },
+  heroNumberWhite: { fontSize: 56, fontWeight: typography.bold, color: '#fff' },
   heroLabel: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginTop: 4 },
+  heroLabelWhite: { fontSize: typography.body, fontWeight: typography.semibold, color: '#fff', marginTop: 4 },
   heroSub: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  heroSubWhite: { fontSize: typography.caption, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   sectionTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, marginBottom: spacing.sm, marginTop: spacing.sm },
   topicCard: { marginBottom: spacing.sm },
   topicRow: { flexDirection: 'row', alignItems: 'center' },
