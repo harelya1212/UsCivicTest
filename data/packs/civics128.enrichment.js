@@ -159,7 +159,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'The 22nd Amendment (1951) limits presidents to two terms.',
   },
   'CIVICS_038': {
-    distractors: ['the Vice President', 'the Secretary of State', 'the Chief Justice'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'Check uscis.gov/citizenship/testupdates for the current President\'s name.',
   },
   'CIVICS_039': {
@@ -235,7 +235,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'Life tenure keeps justices independent from political pressure.',
   },
   'CIVICS_057': {
-    distractors: ['an Associate Justice', 'the Attorney General', 'the Senate Majority Leader'],
+    distractors: ['LeBron James', 'Elon Musk', 'Tom Hanks'],
     why: 'Check uscis.gov/citizenship/testupdates for the current Chief Justice.',
   },
   'CIVICS_058': {
