@@ -7,105 +7,161 @@ import {
   View,
   Alert,
   TextInput,
+  Platform,
+  Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-datepicker';
+import '../assets/react-datepicker.min.css';
+import { usStates } from '../constants';
+import { colors } from '../theme';
 import styles from '../styles';
+import Screen from '../components/ui/Screen';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 
 function EditTestDetailsScreen({ navigation, testDetails, onSave }) {
   const [name, setName] = useState(testDetails?.name || '');
   const [testType, setTestType] = useState(testDetails?.testType || '');
-  const [location, setLocation] = useState(testDetails?.location || '');
-  const [testDate, setTestDate] = useState(testDetails?.testDate || '');
+  // Support both 'state' (onboarding) and 'location' (legacy) fields
+  const [selectedState, setSelectedState] = useState(testDetails?.state || testDetails?.location || '');
+  const [testDate, setTestDate] = useState(
+    testDetails?.testDate ? new Date(testDetails.testDate) : new Date()
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const testOptions = [
-    { type: 'highschool', title: 'High School Civics', icon: '🏫' },
-    { type: 'naturalization100', title: 'Naturalization (100Q)', icon: '🏛️' },
-    { type: 'naturalization128', title: 'Naturalization (128Q)', icon: '🇺🇸' },
+    { type: 'highschool', title: 'High School Civics', subtitle: 'Arizona graduation test', icon: 'school' },
+    { type: 'naturalization100', title: 'Citizenship Test (100)', subtitle: 'Official 2008 test', icon: 'landmark' },
+    { type: 'naturalization128', title: 'Citizenship Test (128)', subtitle: 'Official 2025 test', icon: 'flag' },
   ];
 
   const handleSave = () => {
-    if (!name.trim() || !testType || !location.trim() || !testDate) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!name.trim() || !testType || !selectedState) {
+      Alert.alert('Missing info', 'Please fill in your name, test type, and state.');
       return;
     }
-    onSave({ name, testType, location, testDate });
+    onSave({
+      name: name.trim(),
+      testType,
+      state: selectedState,
+      location: selectedState,
+      testDate: testDate.toLocaleDateString(),
+    });
     navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.screenHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#A78BFA" />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>Edit Test Details</Text>
-          <View style={styles.spacer} />
-        </View>
-
-        {/* Name */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Your Name</Text>
-          <TextInput
-            style={styles.textInput}
-            value={name}
-            onChangeText={setName}
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Test Type */}
-        <Text style={styles.sectionLabel}>Test Type</Text>
-        {testOptions.map((option) => (
-          <TouchableOpacity
-            key={option.type}
-            style={[
-              styles.onboardingOption,
-              testType === option.type && styles.onboardingOptionSelected,
-            ]}
-            onPress={() => setTestType(option.type)}
-          >
-            <Text style={{ fontSize: 24, marginRight: 12 }}>{option.icon}</Text>
-            <Text style={styles.optionTitle}>{option.title}</Text>
-            {testType === option.type && (
-              <MaterialCommunityIcons name="check-circle" size={20} color="#A78BFA" />
-            )}
-          </TouchableOpacity>
-        ))}
-
-        {/* Location */}
-        <View style={[styles.inputContainer, { marginTop: 16 }]}>
-          <Text style={styles.inputLabel}>Test Location</Text>
-          <TextInput
-            style={styles.textInput}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="City, State"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Test Date */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Expected Test Date</Text>
-          <TextInput
-            style={styles.textInput}
-            value={testDate}
-            onChangeText={setTestDate}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#ccc"
-          />
-        </View>
-
-        {/* Save Button */}
-        <TouchableOpacity
-          style={[styles.button, styles.buttonPrimary, { marginTop: 20 }]}
-          onPress={handleSave}
-        >
-          <Text style={[styles.buttonText, { color: '#fff' }]}>Save Changes</Text>
+    <Screen>
+      <View style={styles.screenHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+        <Text style={styles.pageTitle}>Edit Test Details</Text>
+        <View style={styles.spacer} />
+      </View>
+
+      {/* Name */}
+      <Card style={{ marginBottom: 12 }}>
+        <Text style={styles.inputLabel}>Your Name</Text>
+        <TextInput
+          style={styles.textInput}
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor={colors.textTertiary}
+        />
+      </Card>
+
+      {/* Test Type */}
+      <Text style={styles.sectionLabel}>Test Type</Text>
+      {testOptions.map((option) => (
+        <Card
+          key={option.type}
+          onPress={() => setTestType(option.type)}
+          style={{
+            marginBottom: 8,
+            borderColor: testType === option.type ? colors.primary : colors.border,
+            borderWidth: testType === option.type ? 2 : 1,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name={option.icon} size={24} color={colors.primary} style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.optionTitle}>{option.title}</Text>
+              <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
+            </View>
+            {testType === option.type && (
+              <MaterialCommunityIcons name="check-circle" size={20} color={colors.primary} />
+            )}
+          </View>
+        </Card>
+      ))}
+
+      {/* State (dropdown like onboarding) */}
+      <Text style={[styles.sectionLabel, { marginTop: 12 }]}>State</Text>
+      <Card style={{ marginBottom: 12 }}>
+        <View style={styles.pickerWrap}>
+          <Picker
+            selectedValue={selectedState}
+            onValueChange={(itemValue) => setSelectedState(itemValue)}
+            style={styles.picker}
+            dropdownIconColor={colors.primary}
+            prompt="Select your state"
+            mode={Platform.OS === 'android' ? 'dropdown' : undefined}
+          >
+            <Picker.Item label="Select a state" value="" color={colors.textTertiary} />
+            {usStates.map((state) => (
+              <Picker.Item key={state} label={state} value={state} />
+            ))}
+          </Picker>
+        </View>
+        <Text style={styles.hint}>Questions like "who is your governor" depend on this.</Text>
+      </Card>
+
+      {/* Test Date (picker like onboarding) */}
+      <Text style={styles.sectionLabel}>Expected Test Date</Text>
+      <Card onPress={() => setShowDatePicker(true)} style={{ marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <MaterialCommunityIcons name="calendar-month" size={26} color={colors.primary} />
+          <Text style={[styles.dateText, { flex: 1, marginLeft: 12 }]}>
+            {testDate.toLocaleDateString()}
+          </Text>
+          <MaterialCommunityIcons name="chevron-down" size={24} color={colors.textTertiary} />
+        </View>
+      </Card>
+
+      {Platform.OS === 'web' ? (
+        <Modal visible={showDatePicker} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <DatePicker
+                selected={testDate}
+                onChange={(date) => { setTestDate(date); setShowDatePicker(false); }}
+                inline
+              />
+              <Button title="Done" onPress={() => setShowDatePicker(false)} />
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showDatePicker && (
+          <DateTimePicker
+            value={testDate}
+            mode="date"
+            display="default"
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) setTestDate(date);
+            }}
+          />
+        )
+      )}
+
+      <Button title="Save Changes" onPress={handleSave} style={{ marginTop: 12 }} />
+    </Screen>
   );
 }
 
