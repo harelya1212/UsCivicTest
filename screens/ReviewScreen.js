@@ -45,7 +45,7 @@ function sanitizeVariant(variantKey, candidate) {
 }
 
 function ReviewScreen({ route, navigation }) {
-  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank } = useContext(AppDataContext);
+  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank, maybeShowInterstitial } = useContext(AppDataContext);
   const { score = 0, total = 0, type = 'unknown', weak = [] } = route.params || {};
   const percentage = Math.round((score / total) * 100);
   const weakScoreThreshold = 70;
@@ -545,14 +545,22 @@ function ReviewScreen({ route, navigation }) {
       {/* Actions */}
       <Button
         title="Practice again"
-        onPress={practiceAgain}
+        onPress={async () => {
+          // Ad policy: 1 interstitial per quiz, shown after results
+          await maybeShowInterstitial?.({ trigger: 'quizComplete', sessionQuestionCount: total, score });
+          practiceAgain();
+        }}
         icon={<MaterialCommunityIcons name="refresh" size={20} color="#fff" />}
         style={styles.actionButton}
       />
       <View style={styles.actionRow}>
         <Button
           title="Back home"
-          onPress={() => navigation.navigate('MainTabs', { screen: 'HomeTab' })}
+          onPress={async () => {
+            // Ad policy: 1 interstitial per quiz, shown after results
+            await maybeShowInterstitial?.({ trigger: 'quizComplete', sessionQuestionCount: total, score });
+            navigation.navigate('MainTabs', { screen: 'HomeTab' });
+          }}
           variant="secondary"
           style={styles.halfButton}
         />
