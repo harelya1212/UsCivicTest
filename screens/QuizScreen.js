@@ -680,15 +680,10 @@ function QuizScreen({ route, navigation }) {
     }
 
     if (current + 1 >= pool.length) {
-      // Quiz complete
+      // Quiz complete - interstitial will show after Review screen (per ad policy)
       const weak = weakAreaEstimator(history);
       recordMasterySession(history, type);
       clearPausedSession();
-      await maybeShowInterstitial({
-        trigger: 'quizComplete',
-        sessionQuestionCount: pool.length,
-        score,
-      });
       navigation.replace('Review', {
         score,
         total: pool.length,
