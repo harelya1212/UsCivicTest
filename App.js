@@ -1928,6 +1928,26 @@ export default function App() {
     const sessionPercentage = sessionQuestionCount > 0
       ? Math.round((sessionScore / sessionQuestionCount) * 100)
       : 0;
+
+    // AD POLICY (2026-10-26, user-approved): 1 interstitial per quiz completion,
+    // shown after the Review screen. No daily cap, no cadence skip, no low-score
+    // block for quiz completions. The call site (ReviewScreen) ensures 1 per quiz.
+    if (triggerName === 'quizComplete') {
+      try {
+        await showInterstitialAd();
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'allowed',
+          reason: 'quiz_complete_policy',
+          segment: 'policy',
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
     const now = Date.now();
     const todayKey = new Date().toISOString().slice(0, 10);
     const activeSegment = getSelfIntentSegment();
