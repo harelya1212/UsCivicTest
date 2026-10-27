@@ -11,13 +11,27 @@ import { createEmptyIntentTransitionSummary, summarizeIntentTransitions, normali
 
 const COMEBACK_WINDOW_OFFSETS = Object.freeze({ d2: 2, d5: 5, d10: 10 });
 
-function buildInviteCode() {
+function buildInviteCode(username = '', testDate = null) {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'SQUAD-';
-  for (let i = 0; i < 6; i += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  // Last letter of username (uppercase), or 'X' if no username
+  const lastLetter = username && typeof username === 'string' && username.trim().length > 0
+    ? username.trim().slice(-1).toUpperCase()
+    : 'X';
+  // Day of test date (1-31), padded to 2 digits, or '00' if no date
+  let dayNum = '00';
+  try {
+    if (testDate) {
+      const d = testDate instanceof Date ? testDate : new Date(testDate);
+      if (!isNaN(d.getTime())) {
+        dayNum = String(d.getDate()).padStart(2, '0');
+      }
+    }
+  } catch {}
+  let randomPart = '';
+  for (let i = 0; i < 4; i += 1) {
+    randomPart += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
-  return code;
+  return `SQUAD-${lastLetter}${dayNum}-${randomPart}`;
 }
 
 function normalizeComebackCampaign(raw = {}) {
