@@ -19,6 +19,7 @@ import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import HomeButton from '../components/ui/HomeButton';
 import { colors, radius, spacing, typography, shadows } from '../theme';
 
 const TEST_TYPE_LABELS = {
@@ -167,7 +168,7 @@ function ProfileScreen({ navigation }) {
           <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
-        <View style={styles.backBtn} />
+        <HomeButton />
       </View>
 
       {/* Identity card */}
