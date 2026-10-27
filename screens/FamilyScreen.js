@@ -15,7 +15,7 @@ import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
-import { colors, spacing, typography, radius } from '../theme';
+import { colors, gradients, spacing, typography, radius } from '../theme';
 
 const TEST_TYPES = [
   { type: 'naturalization128', label: '128Q', icon: 'flag' },
@@ -163,7 +163,7 @@ function FamilyScreen({ navigation }) {
       {/* Invite - gradient card for TikTok energy */}
       <TouchableOpacity onPress={handleShare} activeOpacity={0.85}>
         <LinearGradient
-          colors={[colors.primary, '#7C3AED']}
+          colors={gradients.primary}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.inviteGradient}
@@ -256,7 +256,7 @@ function FamilyScreen({ navigation }) {
         title="Start Challenge"
         onPress={handleChallenge}
         style={styles.challengeBtn}
-        icon={<MaterialCommunityIcons name="sword-cross" size={22} color="#fff" />}
+        icon={<MaterialCommunityIcons name="trophy" size={22} color="#fff" />}
       />
       <Text style={styles.scoringNote}>
         10 questions. Each correct answer = 1 point for your squad.
