@@ -146,7 +146,7 @@ function HomeScreen({ navigation }) {
           </Text>
           <View style={styles.heroCta}>
             <Text style={styles.heroCtaText}>Let's go</Text>
-            <MaterialCommunityIcons name="arrow-right" size={20} color="#4F46E5" />
+            <MaterialCommunityIcons name="arrow-right" size={20} color={colors.primary} />
           </View>
         </LinearGradient>
       </TouchableOpacity>
