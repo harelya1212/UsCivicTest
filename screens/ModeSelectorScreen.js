@@ -12,6 +12,7 @@ import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import HomeButton from '../components/ui/HomeButton';
 import { ALL_TOPICS_VALUE, ALL_SUBTOPICS_VALUE } from '../constants';
 import { getQuestionTopic, getQuestionSubTopic } from '../utils/helpers';
 import { getQuestionBank } from '../quizHelpers';
@@ -139,10 +140,13 @@ function ModeSelectorScreen({ navigation }) {
 
   return (
     <Screen>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} activeOpacity={0.7}>
-        <MaterialCommunityIcons name="arrow-left" size={20} color={colors.primary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color={colors.primary} />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <HomeButton />
+      </View>
 
       <Text style={styles.pageTitle}>Practice Setup</Text>
       <Text style={styles.pageSubtitle}>Pick your test, then focus on what you want to drill.</Text>
