@@ -16,7 +16,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { getQuestionTopic } from '../utils/helpers';
 import { getQuestionBank } from '../quizHelpers';
 import HomeButton from '../components/ui/HomeButton';
-import { colors, spacing, typography, radius } from '../theme';
+import { colors, gradients, spacing, typography, radius } from '../theme';
 
 const TOPIC_EMOJI = {
   'American Government': '🏛️',
@@ -101,7 +101,7 @@ function MasteryMapScreen({ navigation }) {
 
       {/* Overall progress - gradient hero for TikTok energy */}
       <LinearGradient
-        colors={[colors.primary, '#7C3AED', '#4F46E5']}
+        colors={gradients.primary}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.heroGradient}
