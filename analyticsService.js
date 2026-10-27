@@ -52,6 +52,8 @@ const mirrorDebugEvent = async (eventName, params) => {
       debugBuild: __DEV__,
     });
   } catch (error) {
+    // Silently ignore in offline mode - don't spam console
+    if (__DEV__) return;
     console.log('[Analytics] Firestore debug mirror failed:', error?.message || error);
   }
 };
