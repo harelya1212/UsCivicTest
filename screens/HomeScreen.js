@@ -15,6 +15,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { HomeBannerAd } from '../adMobService';
 import { getQuestionBank } from '../quizHelpers';
+import { getDynamicDataFreshness } from '../civicsDynamicData';
 import { getQuestionTopic } from '../utils/helpers';
 import { ALL_TOPICS_VALUE } from '../constants';
 import { colors, gradients, radius, spacing, typography, shadows } from '../theme';
@@ -125,6 +126,22 @@ function HomeScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Stale officeholder data notice (non-blocking, dismissible per session) */}
+      {(() => {
+        const freshness = getDynamicDataFreshness(90);
+        if (!freshness.isStale) return null;
+        return (
+          <Card style={{ marginBottom: spacing.md, borderColor: colors.warning, borderWidth: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={20} color={colors.warning} style={{ marginRight: spacing.sm, marginTop: 2 }} />
+              <Text style={{ flex: 1, fontSize: typography.caption, color: colors.text, lineHeight: 20 }}>
+                Heads up: governor and senator answers were last verified on {freshness.lastVerified} ({freshness.ageDays} days ago). Officeholders can change after elections - please double-check current names at uscis.gov before your test.
+              </Text>
+            </View>
+          </Card>
+        );
+      })()}
 
       {/* Hero: start practice */}
       <TouchableOpacity activeOpacity={0.95} onPress={() => startQuiz()}>
