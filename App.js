@@ -29,6 +29,7 @@ import DatePicker from 'react-datepicker';
 import * as Notifications from 'expo-notifications';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 // CSS bundled locally to avoid Metro node_modules export-map warning
 import './assets/react-datepicker.min.css';
 
@@ -199,11 +200,12 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
           paddingBottom: 8,
           height: 64,
         },
-        tabBarActiveTintColor: '#4F46E5',
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#98A2B3',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          fontFamily: 'Nunito_700Bold',
           marginTop: 2,
         },
       }}
@@ -249,6 +251,13 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
 
 // 🚀 MAIN APP
 export default function App() {
+  // Load Nunito fonts; app renders with system font until loaded (no blocking)
+  const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
   const [onboardingComplete, setOnboardingComplete] = useState(false);
   const [testDetails, setTestDetails] = useState(null);
   const [errorBank, setErrorBank] = useState([]);
