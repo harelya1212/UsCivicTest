@@ -31,6 +31,7 @@ import {
   getQuestionBank,
   isAnswerCorrect as checkAnswerCorrect,
   shuffleArray,
+  displayQuestionWithState,
 } from '../quizHelpers';
 import { ttsManager } from '../utils/ttsWrapper';
 import { useHapticEngine } from '../context/HapticProvider';
@@ -768,7 +769,7 @@ function QuizScreen({ route, navigation }) {
         {/* Question card - image hidden until after answering to avoid spoiling */}
         <View style={quizStyles.questionCard}>
           <Text style={quizStyles.questionText}>
-            {question.question}
+            {displayQuestionWithState(question.question, testDetails?.state)}
           </Text>
           {isTwoAnswerQuestion && (
             <Text style={quizStyles.multiHint}>
@@ -791,6 +792,9 @@ function QuizScreen({ route, navigation }) {
                 disabled={showFeedback}
                 onPress={() => handleSelectAnswer(option)}
                 activeOpacity={0.7}
+                accessibilityLabel={`Answer option: ${option}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: showFeedback }}
                 style={[
                   quizStyles.option,
                   isSelected && !showFeedback && quizStyles.optionSelected,
@@ -885,6 +889,8 @@ function QuizScreen({ route, navigation }) {
             <TouchableOpacity
               style={quizStyles.nextBtn}
               onPress={handleNextQuestion}
+              accessibilityLabel={current + 1 >= pool.length ? 'See results' : 'Next question'}
+              accessibilityRole="button"
             >
               <Text style={quizStyles.nextBtnText}>
                 {listenMode && autoAdvancePhase === 'next' && autoAdvanceCountdown > 0
