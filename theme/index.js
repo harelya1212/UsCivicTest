@@ -1,9 +1,12 @@
 /**
  * theme/index.js - Design tokens for the rebuilt UI.
  *
- * Design language: clean, modern, confident. Built to feel like an app
- * teenagers choose to open, not a government form. Generous whitespace,
- * rounded surfaces, one vibrant gradient for primary actions.
+ * Design language: American achievement. Deep navy for trust and
+ * authority, gold for celebration and progress, warm red for energy.
+ * Built to feel like an app people choose to open, not a government
+ * form. Generous whitespace, rounded surfaces, one confident gradient
+ * for primary actions. Rounded Nunito type for a friendly, Duolingo-like
+ * voice that stays highly readable for non-native English speakers.
  */
 
 export const colors = {
@@ -17,20 +20,25 @@ export const colors = {
   textSecondary: '#667085',
   textTertiary: '#98A2B3',
   textOnPrimary: '#FFFFFF',
+  textOnDark: '#FFFFFF',
 
-  // Brand
-  primary: '#4F46E5',
-  primaryDark: '#4338CA',
-  primaryLight: '#EEF0FF',
-  accent: '#7C3AED',
+  // Brand - navy / gold / warm red
+  primary: '#1B2A4A',
+  primaryDark: '#121E35',
+  primaryLight: '#E8ECF4',
+  accent: '#F5B301',
+  accentDark: '#D99A00',
+  accentLight: '#FEF6E0',
+  energy: '#E63946',
+  energyLight: '#FDECEC',
 
   // Status
   success: '#12B76A',
   successLight: '#E6F9F0',
   warning: '#F79009',
   warningLight: '#FEF4E6',
-  danger: '#F04438',
-  dangerLight: '#FEECEB',
+  danger: '#E63946',
+  dangerLight: '#FDECEC',
   info: '#2E90FA',
   infoLight: '#EAF3FE',
 
@@ -39,16 +47,18 @@ export const colors = {
   borderLight: '#F2F4F7',
 
   // Gamification
-  gold: '#FDB022',
-  goldLight: '#FEF6E7',
-  xp: '#7C3AED',
-  xpLight: '#F1EAFE',
+  gold: '#F5B301',
+  goldLight: '#FEF6E0',
+  xp: '#F5B301',
+  xpLight: '#FEF6E0',
 };
 
 export const gradients = {
-  primary: ['#4F46E5', '#7C3AED'],
+  primary: ['#1B2A4A', '#2A4365'],
+  hero: ['#1B2A4A', '#1B2A4A'],
+  gold: ['#F5B301', '#F79009'],
   success: ['#12B76A', '#0E9384'],
-  gold: ['#FDB022', '#F79009'],
+  energy: ['#E63946', '#F79009'],
   dark: ['#101828', '#1D2939'],
 };
 
@@ -70,6 +80,12 @@ export const radius = {
 };
 
 export const typography = {
+  // Font families (Nunito, loaded via @expo-google-fonts/nunito;
+  // falls back to system font if not yet loaded)
+  fontRegular: 'Nunito_400Regular',
+  fontMedium: 'Nunito_600SemiBold',
+  fontBold: 'Nunito_700Bold',
+  fontExtraBold: 'Nunito_800ExtraBold',
   // Sizes
   hero: 32,
   title: 24,
