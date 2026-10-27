@@ -104,6 +104,11 @@ import {
 import { logAppAnalyticsEvent } from './analyticsService';
 import { playLogoSwell } from './utils/audioHaptics';
 import {
+  scheduleDailyNudge,
+  notifySquadUpdates,
+  screenForNotificationResponse,
+} from './services/notifications';
+import {
   fetchSquadSyncSnapshot,
   pushSquadSyncSnapshot,
   enforceServerModerationPolicy,
@@ -851,6 +856,32 @@ export default function App() {
       clearInterval(intervalId);
     };
   }, [squadSync?.teamId]);
+
+  // ─── Push notifications: daily nudge + tap handling ──────────────────────
+  useEffect(() => {
+    // Request permission and schedule the daily afternoon/evening nudge.
+    // Runs once on app start; no-ops on web and if permission denied.
+    scheduleDailyNudge();
+
+    // Tapping a notification opens the relevant screen.
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const screen = screenForNotificationResponse(response);
+      if (screen) {
+        try {
+          navigationRef?.current?.navigate('MainTabs', { screen });
+        } catch {}
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  // ─── Squad update notifications: notify only when the leaderboard changes ─
+  useEffect(() => {
+    const leaderboard = squadSync?.season?.leaderboard;
+    if (!Array.isArray(leaderboard) || leaderboard.length < 2) return;
+    if (!squadSync?.teamId) return;
+    notifySquadUpdates(leaderboard, 'self', squadSync?.teamName || 'your squad');
+  }, [squadSync?.season?.leaderboard, squadSync?.teamId]);
 
   useEffect(() => {
     const teamId = String(squadSync?.teamId || '').trim();
