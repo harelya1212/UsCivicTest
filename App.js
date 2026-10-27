@@ -1048,7 +1048,7 @@ export default function App() {
       ...squadSync,
       teamId: squadSync.teamId || `team-${Date.now()}`,
       teamName: nextTeamName,
-      inviteCode: squadSync.inviteCode || buildInviteCode(),
+      inviteCode: squadSync.inviteCode || buildInviteCode(userProfile?.name, testDetails?.testDate),
       householdBoard: squadSync.householdBoard || createDefaultSquadSync().householdBoard,
       streakChain: squadSync.streakChain || createDefaultSquadSync().streakChain,
       nudgeCooldownByMember: squadSync.nudgeCooldownByMember || {},
@@ -1089,7 +1089,7 @@ export default function App() {
   };
 
   const refreshSquadInviteCode = () => {
-    const nextCode = buildInviteCode();
+    const nextCode = buildInviteCode(userProfile?.name, testDetails?.testDate);
     applySquadMutation((prev) => ({
       ...prev,
       teamId: prev.teamId || `team-${Date.now()}`,
@@ -1106,6 +1106,11 @@ export default function App() {
     const code = String(inviteCodeInput || '').trim().toUpperCase();
     if (!code) return null;
 
+    // Prevent duplicate join: if already in a squad with this code, return existing
+    if (squadSync?.inviteCode === code && squadSync?.teamId) {
+      return squadSync;
+    }
+
     // Try Firestore first (production), fall back to local
     try {
       const { db } = await import('./firebaseConfig.js');
@@ -1115,11 +1120,24 @@ export default function App() {
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
           const squadData = snapshot.docs[0].data();
+          // Prevent duplicate member: check if self already in members
+          const existingMembers = squadData.members || [];
+          const selfId = 'self';
+          if (existingMembers.some(m => String(m.id) === selfId)) {
+            // Already a member, just sync the squad data
+            const nextState = {
+              ...createDefaultSquadSync(),
+              ...squadData,
+              updatedAt: new Date().toISOString(),
+            };
+            applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+            return nextState;
+          }
           const selfMember = buildMemberFromProfile(userProfile, 'You');
           const nextState = {
             ...createDefaultSquadSync(),
             ...squadData,
-            members: [...(squadData.members || []), selfMember],
+            members: [...existingMembers, selfMember],
             updatedAt: new Date().toISOString(),
           };
           applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
