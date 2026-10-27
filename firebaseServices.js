@@ -291,6 +291,8 @@ export const fetchSquadSyncSnapshot = async (teamId) => {
     try {
         const safeTeamId = String(teamId || '').trim();
         if (!safeTeamId) return null;
+        // Silently return null in offline mode (no Firebase)
+        if (!db) return null;
 
         const snap = await getDoc(doc(db, 'squads', safeTeamId));
         if (!snap.exists()) return null;
@@ -306,6 +308,8 @@ export const pushSquadSyncSnapshot = async (teamId, payload, options = {}) => {
     try {
         const safeTeamId = String(teamId || '').trim();
         if (!safeTeamId || !payload || typeof payload !== 'object') return { ok: false };
+        // Silently skip in offline mode (no Firebase)
+        if (!db) return { ok: false, offline: true };
 
         await setDoc(doc(db, 'squads', safeTeamId), {
             teamId: safeTeamId,
