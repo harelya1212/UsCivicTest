@@ -16,7 +16,13 @@ export default function HomeButton({ size = 22, style }) {
   };
 
   return (
-    <TouchableOpacity onPress={goHome} style={[styles.button, style]} hitSlop={8}>
+    <TouchableOpacity
+      onPress={goHome}
+      style={[styles.button, style]}
+      hitSlop={12}
+      accessibilityLabel="Go home"
+      accessibilityRole="button"
+    >
       <MaterialCommunityIcons name="home" size={size} color={colors.primary} />
     </TouchableOpacity>
   );
