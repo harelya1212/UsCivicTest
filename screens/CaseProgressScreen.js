@@ -18,6 +18,7 @@ import * as Notifications from 'expo-notifications';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import styles from '../styles';
+import HomeButton from '../components/ui/HomeButton';
 import { AppDataContext } from '../context/AppDataContext';
 import {
   buildCaseProgressStorageKey,
@@ -394,10 +395,13 @@ function CaseProgressScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
-          <MaterialCommunityIcons name="arrow-left" size={20} color="#A78BFA" />
-          <Text style={{ color: '#A78BFA', fontWeight: '600', marginLeft: 4 }}>Back</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color="#A78BFA" />
+            <Text style={{ color: '#A78BFA', fontWeight: '600', marginLeft: 4 }}>Back</Text>
+          </TouchableOpacity>
+          <HomeButton />
+        </View>
 
         <Text style={styles.pageTitle}>Case Progress Tracker</Text>
         <Text style={styles.pageSubtitle}>Track your USCIS timeline and sync updates after checking your official account.</Text>
