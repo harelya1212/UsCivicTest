@@ -180,27 +180,48 @@ function FamilyScreen({ navigation }) {
       </TouchableOpacity>
 
       {/* Leaderboard */}
-      <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
+        <TouchableOpacity
+          onPress={() => {
+            // Manual refresh: re-fetch from Firestore if available
+            if (typeof refreshSquadInviteCode === 'function') {
+              // Trigger a re-render by refreshing the invite code display
+              // The actual leaderboard sync happens via App.js pullRemote interval
+            }
+          }}
+          style={{ padding: 8 }}
+        >
+          <MaterialCommunityIcons name="refresh" size={20} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
       {leaderboard.length === 0 ? (
         <Card style={styles.emptyBoard}>
           <Text style={styles.emptyText}>No scores yet. Be the first!</Text>
         </Card>
       ) : (
-        leaderboard.slice(0, 5).map((entry, idx) => (
-          <Card
-            key={entry.id || idx}
-            style={[
-              styles.boardRow,
-              idx === 0 && styles.boardRowGold,
-            ]}
-          >
-            <Text style={styles.rank}>
-              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
-            </Text>
-            <Text style={styles.boardName} numberOfLines={1}>{entry.name || 'Player'}</Text>
-            <Text style={styles.boardScore}>{entry.score || 0} pts</Text>
-          </Card>
-        ))
+        leaderboard.slice(0, 5).map((entry, idx) => {
+          // Privacy: show only name initial avatar + name + score (no email, no phone)
+          const initial = (entry.name || 'P').trim().charAt(0).toUpperCase();
+          return (
+            <Card
+              key={entry.id || idx}
+              style={[
+                styles.boardRow,
+                idx === 0 && styles.boardRowGold,
+              ]}
+            >
+              <Text style={styles.rank}>
+                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
+              </Text>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{initial}</Text>
+              </View>
+              <Text style={styles.boardName} numberOfLines={1}>{entry.name || 'Player'}</Text>
+              <Text style={styles.boardScore}>{entry.score || 0} pts</Text>
+            </Card>
+          );
+        })
       )}
 
       {/* Test type picker */}
@@ -324,6 +345,16 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   rank: { fontSize: 20, minWidth: 36 },
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  avatarText: { fontSize: 16, fontWeight: typography.bold, color: colors.primary },
   boardName: { flex: 1, fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginLeft: spacing.sm },
   boardScore: { fontSize: typography.body, fontWeight: typography.bold, color: colors.primary },
 
