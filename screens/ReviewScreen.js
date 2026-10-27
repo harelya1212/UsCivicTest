@@ -26,6 +26,7 @@ import { playAdStartFeedback, playHighScoreFeedback } from '../utils/audioHaptic
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import HomeButton from '../components/ui/HomeButton';
 import ProgressBar from '../components/ui/ProgressBar';
 import { colors, gradients, radius, spacing, typography, shadows } from '../theme';
 
@@ -405,6 +406,10 @@ function ReviewScreen({ route, navigation }) {
 
   return (
     <Screen>
+      {/* Home at any moment */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.sm }}>
+        <HomeButton />
+      </View>
       {/* Celebration hero */}
       <LinearGradient
         colors={heroGradient}
