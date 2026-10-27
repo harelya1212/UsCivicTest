@@ -55,11 +55,13 @@ const styles = StyleSheet.create({
   levelBadgeText: {
     color: '#C4B5FD',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     fontSize: 14,
   },
   levelBadgeLevel: {
     color: '#A78BFA',
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     fontSize: 16,
     marginTop: 2,
   },
@@ -81,6 +83,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Nunito_700Bold',
   },
   headerContent: {
     zIndex: 10,
@@ -89,6 +92,7 @@ const styles = StyleSheet.create({
     color: '#F1F5F9',
     fontSize: 30,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     marginBottom: 4,
     letterSpacing: -0.5,
   },
@@ -96,6 +100,7 @@ const styles = StyleSheet.create({
     color: 'rgba(241, 245, 249, 0.55)',
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Nunito_400Regular',
   },
 
   // ─── CTA Button ──────────────────────────────────────────────────────────────
@@ -118,12 +123,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   ctaButtonSub: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 12,
     marginTop: 2,
     fontWeight: '500',
+    fontFamily: 'Nunito_400Regular',
   },
   listenCtaButton: {
     backgroundColor: 'transparent',
@@ -149,12 +156,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   interviewCtaButtonSub: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 12,
     marginTop: 4,
     fontWeight: '500',
+    fontFamily: 'Nunito_400Regular',
   },
 
   // ─── Stats Grid ──────────────────────────────────────────────────────────────
@@ -181,12 +190,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   statValue: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginTop: 4,
   },
@@ -214,6 +225,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     marginLeft: 12,
     color: '#F1F5F9',
   },
@@ -225,6 +237,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     color: '#94A3B8',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   trendBadge: {
     flexDirection: 'row',
@@ -237,6 +250,7 @@ const styles = StyleSheet.create({
   trendText: {
     color: '#34D399',
     fontWeight: 'bold',
+    fontFamily: 'Nunito_700Bold',
     marginLeft: 4,
   },
   milestoneText: {
@@ -259,6 +273,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 14,
     letterSpacing: -0.3,
@@ -277,6 +292,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
     marginLeft: 12,
   },
@@ -306,6 +322,7 @@ const styles = StyleSheet.create({
   achievementName: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#CBD5E1',
     textAlign: 'center',
   },
@@ -336,6 +353,7 @@ const styles = StyleSheet.create({
   quizActionText: {
     color: '#A78BFA',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginLeft: 6,
   },
   listenControlsRow: {
@@ -357,6 +375,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     color: '#67E8F9',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     fontSize: 12,
   },
   listenAutoAdvanceBar: {
@@ -376,6 +395,7 @@ const styles = StyleSheet.create({
     color: '#C4B5FD',
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   listenAutoAdvanceCancelBtn: {
     paddingHorizontal: 10,
@@ -387,6 +407,7 @@ const styles = StyleSheet.create({
     color: '#A78BFA',
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   progressBar: {
     height: 6,
@@ -403,6 +424,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     textAlign: 'right',
   },
   quizContent: {
@@ -435,6 +457,7 @@ const styles = StyleSheet.create({
     color: '#FDE68A',
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   focusRecoveryButton: {
     backgroundColor: 'rgba(22, 163, 74, 0.2)',
@@ -447,6 +470,7 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: 22,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 18,
     lineHeight: 30,
@@ -468,6 +492,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   optionsContainer: {
     gap: 10,
@@ -505,6 +530,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#CBD5E1',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   optionCorrectText: {
     color: '#34D399',
@@ -524,6 +550,7 @@ const styles = StyleSheet.create({
   feedbackCorrect: {
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#34D399',
     marginTop: 8,
   },
@@ -535,6 +562,7 @@ const styles = StyleSheet.create({
   feedbackAnswer: {
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Nunito_700Bold',
     color: '#F87171',
     marginTop: 4,
   },
@@ -564,6 +592,7 @@ const styles = StyleSheet.create({
   scoreTitle: {
     fontSize: 24,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     letterSpacing: -0.3,
   },
@@ -598,6 +627,7 @@ const styles = StyleSheet.create({
   weakTopic: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
     marginBottom: 6,
   },
@@ -643,6 +673,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
   },
 
@@ -650,6 +681,7 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 30,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 4,
     letterSpacing: -0.5,
@@ -659,6 +691,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 20,
     fontWeight: '500',
+    fontFamily: 'Nunito_400Regular',
   },
 
   // ─── Mode Card ────────────────────────────────────────────────────────────────
@@ -691,6 +724,7 @@ const styles = StyleSheet.create({
   modeTitle: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
   },
   modeDesc: {
@@ -698,6 +732,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 3,
     fontWeight: '500',
+    fontFamily: 'Nunito_400Regular',
   },
   modeFilterCard: {
     backgroundColor: '#12121E',
@@ -711,6 +746,7 @@ const styles = StyleSheet.create({
   modeFilterTitle: {
     fontSize: 17,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
   },
   modeFilterHint: {
@@ -722,6 +758,7 @@ const styles = StyleSheet.create({
   modeFilterLabel: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#94A3B8',
     marginBottom: 6,
   },
@@ -730,6 +767,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#34D399',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   modeStartButton: {
     borderRadius: 16,
@@ -750,6 +788,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
 
   // ─── Case Progress ────────────────────────────────────────────────────────────
@@ -769,11 +808,13 @@ const styles = StyleSheet.create({
   caseTitle: {
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
   },
   casePct: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#38BDF8',
   },
   caseSubtext: {
@@ -806,11 +847,13 @@ const styles = StyleSheet.create({
   casePortalButtonText: {
     color: '#F1F5F9',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginLeft: 8,
   },
   caseLabel: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#94A3B8',
     marginBottom: 6,
   },
@@ -835,6 +878,7 @@ const styles = StyleSheet.create({
   caseSaveButtonText: {
     color: '#fff',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginLeft: 8,
   },
   caseResetButton: {
@@ -851,6 +895,7 @@ const styles = StyleSheet.create({
   caseResetButtonText: {
     color: '#A78BFA',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginLeft: 6,
   },
   caseTimelineItem: {
@@ -871,6 +916,7 @@ const styles = StyleSheet.create({
   caseTimelineStage: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
   },
   caseTimelineStatus: {
@@ -910,6 +956,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#F1F5F9',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
 
   // ─── Mastery Map ──────────────────────────────────────────────────────────────
@@ -944,6 +991,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   masteryUpdatedText: {
     marginTop: 10,
@@ -961,6 +1009,7 @@ const styles = StyleSheet.create({
   masteryCardTitle: {
     fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 8,
     letterSpacing: -0.2,
@@ -987,6 +1036,7 @@ const styles = StyleSheet.create({
   masteryDueTitle: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#7DD3FC',
   },
   masteryDueMeta: {
@@ -1008,6 +1058,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   masteryRecommendationRow: {
     marginTop: 10,
@@ -1035,6 +1086,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
     marginRight: 10,
   },
@@ -1062,6 +1114,7 @@ const styles = StyleSheet.create({
   masteryHeatTitle: {
     fontSize: 13,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   masteryHeatMeta: {
     fontSize: 12,
@@ -1089,6 +1142,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   masteryTrendRow: {
     marginTop: 10,
@@ -1112,6 +1166,7 @@ const styles = StyleSheet.create({
   masteryTrendBadgeText: {
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   masteryTrendMeta: {
     marginTop: 6,
@@ -1129,6 +1184,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   masteryTrendStripRow: {
     marginTop: 8,
@@ -1146,6 +1202,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 4,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   masteryTrendStripTrack: {
     width: '100%',
@@ -1165,6 +1222,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#475569',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   masteryUrgencyRow: {
     marginTop: 10,
@@ -1191,6 +1249,7 @@ const styles = StyleSheet.create({
   masteryUrgencyBadgeText: {
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   masteryRouteRow: {
     marginTop: 10,
@@ -1219,6 +1278,7 @@ const styles = StyleSheet.create({
   masteryRouteStepBadgeText: {
     color: '#fff',
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     fontSize: 13,
   },
   masteryRouteRowDone: {
@@ -1236,6 +1296,7 @@ const styles = StyleSheet.create({
   masteryRouteConfidencePillText: {
     fontSize: 10,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   masteryActionButtonDone: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -1255,6 +1316,7 @@ const styles = StyleSheet.create({
   masteryResetButtonText: {
     marginLeft: 8,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#A78BFA',
   },
 
@@ -1310,6 +1372,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     color: '#E2E8F0',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     fontSize: 12,
   },
   profileNameEditorWrap: {
@@ -1327,10 +1390,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   profileName: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 4,
     letterSpacing: -0.3,
@@ -1358,6 +1423,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 4,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   editButton: {
     flexDirection: 'row',
@@ -1374,6 +1440,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: '#fff',
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     marginLeft: 8,
   },
 
@@ -1408,6 +1475,7 @@ const styles = StyleSheet.create({
   },
   familyRankText: {
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#0A0A12',
     fontSize: 14,
   },
@@ -1423,6 +1491,7 @@ const styles = StyleSheet.create({
   familyAvatarText: {
     color: '#fff',
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   familyInfo: {
     flex: 1,
@@ -1430,6 +1499,7 @@ const styles = StyleSheet.create({
   familyName: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
   },
   familyStats: {
@@ -1449,6 +1519,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#64748B',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
 
   // ─── Tab Bar ──────────────────────────────────────────────────────────────────
@@ -1471,6 +1542,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 8,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   progressBarFill: {
     height: '100%',
@@ -1487,6 +1559,7 @@ const styles = StyleSheet.create({
   onboardingTitle: {
     fontSize: 26,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 8,
     textAlign: 'center',
@@ -1505,6 +1578,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#CBD5E1',
     marginBottom: 8,
   },
@@ -1557,6 +1631,7 @@ const styles = StyleSheet.create({
     color: '#67E8F9',
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   dateButton: {
     borderWidth: 2,
@@ -1590,6 +1665,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 20,
   },
@@ -1608,6 +1684,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   inputHint: {
     fontSize: 12,
@@ -1647,6 +1724,7 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
     marginBottom: 4,
   },
@@ -1666,6 +1744,7 @@ const styles = StyleSheet.create({
   studyPlanTitle: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#A78BFA',
     marginBottom: 8,
   },
@@ -1673,6 +1752,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#F1F5F9',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   studyPlanSmall: {
     fontSize: 12,
@@ -1717,6 +1797,7 @@ const styles = StyleSheet.create({
   studyPlanCardTitle: {
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#6EE7B7',
     marginLeft: 6,
   },
@@ -1743,6 +1824,7 @@ const styles = StyleSheet.create({
   resumeButtonTitle: {
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#6EE7B7',
   },
   resumeButtonSubtitle: {
@@ -1768,6 +1850,7 @@ const styles = StyleSheet.create({
   boostsTitle: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#C4B5FD',
   },
   boostsSubtitle: {
@@ -1792,6 +1875,7 @@ const styles = StyleSheet.create({
   boostMetricLabel: {
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#A78BFA',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1825,6 +1909,7 @@ const styles = StyleSheet.create({
   rewardedHomeTitle: {
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#fff',
   },
   rewardedHomeSubtitle: {
@@ -1849,6 +1934,7 @@ const styles = StyleSheet.create({
   homeKpiTitle: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#67E8F9',
   },
   homeKpiMetricsRow: {
@@ -1867,6 +1953,7 @@ const styles = StyleSheet.create({
   homeKpiMetricLabel: {
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#2DD4BF',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1897,6 +1984,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#C4B5FD',
   },
 
@@ -1912,6 +2000,7 @@ const styles = StyleSheet.create({
   adminCardTitle: {
     fontSize: 17,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 12,
   },
@@ -1990,10 +2079,12 @@ const styles = StyleSheet.create({
     color: '#A78BFA',
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   revenueTotal: {
     fontSize: 15,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#34D399',
     marginTop: 8,
   },
@@ -2017,6 +2108,7 @@ const styles = StyleSheet.create({
   adminMetricLabel: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#F1F5F9',
   },
   adminMetricSubtext: {
@@ -2027,6 +2119,7 @@ const styles = StyleSheet.create({
   adminMetricValue: {
     fontSize: 13,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#34D399',
   },
   adminSuggestionBadge: {
@@ -2038,6 +2131,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#86EFAC',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
   adminCopyFeedbackError: {
     color: '#FCA5A5',
@@ -2068,6 +2162,7 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 12,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
     paddingVertical: 5,
     borderWidth: 1,
@@ -2077,6 +2172,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#34D399',
   },
   testDetailsContent: {
@@ -2088,6 +2184,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -2096,6 +2193,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#F1F5F9',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
     marginTop: 2,
   },
   testDetailsSeparator: {
@@ -2120,6 +2218,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#64748B',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -2187,6 +2286,7 @@ const styles = StyleSheet.create({
   smartQueueBadgeText: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#7DD3FC',
   },
   focusModeBadge: {
@@ -2205,6 +2305,7 @@ const styles = StyleSheet.create({
   focusModeBadgeText: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#6EE7B7',
   },
 
@@ -2242,6 +2343,7 @@ const styles = StyleSheet.create({
   threeDIslandTitle: {
     fontSize: 17,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#E2E8F0',
   },
   threeDIslandSubtitle: {
@@ -2257,6 +2359,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#FDBA74',
     backgroundColor: 'rgba(251, 146, 60, 0.15)',
     borderWidth: 1,
@@ -2307,6 +2410,7 @@ const styles = StyleSheet.create({
   threeDSquadGhostBadgeText: {
     fontSize: 10,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#BAE6FD',
   },
   homeBetaFallbackBadge: {
@@ -2325,6 +2429,7 @@ const styles = StyleSheet.create({
   homeBetaFallbackBadgeText: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#FDE68A',
   },
   offlinePlaceholder: {
@@ -2336,6 +2441,7 @@ const styles = StyleSheet.create({
   offlinePlaceholderTitle: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#94A3B8',
     marginTop: 4,
   },
@@ -2356,6 +2462,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1E293B',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
 
   // ─── QuizScreen: ADHD option buttons ──────────────────────────────────────────
@@ -2407,10 +2514,12 @@ const styles = StyleSheet.create({
     color: '#CBD5E1',
     lineHeight: 22,
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   adhd_textCorrect: {
     color: '#6EE7B7',
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   adhd_textWrong: {
     color: '#FCA5A5',
@@ -2440,6 +2549,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     lineHeight: 22,
   },
   feedbackSuccess: {
@@ -2463,6 +2573,7 @@ const styles = StyleSheet.create({
   correctAnswerLabel: {
     fontSize: 12,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#34D399',
     marginBottom: 4,
     textTransform: 'uppercase',
@@ -2472,6 +2583,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#6EE7B7',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     lineHeight: 22,
   },
   alternateAnswersBox: {
@@ -2483,6 +2595,7 @@ const styles = StyleSheet.create({
   alternateAnswersLabel: {
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#34D399',
     marginBottom: 4,
   },
@@ -2509,6 +2622,7 @@ const styles = StyleSheet.create({
   adhd_explanationButtonText: {
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#A78BFA',
   },
   adhd_explanationBox: {
@@ -2540,6 +2654,7 @@ const styles = StyleSheet.create({
   adhd_continueButtonText: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#fff',
   },
 
@@ -2555,6 +2670,7 @@ const styles = StyleSheet.create({
   focusPresetTitle: {
     fontSize: 16,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#F1F5F9',
     marginBottom: 4,
   },
@@ -2587,6 +2703,7 @@ const styles = StyleSheet.create({
     color: '#8B5CF6',
     textAlign: 'center',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
 
   // ─── ReviewScreen: bonus / rewarded ad ────────────────────────────────────────
@@ -2598,6 +2715,7 @@ const styles = StyleSheet.create({
   bonusText: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     color: '#FCD34D',
     marginBottom: 10,
     lineHeight: 20,
@@ -2626,6 +2744,7 @@ const styles = StyleSheet.create({
   rewardedAdText: {
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#fff',
   },
   reviewUpsellWaitCard: {
@@ -2651,6 +2770,7 @@ const styles = StyleSheet.create({
   reviewUpsellTagText: {
     fontSize: 11,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#FBBF24',
   },
 
@@ -2684,6 +2804,7 @@ const styles = StyleSheet.create({
   masteryActionButtonGhostText: {
     fontSize: 14,
     fontWeight: '800',
+    fontFamily: 'Nunito_800ExtraBold',
     color: '#A78BFA',
   },
   masterySmartQueueActions: {
@@ -2701,6 +2822,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
     marginBottom: 2,
@@ -2709,6 +2831,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#F1F5F9',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
     marginBottom: 4,
   },
 });
