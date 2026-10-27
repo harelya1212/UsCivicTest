@@ -170,6 +170,23 @@ export function setStateCapital(stateName, capital) {
   touchLastVerified();
 }
 
+export function getDynamicDataFreshness(freshnessCheckDays = 90) {
+  const lastVerified = DYNAMIC_CIVICS_DATA.lastVerified || '';
+  let ageDays = null;
+  try {
+    const verifiedDate = new Date(lastVerified);
+    if (!isNaN(verifiedDate.getTime())) {
+      ageDays = Math.floor((Date.now() - verifiedDate.getTime()) / (1000 * 60 * 60 * 24));
+    }
+  } catch {}
+  return {
+    lastVerified,
+    ageDays,
+    freshnessCheckDays,
+    isStale: ageDays !== null && ageDays > freshnessCheckDays,
+  };
+}
+
 export function getDynamicCivicsAnswer(question, fallbackAnswer, context = {}) {
   const q = normalizeForMatch(question);
   const selectedState = normalizeStateName(context.userState || context.state || '');
