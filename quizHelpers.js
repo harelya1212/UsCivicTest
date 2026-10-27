@@ -90,6 +90,20 @@ export function shuffleArray(values) {
   return arr;
 }
 
+/**
+ * Display a dynamic question with the user's actual state name instead of
+ * "your state", so a wrong saved state is immediately visible.
+ * "Who is the governor of your state now?" + Arizona ->
+ * "Who is the governor of Arizona now?"
+ * If no state is set, returns the question unchanged.
+ */
+export function displayQuestionWithState(questionText, userState) {
+  const q = String(questionText || '');
+  const state = String(userState || '').trim();
+  if (!q || !state) return q;
+  return q.replace(/your state/gi, state);
+}
+
 function uniqueByNormalized(values) {
   const seen = new Set();
   const unique = [];
