@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   btn_md: { paddingVertical: 14, paddingHorizontal: spacing.lg, minHeight: 52 },
   btn_lg: { paddingVertical: spacing.md, paddingHorizontal: spacing.xl, minHeight: 60 },
   disabled: { opacity: 0.5 },
-  text: { fontWeight: typography.semibold, textAlign: 'center' },
+  text: { fontFamily: typography.fontBold, fontWeight: typography.semibold, textAlign: 'center' },
   text_primary: { color: colors.textOnPrimary },
   text_secondary: { color: colors.primary },
   text_ghost: { color: colors.primary },
