@@ -35,6 +35,7 @@ import './assets/react-datepicker.min.css';
 
 // Shared styles (includes all screen-level and component-level styles)
 import styles from './styles';
+import { colors } from './theme';
 
 // Shared context and state factories
 import {
