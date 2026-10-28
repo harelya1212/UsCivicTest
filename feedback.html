@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US Civic Test - טופס משוב בטא</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: #F6F7FB; color: #1B2A4A; margin: 0; padding: 16px; }
+  .wrap { max-width: 620px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-size: 24px; margin: 0 0 4px; color: #1B2A4A; }
+  h1 span { color: #D99A00; }
+  p.intro { color: #5b6478; line-height: 1.6; margin-top: 0; }
+  label { display: block; font-weight: 700; margin: 18px 0 6px; }
+  input[type=text], textarea, select { width: 100%; padding: 12px; border: 1px solid #d5d9e2; border-radius: 10px; font-size: 16px; font-family: inherit; }
+  textarea { min-height: 90px; resize: vertical; }
+  .checks label, .radios label { font-weight: 400; margin: 6px 0; display: flex; gap: 8px; align-items: center; }
+  .checks input, .radios input { width: 18px; height: 18px; }
+  button { width: 100%; background: #1B2A4A; color: #fff; border: 0; border-radius: 10px; padding: 15px; font-size: 18px; font-weight: 700; margin-top: 22px; cursor: pointer; }
+  button:active { background: #2A4365; }
+  .note { font-size: 14px; color: #5b6478; line-height: 1.6; margin-top: 14px; }
+  #fallback { display: none; margin-top: 18px; }
+  #fallback textarea { min-height: 180px; font-size: 14px; }
+  .back { display: inline-block; margin-bottom: 12px; color: #1B2A4A; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="testers.html">← חזרה להוראות לבודקים</a>
+  <h1>US Civic Test <span>- משוב בטא</span></h1>
+  <p class="intro">תודה שבדקתם! מלאו מה שבדקתם, מה עבד ומה התקלקל. בלחיצה על "שלח משוב" תיפתח אפליקציית המייל שלכם עם הכל מוכן - רק ללחוץ שלח.</p>
+
+  <form id="f">
+    <label for="name">שם</label>
+    <input type="text" id="name" placeholder="השם שלכם">
+
+    <label for="device">מכשיר ודפדפן</label>
+    <input type="text" id="device" placeholder="למשל: iPhone / Safari, מחשב / Chrome, Android / Chrome">
+
+    <label for="squad">קוד סקוואד שהשתמשתם בו (אם בדקתם סקוואד)</label>
+    <input type="text" id="squad" placeholder="לא חובה">
+
+    <label>אילו מסכים בדקתם?</label>
+    <div class="checks">
+      <label><input type="checkbox" name="screens" value="בית (Home)"> בית (Home)</label>
+      <label><input type="checkbox" name="screens" value="חידון (Quiz)"> חידון (Quiz)</label>
+      <label><input type="checkbox" name="screens" value="סיכום (Review)"> סיכום (Review)</label>
+      <label><input type="checkbox" name="screens" value="סקוואד (Family/Squad)"> סקוואד (Family/Squad)</label>
+      <label><input type="checkbox" name="screens" value="מפת שליטה (Mastery Map)"> מפת שליטה (Mastery Map)</label>
+      <label><input type="checkbox" name="screens" value="ראיון מדומה (Interview)"> ראיון מדומה (Interview)</label>
+      <label><input type="checkbox" name="screens" value="מעקב תיק (Case Progress)"> מעקב תיק (Case Progress)</label>
+      <label><input type="checkbox" name="screens" value="פרופיל / התקדמות (Profile)"> פרופיל / התקדמות (Profile)</label>
+    </div>
+
+    <label>דירוג כללי</label>
+    <div class="radios">
+      <label><input type="radio" name="rating" value="5 - מעולה"> 5 - מעולה</label>
+      <label><input type="radio" name="rating" value="4 - טוב"> 4 - טוב</label>
+      <label><input type="radio" name="rating" value="3 - סביר"> 3 - סביר</label>
+      <label><input type="radio" name="rating" value="2 - חלש"> 2 - חלש</label>
+      <label><input type="radio" name="rating" value="1 - גרוע"> 1 - גרוע</label>
+    </div>
+
+    <label for="good">מה עבד טוב?</label>
+    <textarea id="good" placeholder="מה אהבתם, מה היה ברור ונוח"></textarea>
+
+    <label for="bad">מה התקלקל או היה מבלבל?</label>
+    <textarea id="bad" placeholder="תארו מה קרה, באיזה מסך, ומה לחצתם לפני זה. צילום מסך עוזר מאוד - צרפו אותו למייל"></textarea>
+
+    <label for="ideas">הצעות לשיפור</label>
+    <textarea id="ideas" placeholder="מה חסר, מה הייתם משנים"></textarea>
+
+    <button type="submit">שלח משוב במייל</button>
+    <p class="note">המשוב נשלח במייל אל מפתח האפליקציה. שום דבר לא נשמר באתר עצמו.</p>
+
+    <div id="fallback">
+      <label>אם אפליקציית המייל לא נפתחה - העתיקו את הטקסט ושלחו ידנית:</label>
+      <textarea id="fallbackText" readonly></textarea>
+    </div>
+  </form>
+</div>
+<script>
+document.getElementById('f').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var screens = [];
+  document.querySelectorAll('input[name=screens]:checked').forEach(function (c) { screens.push(c.value); });
+  var rating = '';
+  var r = document.querySelector('input[name=rating]:checked');
+  if (r) rating = r.value;
+  var lines = [
+    'שם: ' + document.getElementById('name').value,
+    'מכשיר ודפדפן: ' + document.getElementById('device').value,
+    'קוד סקוואד: ' + document.getElementById('squad').value,
+    'מסכים שנבדקו: ' + (screens.length ? screens.join(', ') : '-'),
+    'דירוג כללי: ' + (rating || '-'),
+    '',
+    'מה עבד טוב:',
+    document.getElementById('good').value || '-',
+    '',
+    'מה התקלקל או היה מבלבל:',
+    document.getElementById('bad').value || '-',
+    '',
+    'הצעות לשיפור:',
+    document.getElementById('ideas').value || '-'
+  ];
+  var body = lines.join('\n');
+  document.getElementById('fallbackText').value = body;
+  document.getElementById('fallback').style.display = 'block';
+  window.location.href = 'mailto:harel.y.a@gmail.com'
+    + '?subject=' + encodeURIComponent('US Civic Test - משוב בטא')
+    + '&body=' + encodeURIComponent(body);
+});
+</script>
+</body>
+</html>
