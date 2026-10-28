@@ -31,7 +31,11 @@ function buildInviteCode(username = '', testDate = null) {
   for (let i = 0; i < 4; i += 1) {
     randomPart += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
-  return `SQUAD-${lastLetter}${dayNum}-${randomPart}`;
+  // Code format: {lastLetter}{day}-{4 random}, e.g. X24-GL7U.
+  // No word prefix: the share message already says "squad", so a SQUAD-
+  // prefix in the code itself is redundant typing. Join matches the full
+  // string exactly, so older SQUAD- codes keep working.
+  return `${lastLetter}${dayNum}-${randomPart}`;
 }
 
 function normalizeComebackCampaign(raw = {}) {

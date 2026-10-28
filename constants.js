@@ -6,6 +6,7 @@ export const CASE_REMINDER_STORAGE_PREFIX = 'civics.caseReminder.v1';
 export const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
 export const USER_PROFILE_STORAGE_KEY = 'civics.userProfile.v1';
 export const SQUAD_SYNC_STORAGE_KEY = 'civics.squadSync.v1';
+export const SQUAD_LIST_STORAGE_KEY = 'civics.squadList.v1';
 export const RECOVERY_CAMPAIGN_STORAGE_PREFIX = 'civics.recoveryCampaign.v1';
 export const ALL_TOPICS_VALUE = '__all_topics__';
 export const ALL_SUBTOPICS_VALUE = '__all_subtopics__';

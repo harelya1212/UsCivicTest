@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   View,
   Image,
+  Modal,
   Alert,
   Animated,
   AppState,
   StatusBar,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -151,6 +153,7 @@ function QuizScreen({ route, navigation }) {
   const consecutiveIncorrectRef = useRef(0);
   const skipActionsRef = useRef(0);
   const [focusActionBusy, setFocusActionBusy] = useState(false);
+  const [imageFullscreen, setImageFullscreen] = useState(false);
   const stepGoalPulse = useRef(new Animated.Value(0)).current;
   const meshBreathingPulse = useRef(new Animated.Value(0.22)).current;
   const showFeedbackRef = useRef(showFeedback);
@@ -319,7 +322,10 @@ function QuizScreen({ route, navigation }) {
     }
   };
 
-  // Regenerate question when current index or difficulty changes
+  // Regenerate question when current index or pool changes - but NEVER
+  // re-generate the question already on screen. A difficulty change after
+  // answering must not reshuffle the options the user just answered from
+  // (that bug showed different options in feedback than in the question).
   useEffect(() => {
     if (justRestoredSession) {
       setJustRestoredSession(false);
@@ -327,7 +333,10 @@ function QuizScreen({ route, navigation }) {
     }
 
     if (pool && pool.length && pool[current]) {
-      setCurrentQuestion(generateQuizQuestion(pool[current], difficulty, { userState: testDetails?.state }));
+      // Only generate when the displayed question is not this pool question
+      if (currentQuestion?.id !== pool[current].id) {
+        setCurrentQuestion(generateQuizQuestion(pool[current], difficulty, { userState: testDetails?.state }));
+      }
     }
   }, [current, testDetails?.state, justRestoredSession, pool, difficulty]);
 
@@ -353,12 +362,12 @@ function QuizScreen({ route, navigation }) {
         Animated.timing(meshBreathingPulse, {
           toValue: 0.34,
           duration: 900,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(meshBreathingPulse, {
           toValue: 0.18,
           duration: 900,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
     ).start();
@@ -408,7 +417,7 @@ function QuizScreen({ route, navigation }) {
         toValue: 0,
         friction: 5,
         tension: 120,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
       trackAppEvent(APP_EVENT_NAMES.QUIZ_STEP_GOAL_REACHED, {
         quiz_type: type,
@@ -879,11 +888,18 @@ function QuizScreen({ route, navigation }) {
             )}
 
             {!lowClutterMode && visualImageUrl ? (
-              <Image
-                source={{ uri: visualImageUrl }}
-                style={quizStyles.feedbackImage}
-                resizeMode="contain"
-              />
+              <TouchableOpacity
+                onPress={() => setImageFullscreen(true)}
+                accessibilityLabel="Open image fullscreen"
+                accessibilityRole="button"
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={{ uri: visualImageUrl }}
+                  style={quizStyles.feedbackImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
             ) : null}
 
             <TouchableOpacity
@@ -908,6 +924,28 @@ function QuizScreen({ route, navigation }) {
           </Text>
         )}
       </ScrollView>
+
+      {/* Fullscreen image: tap the memory-hook picture to enlarge, tap again to close */}
+      <Modal
+        visible={imageFullscreen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageFullscreen(false)}
+      >
+        <TouchableOpacity
+          style={quizStyles.fullscreenBackdrop}
+          activeOpacity={1}
+          onPress={() => setImageFullscreen(false)}
+          accessibilityLabel="Close fullscreen image"
+          accessibilityRole="button"
+        >
+          <Image
+            source={{ uri: visualImageUrl }}
+            style={quizStyles.fullscreenImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
 
       <StatusBar style="dark" />
     </SafeAreaView>
@@ -943,6 +981,8 @@ const quizStyles = StyleSheet.create({
   },
   questionImage: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: spacing.md, backgroundColor: '#f1f5f9' },
   feedbackImage: { width: '100%', height: 180, borderRadius: radius.md, marginTop: spacing.md, marginBottom: spacing.md, backgroundColor: '#f1f5f9' },
+  fullscreenBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
+  fullscreenImage: { width: '100%', height: '100%' },
   questionText: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, lineHeight: 26 },
   multiHint: { fontSize: typography.caption, color: colors.textSecondary, marginTop: spacing.sm, fontStyle: 'italic' },
 

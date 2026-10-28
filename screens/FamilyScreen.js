@@ -26,15 +26,22 @@ const TEST_TYPES = [
 function FamilyScreen({ navigation }) {
   const {
     squadSync,
+    squadList,
     createSquad,
+    createNewSquad,
+    switchSquad,
+    leaveSquad,
     joinSquad,
     refreshSquadInviteCode,
     testDetails,
+    userProfile,
   } = useContext(AppDataContext);
 
   const [joinCode, setJoinCode] = useState('');
   const [squadName, setSquadName] = useState('');
   const [selectedTestType, setSelectedTestType] = useState(testDetails?.testType || 'naturalization128');
+  const [showCreateNew, setShowCreateNew] = useState(false);
+  const [newSquadName, setNewSquadName] = useState('');
   const [showCreate, setShowCreate] = useState(false);
 
   const inSquad = Boolean(squadSync?.teamId);
@@ -64,12 +71,55 @@ function FamilyScreen({ navigation }) {
     setJoinCode('');
   };
 
+  // Share template: the join link uses the app's deep-link scheme (works on
+  // devices with the app installed). No web join page or store listing exists
+  // yet, so the download URL is a placeholder to fill once listings go live.
+  const APP_JOIN_SCHEME = 'civiceducation';
+  const APP_DOWNLOAD_URL = ''; // TODO: real App Store / Google Play URL once live
+
   const handleShare = async () => {
+    const firstName = (userProfile?.name || '').trim().split(/\s+/)[0] || 'Your friend';
+    const joinLink = `${APP_JOIN_SCHEME}://join?code=${inviteCode}`;
+    const lines = [
+      `You've been challenged! ${firstName} has invited you to join the "${teamName}" civics squad in US Civic Test!`,
+      `Your invite code is: ${inviteCode}`,
+      `Join here: ${joinLink}`,
+    ];
+    if (APP_DOWNLOAD_URL) {
+      lines.push(`Don't have US Civic Test yet? Download now: ${APP_DOWNLOAD_URL}`);
+    } else {
+      lines.push(`Don't have US Civic Test yet? Download it from the App Store or Google Play.`);
+    }
+    const message = lines.join('\n');
     try {
-      await Share.share({
-        message: `Join my "${teamName}" civics squad! Use code: ${inviteCode}`,
-      });
-    } catch {}
+      // Pass url too: Safari drops text-only shares when handing off to Messages.
+      await Share.share({ message, url: joinLink });
+    } catch {
+      try {
+        await Share.share({ message });
+      } catch {}
+    }
+  };
+
+  const handleCreateNew = () => {
+    if (!newSquadName.trim()) {
+      Alert.alert('Name your squad', 'Give your squad a fun name to get started.');
+      return;
+    }
+    createNewSquad?.(newSquadName.trim());
+    setShowCreateNew(false);
+    setNewSquadName('');
+  };
+
+  const handleLeave = (teamId, name) => {
+    Alert.alert(
+      'Leave squad?',
+      `Leave "${name || 'this squad'}"? You can rejoin anytime with its invite code.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Leave', style: 'destructive', onPress: () => leaveSquad?.(teamId) },
+      ]
+    );
   };
 
   const handleChallenge = () => {
@@ -261,6 +311,55 @@ function FamilyScreen({ navigation }) {
       <Text style={styles.scoringNote}>
         10 questions. Each correct answer = 1 point for your squad.
       </Text>
+
+      {/* My squads: switch between family, friends, ... */}
+      <Text style={styles.sectionTitle}>My squads</Text>
+      {(Array.isArray(squadList) ? squadList : []).map((s) => {
+        const isActive = String(s?.teamId || '') === String(squadSync?.teamId || '');
+        const count = Array.isArray(s?.members) ? s.members.length : 0;
+        return (
+          <Card key={s.teamId} style={[styles.squadRow, isActive && styles.squadRowActive]}>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={() => { if (!isActive) switchSquad?.(s.teamId); }}
+              accessibilityLabel={isActive ? `${s.teamName} (active squad)` : `Switch to ${s.teamName}`}
+              accessibilityRole="button"
+            >
+              <Text style={styles.squadRowName}>{s.teamName || 'Squad'}</Text>
+              <Text style={styles.squadRowMeta}>
+                {count} member{count === 1 ? '' : 's'}{isActive ? ' - Active' : ''}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleLeave(s.teamId, s.teamName)} style={{ padding: 8 }}>
+              <Text style={styles.leaveText}>Leave</Text>
+            </TouchableOpacity>
+          </Card>
+        );
+      })}
+      {!showCreateNew ? (
+        <Button
+          title="Create another squad"
+          variant="secondary"
+          onPress={() => setShowCreateNew(true)}
+          style={styles.createAnotherBtn}
+          icon={<MaterialCommunityIcons name="account-group" size={20} color={colors.primary} />}
+        />
+      ) : (
+        <Card style={styles.createCard}>
+          <Text style={styles.createTitle}>Name your new squad</Text>
+          <TextInput
+            style={styles.nameInput}
+            value={newSquadName}
+            onChangeText={setNewSquadName}
+            placeholder="e.g. Friends League"
+            placeholderTextColor={colors.textTertiary}
+          />
+          <View style={styles.createRow}>
+            <Button title="Cancel" variant="secondary" onPress={() => setShowCreateNew(false)} style={styles.halfBtn} />
+            <Button title="Create" onPress={handleCreateNew} style={styles.halfBtn} />
+          </View>
+        </Card>
+      )}
     </Screen>
   );
 }
@@ -334,6 +433,12 @@ const styles = StyleSheet.create({
   emptyBoard: { alignItems: 'center', paddingVertical: spacing.lg },
   emptyText: { fontSize: typography.body, color: colors.textSecondary },
   boardRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, paddingVertical: spacing.md },
+  squadRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, paddingVertical: spacing.md },
+  squadRowActive: { borderColor: colors.primary, borderWidth: 1.5, backgroundColor: colors.primaryLight },
+  squadRowName: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
+  squadRowMeta: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
+  leaveText: { fontSize: typography.caption, fontWeight: typography.bold, color: colors.energy },
+  createAnotherBtn: { marginTop: spacing.sm },
   boardRowGold: {
     backgroundColor: '#FFFBEB',
     borderColor: '#F59E0B',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import { requestTrackingPermissionsAsync } from './utils/trackingTransparency';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -73,6 +73,7 @@ import {
   USER_PROFILE_STORAGE_KEY,
   TEST_DETAILS_STORAGE_KEY,
   SQUAD_SYNC_STORAGE_KEY,
+  SQUAD_LIST_STORAGE_KEY,
   DAILY_FREE_PACK_LIMIT,
   FREE_PACK_QUESTION_COUNT,
   FREE_PACK_COOLDOWN_MS,
@@ -223,7 +224,7 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
       <Tab.Screen
         name="ProgressTab"
         component={ProfileScreen}
-        initialParams={{ testDetails, onEditTestDetails }}
+        initialParams={{ testDetails }}
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account" size={size} color={color} />,
@@ -267,6 +268,11 @@ export default function App() {
   const [masteryMap, setMasteryMap] = useState(createDefaultMasteryMap());
   const [userProfile, setUserProfile] = useState(createDefaultUserProfile());
   const [squadSync, setSquadSync] = useState(createDefaultSquadSync());
+  // Multi-squad: squadSync stays the ACTIVE squad (all existing code reads it
+  // unchanged). squadList keeps every squad the user belongs to, so switching
+  // never loses one. The persist effect below upserts the active squad into
+  // the list on every change.
+  const [squadList, setSquadList] = useState([]);
   const lastGhostBroadcastRef = useRef({ at: 0, intensity: -1, isFlowState: false });
   const navigationRef = useRef(null);
   const routeNameRef = useRef(null);
@@ -399,7 +405,11 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [squadSync?.teamId, squadSync?.members, squadSync?.season?.seasonId, squadSync?.season?.endsAt]);
 
-  const trackAppEvent = (eventName, params = {}) => {
+  // Stable identity: this function uses no component state, only the imported
+  // analytics logger. Without useCallback it changed identity on every App
+  // render, which re-fired every effect that lists it as a dependency
+  // (e.g. ReviewScreen's exposure event spamming the console).
+  const trackAppEvent = useCallback((eventName, params = {}) => {
     if (!eventName) return;
 
     const safeParams = Object.entries(params || {}).reduce((acc, [key, value]) => {
@@ -413,7 +423,7 @@ export default function App() {
 
     console.log('[Analytics]', eventName, safeParams);
     void logAppAnalyticsEvent(eventName, safeParams);
-  };
+  }, []);
 
   useEffect(() => {
     const season = squadSync?.season || {};
@@ -560,6 +570,19 @@ export default function App() {
 
     loadTestDetails();
 
+    const loadSquadList = async () => {
+      try {
+        const storedList = await AsyncStorage.getItem(SQUAD_LIST_STORAGE_KEY);
+        if (!storedList) return;
+        const parsedList = JSON.parse(storedList);
+        if (Array.isArray(parsedList) && parsedList.length > 0) {
+          setSquadList(parsedList);
+        }
+      } catch (error) {
+        console.log('Failed to load squad list:', error);
+      }
+    };
+
     const loadSquadSync = async () => {
       try {
         const stored = await AsyncStorage.getItem(SQUAD_SYNC_STORAGE_KEY);
@@ -568,6 +591,13 @@ export default function App() {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === 'object') {
           setSquadSync((prev) => reconcileSquadSync(prev, parsed));
+          // Migration: existing users have one squad and no list yet.
+          // Seed the list from the active squad so it is never lost.
+          setSquadList((prev) => {
+            if (Array.isArray(prev) && prev.length > 0) return prev;
+            const teamId = String(parsed?.teamId || '').trim();
+            return teamId ? [parsed] : prev;
+          });
         }
       } catch (error) {
         console.log('Failed to load squad sync:', error);
@@ -576,6 +606,7 @@ export default function App() {
 
     loadMasteryMap();
     loadUserProfile();
+    loadSquadList();
     loadSquadSync();
     return () => {
       isMounted = false;
@@ -834,6 +865,20 @@ export default function App() {
     const persistSquadSync = async () => {
       try {
         await AsyncStorage.setItem(SQUAD_SYNC_STORAGE_KEY, JSON.stringify(squadSync));
+        // Keep the active squad upserted in the multi-squad list so switching
+        // away never loses it.
+        const teamId = String(squadSync?.teamId || '').trim();
+        if (teamId) {
+          setSquadList((prev) => {
+            const list = Array.isArray(prev) ? prev : [];
+            const idx = list.findIndex((s) => String(s?.teamId || '') === teamId);
+            const next = idx >= 0
+              ? list.map((s, i) => (i === idx ? squadSync : s))
+              : [...list, squadSync];
+            AsyncStorage.setItem(SQUAD_LIST_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+            return next;
+          });
+        }
       } catch (error) {
         console.log('Failed to persist squad sync:', error);
       }
@@ -1143,6 +1188,62 @@ export default function App() {
     return nextCode;
   };
 
+  // Multi-squad: switch the active squad. The previous active squad is already
+  // saved in squadList by the persist effect, so nothing is lost.
+  const switchSquad = (teamIdInput = '') => {
+    const teamId = String(teamIdInput || '').trim();
+    if (!teamId || teamId === String(squadSync?.teamId || '')) return squadSync;
+    const found = (Array.isArray(squadList) ? squadList : []).find((s) => String(s?.teamId || '') === teamId);
+    if (!found) return squadSync;
+    const nextState = { ...createDefaultSquadSync(), ...found, updatedAt: new Date().toISOString() };
+    applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_CREATED, { team_name: nextState.teamName, switched: true });
+    return nextState;
+  };
+
+  // Multi-squad: create an additional squad (family, friends, ...) without
+  // touching the current one. Unlike createSquad, this always starts fresh.
+  const createNewSquad = async (teamNameInput = '') => {
+    const trimmedName = String(teamNameInput || '').trim();
+    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const nextState = {
+      ...createDefaultSquadSync(),
+      teamId: `team-${Date.now()}`,
+      teamName: trimmedName || 'Civics Squad',
+      inviteCode: buildInviteCode(userProfile?.name, testDetails?.testDate),
+      members: [selfMember],
+      updatedAt: new Date().toISOString(),
+    };
+    applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_CREATED, {
+      team_name: nextState.teamName,
+      member_count: 1,
+    });
+    return nextState;
+  };
+
+  // Multi-squad: leave a squad. Leaving the active one switches to another
+  // saved squad, or back to no-squad state when it was the last one.
+  const leaveSquad = (teamIdInput = '') => {
+    const teamId = String(teamIdInput || '').trim();
+    if (!teamId) return squadSync;
+    const list = Array.isArray(squadList) ? squadList : [];
+    const nextList = list.filter((s) => String(s?.teamId || '') !== teamId);
+    setSquadList(nextList);
+    AsyncStorage.setItem(SQUAD_LIST_STORAGE_KEY, JSON.stringify(nextList)).catch(() => {});
+    if (teamId === String(squadSync?.teamId || '')) {
+      if (nextList.length > 0) {
+        const nextState = { ...createDefaultSquadSync(), ...nextList[0], updatedAt: new Date().toISOString() };
+        applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+        return nextState;
+      }
+      const cleared = createDefaultSquadSync();
+      setSquadSync(cleared);
+      return cleared;
+    }
+    return squadSync;
+  };
+
   const joinSquad = async (inviteCodeInput = '') => {
     const code = String(inviteCodeInput || '').trim().toUpperCase();
     if (!code) return null;
@@ -1150,6 +1251,15 @@ export default function App() {
     // Prevent duplicate join: if already in a squad with this code, return existing
     if (squadSync?.inviteCode === code && squadSync?.teamId) {
       return squadSync;
+    }
+
+    // Multi-squad: if this code belongs to a saved (non-active) squad, switch
+    // to it instead of creating a duplicate.
+    const savedMatch = (Array.isArray(squadList) ? squadList : []).find(
+      (s) => String(s?.inviteCode || '').toUpperCase() === code
+    );
+    if (savedMatch && String(savedMatch?.teamId || '') !== String(squadSync?.teamId || '')) {
+      return switchSquad(savedMatch.teamId);
     }
 
     // Try Firestore first (production), fall back to local
@@ -2414,7 +2524,11 @@ export default function App() {
           userProfile,
           updateUserProfile,
           squadSync,
+          squadList,
           createSquad,
+          createNewSquad,
+          switchSquad,
+          leaveSquad,
           joinSquad,
           refreshSquadInviteCode,
           updateSquadWeeklyGoal,
@@ -2442,6 +2556,17 @@ export default function App() {
               screen_name: currentRoute,
               previous_screen: previousRoute || 'unknown',
             });
+          }
+
+          // Web only: React Navigation hides inactive screens with aria-hidden,
+          // but focus can stay on a button inside the hidden screen, which
+          // makes Chrome log "Blocked aria-hidden" warnings. Blur only when
+          // focus is actually trapped inside a hidden subtree, so normal
+          // keyboard focus is untouched.
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            if (document.activeElement.closest('[aria-hidden="true"]')) {
+              document.activeElement.blur();
+            }
           }
 
           routeNameRef.current = currentRoute;

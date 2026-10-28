@@ -309,9 +309,26 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
     return true;
   };
 
+  // Pack-provided curated distractors always win at EVERY difficulty.
+  // (generateWrongAnswers puts presets only in the easy bucket, so at
+  // medium/hard the generic pool would otherwise fill all 3 slots and the
+  // user would see unrelated answers from other questions.)
+  const presetDistractors = questionData.wrongAnswers
+    ? uniqueByNormalized(
+        Array.isArray(questionData.wrongAnswers)
+          ? questionData.wrongAnswers
+          : [
+              ...(questionData.wrongAnswers.easy || []),
+              ...(questionData.wrongAnswers.medium || []),
+              ...(questionData.wrongAnswers.hard || []),
+            ]
+      )
+    : [];
+
   // Curated per-question distractors (from the pack) always win: take up to 3
   // of them first, then fill any remaining slots from the generic pools.
   const curatedFirst = uniqueByNormalized([
+    ...presetDistractors,
     ...(wrongAnswers[difficulty] || []),
     ...wrongAnswers.easy,
     ...wrongAnswers.medium,
