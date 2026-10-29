@@ -388,9 +388,20 @@ export function getVisualImage(question, answer) {
   if (q.includes('president') || q.includes('white house') || q.includes('executive'))
     return 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG';
 
-  // Congress / Capitol / Legislative
-  if (q.includes('congress') || q.includes('senate') || q.includes('representative') || q.includes('legislative') || q.includes('capitol'))
+  // Congress / Capitol / Legislative (incl. senators: "senators" does not contain "senate")
+  if (q.includes('congress') || q.includes('senate') || q.includes('senator') || q.includes('representative') || q.includes('legislative') || q.includes('capitol'))
     return 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg';
+
+  // Governor (dynamic state question): a real state capitol building as the
+  // photographic anchor, not the generic flag.
+  if (q.includes('governor'))
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/AZCAPITOL_20121121.jpg?width=480';
+
+  // Capital of the United States (federal). Must sit before the Washington
+  // branch: the answer "Washington, D.C." contains "washington" and would
+  // otherwise win the George Washington portrait.
+  if (q.includes('capital of the united') || q.includes('capital of the u.s'))
+    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/US_Capitol_east_side.JPG/480px-US_Capitol_east_side.JPG';
 
   // Supreme Court / Judicial
   if (q.includes('supreme court') || q.includes('judicial') || q.includes('judge'))
@@ -435,6 +446,10 @@ export function getVisualImage(question, answer) {
   // Washington D.C. geography
   if (q.includes('washington, d.c.') || q.includes('capital city') || q.includes('district of columbia'))
     return 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/US_Capitol_east_side.JPG/480px-US_Capitol_east_side.JPG';
+
+  // State capital (dynamic): a real state capitol building
+  if (q.includes('capital of'))
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Texas_State_Capitol_building-oblique_view.JPG?width=480';
 
   // Republic / government form
   if (q.includes('republic') || q.includes('form of government') || q.includes('self-government'))

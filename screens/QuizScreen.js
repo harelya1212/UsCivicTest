@@ -154,6 +154,12 @@ function QuizScreen({ route, navigation }) {
   const skipActionsRef = useRef(0);
   const [focusActionBusy, setFocusActionBusy] = useState(false);
   const [imageFullscreen, setImageFullscreen] = useState(false);
+  // Memory-image fallback: if the question's own image fails to load, try the
+  // keyword fallback picture; if that fails too, hide the image box entirely
+  // instead of leaving a confusing empty gray rectangle.
+  const [imageFallbackUsed, setImageFallbackUsed] = useState(false);
+  const [imageHidden, setImageHidden] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   const stepGoalPulse = useRef(new Animated.Value(0)).current;
   const meshBreathingPulse = useRef(new Animated.Value(0.22)).current;
   const showFeedbackRef = useRef(showFeedback);
@@ -718,6 +724,22 @@ function QuizScreen({ route, navigation }) {
   };
 
   const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer);
+  const fallbackImageUrl = getVisualImage(question.question, question.answer);
+  const imageSrc = imageFallbackUsed ? fallbackImageUrl : visualImageUrl;
+  const handleImageError = () => {
+    if (!imageFallbackUsed && visualImageUrl && visualImageUrl !== fallbackImageUrl) {
+      setImageFallbackUsed(true);
+    } else {
+      setImageHidden(true);
+    }
+  };
+
+  // Fresh image state for every new question (also covers resume).
+  useEffect(() => {
+    setImageFallbackUsed(false);
+    setImageHidden(false);
+    setImageLoading(true);
+  }, [currentQuestion?.id]);
 
   return (
     <SafeAreaView style={quizStyles.screen}>
@@ -770,6 +792,7 @@ function QuizScreen({ route, navigation }) {
         )}
       </View>
 
+      <View style={quizStyles.bodyWrap}>
       <ScrollView
         style={quizStyles.content}
         contentContainerStyle={quizStyles.container}
@@ -830,93 +853,7 @@ function QuizScreen({ route, navigation }) {
           })}
         </View>
 
-        {/* Feedback */}
-        {showFeedback && (
-          <View style={[
-            quizStyles.feedback,
-            isAnswerCorrect ? quizStyles.feedbackGood : quizStyles.feedbackBad,
-          ]}>
-            <View style={quizStyles.feedbackHeader}>
-              <Text style={quizStyles.feedbackEmoji}>
-                {isAnswerCorrect ? '🎉' : '📚'}
-              </Text>
-              <Text style={quizStyles.feedbackMessage}>
-                {isAnswerCorrect ? 'Correct! Amazing job!' : 'Good try! Here is the correct answer:'}
-              </Text>
-            </View>
-
-            <View style={quizStyles.answerBox}>
-              <Text style={quizStyles.answerLabel}>
-                {isTwoAnswerQuestion ? 'Accepted answers:' : 'Correct answer:'}
-              </Text>
-              <Text style={quizStyles.answerText}>{question.answer}</Text>
-              {acceptedAnswers.length > 1 && (
-                <View style={quizStyles.alternates}>
-                  {acceptedAnswers.filter(a => a !== question.answer).map((alt, idx) => (
-                    <Text key={idx} style={quizStyles.alternateItem}>- {alt}</Text>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            {question.whyThisAnswer && (
-              <>
-                {!showExplanation ? (
-                  <TouchableOpacity
-                    style={quizStyles.whyBtn}
-                    onPress={handleShowExplanation}
-                  >
-                    <MaterialCommunityIcons name="lightbulb-on" size={18} color={colors.primary} />
-                    <Text style={quizStyles.whyBtnText}>Why this answer?</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={quizStyles.whyBox}>
-                    <Text style={quizStyles.whyText}>{question.whyThisAnswer}</Text>
-                  </View>
-                )}
-              </>
-            )}
-
-            {question.mnemonic && (
-              <View style={quizStyles.mnemonicBox}>
-                <View style={quizStyles.mnemonicHeader}>
-                  <MaterialCommunityIcons name="brain" size={18} color={colors.accent} />
-                  <Text style={quizStyles.mnemonicLabel}>Memory hook</Text>
-                </View>
-                <Text style={quizStyles.mnemonicText}>{question.mnemonic}</Text>
-              </View>
-            )}
-
-            {!lowClutterMode && visualImageUrl ? (
-              <TouchableOpacity
-                onPress={() => setImageFullscreen(true)}
-                accessibilityLabel="Open image fullscreen"
-                accessibilityRole="button"
-                activeOpacity={0.9}
-              >
-                <Image
-                  source={{ uri: visualImageUrl }}
-                  style={quizStyles.feedbackImage}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            ) : null}
-
-            <TouchableOpacity
-              style={quizStyles.nextBtn}
-              onPress={handleNextQuestion}
-              accessibilityLabel={current + 1 >= pool.length ? 'See results' : 'Next question'}
-              accessibilityRole="button"
-            >
-              <Text style={quizStyles.nextBtnText}>
-                {listenMode && autoAdvancePhase === 'next' && autoAdvanceCountdown > 0
-                  ? `Next in ${autoAdvanceCountdown}s (tap to skip)`
-                  : current + 1 >= pool.length ? 'See Results' : 'Next Question'}
-              </Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Feedback now lives in the full-screen overlay below the ScrollView. */}
 
         {!showFeedback && !lowClutterMode && (
           <Text style={quizStyles.helperText}>
@@ -924,6 +861,128 @@ function QuizScreen({ route, navigation }) {
           </Text>
         )}
       </ScrollView>
+
+        {/* Full-screen feedback overlay: the moment the user answers, this
+            layer covers the options, so on mobile there is nothing to scroll
+            down for. The user sees only the question plus everything that
+            used to live in the box below it. */}
+        {showFeedback && (
+          <View style={[
+            quizStyles.feedbackOverlay,
+            isAnswerCorrect ? quizStyles.feedbackGood : quizStyles.feedbackBad,
+          ]}>
+            <ScrollView
+              contentContainerStyle={quizStyles.feedbackOverlayContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={quizStyles.feedbackHeader}>
+                <Text style={quizStyles.feedbackEmoji}>
+                  {isAnswerCorrect ? '🎉' : '📚'}
+                </Text>
+                <Text style={quizStyles.feedbackMessage}>
+                  {isAnswerCorrect ? 'Correct! Amazing job!' : 'Good try! Here is the correct answer:'}
+                </Text>
+              </View>
+
+              <View style={quizStyles.questionCard}>
+                <Text style={quizStyles.questionText}>
+                  {displayQuestionWithState(question.question, testDetails?.state)}
+                </Text>
+                {isTwoAnswerQuestion && (
+                  <Text style={quizStyles.multiHint}>
+                    Choose one valid idea. In the interview, give any two accepted ideas.
+                  </Text>
+                )}
+              </View>
+
+              <View style={quizStyles.answerBox}>
+                <Text style={quizStyles.answerLabel}>
+                  {isTwoAnswerQuestion ? 'Accepted answers:' : 'Correct answer:'}
+                </Text>
+                <Text style={quizStyles.answerText}>{question.answer}</Text>
+                {!isAnswerCorrect && selectedOption && selectedOption !== question.answer && (
+                  <Text style={quizStyles.yourAnswerText}>Your answer: {selectedOption}</Text>
+                )}
+                {acceptedAnswers.length > 1 && (
+                  <View style={quizStyles.alternates}>
+                    {acceptedAnswers.filter(a => a !== question.answer).map((alt, idx) => (
+                      <Text key={idx} style={quizStyles.alternateItem}>- {alt}</Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {question.whyThisAnswer && (
+                <>
+                  {!showExplanation ? (
+                    <TouchableOpacity
+                      style={quizStyles.whyBtn}
+                      onPress={handleShowExplanation}
+                    >
+                      <MaterialCommunityIcons name="lightbulb-on" size={18} color={colors.primary} />
+                      <Text style={quizStyles.whyBtnText}>Why this answer?</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={quizStyles.whyBox}>
+                      <Text style={quizStyles.whyText}>{question.whyThisAnswer}</Text>
+                    </View>
+                  )}
+                </>
+              )}
+
+              {question.mnemonic && (
+                <View style={quizStyles.mnemonicBox}>
+                  <View style={quizStyles.mnemonicHeader}>
+                    <MaterialCommunityIcons name="brain" size={18} color={colors.accent} />
+                    <Text style={quizStyles.mnemonicLabel}>Memory hook</Text>
+                  </View>
+                  <Text style={quizStyles.mnemonicText}>{question.mnemonic}</Text>
+                </View>
+              )}
+
+              {!lowClutterMode && !imageHidden && imageSrc ? (
+                <>
+                  <View style={quizStyles.zoomHint}>
+                    <MaterialCommunityIcons name="magnify-plus-outline" size={16} color={colors.textSecondary} />
+                    <Text style={quizStyles.zoomHintText}>Tap the picture to see it big - tap again to shrink it back</Text>
+                  </View>
+                  {imageLoading && (
+                    <Text style={quizStyles.imageLoadingText}>Loading picture…</Text>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => setImageFullscreen(true)}
+                    accessibilityLabel="Open image fullscreen"
+                    accessibilityRole="button"
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: imageSrc }}
+                      style={quizStyles.feedbackImage}
+                      resizeMode="contain"
+                      onLoad={() => setImageLoading(false)}
+                      onError={handleImageError}
+                    />
+                  </TouchableOpacity>
+                </>
+              ) : null}
+
+              <TouchableOpacity
+                style={quizStyles.nextBtn}
+                onPress={handleNextQuestion}
+                accessibilityLabel={current + 1 >= pool.length ? 'See results' : 'Next question'}
+                accessibilityRole="button"
+              >
+                <Text style={quizStyles.nextBtnText}>
+                  {listenMode && autoAdvancePhase === 'next' && autoAdvanceCountdown > 0
+                    ? `Next in ${autoAdvanceCountdown}s (tap to skip)`
+                    : current + 1 >= pool.length ? 'See Results' : 'Next Question'}
+                </Text>
+                <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
+      </View>
 
       {/* Fullscreen image: tap the memory-hook picture to enlarge, tap again to close */}
       <Modal
@@ -940,7 +999,7 @@ function QuizScreen({ route, navigation }) {
           accessibilityRole="button"
         >
           <Image
-            source={{ uri: visualImageUrl }}
+            source={{ uri: imageSrc }}
             style={quizStyles.fullscreenImage}
             resizeMode="contain"
           />
@@ -972,6 +1031,7 @@ const quizStyles = StyleSheet.create({
   listenText: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.primary, marginLeft: 6 },
 
   content: { flex: 1 },
+  bodyWrap: { flex: 1, position: 'relative' },
   container: { padding: spacing.md, paddingBottom: spacing.xl },
 
   questionCard: {
@@ -1003,6 +1063,17 @@ const quizStyles = StyleSheet.create({
     borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.md,
     borderWidth: 1.5,
   },
+  // Full-screen feedback layer: covers the options below the header.
+  feedbackOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+  },
+  feedbackOverlayContent: { padding: spacing.md, paddingBottom: spacing.xl },
+  zoomHint: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginTop: spacing.md, marginBottom: 6,
+  },
+  zoomHintText: { fontSize: typography.caption, color: colors.textSecondary, marginLeft: 6 },
+  imageLoadingText: { textAlign: 'center', fontSize: typography.caption, color: colors.textSecondary, marginTop: 6 },
   feedbackGood: { backgroundColor: colors.successLight, borderColor: colors.success },
   feedbackBad: { backgroundColor: colors.infoLight, borderColor: colors.info },
   feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
@@ -1015,6 +1086,7 @@ const quizStyles = StyleSheet.create({
   },
   answerLabel: { fontSize: typography.small, fontWeight: typography.semibold, color: colors.textSecondary, marginBottom: 4 },
   answerText: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
+  yourAnswerText: { fontSize: typography.caption, color: colors.danger, marginTop: spacing.sm, fontWeight: typography.semibold },
   alternates: { marginTop: spacing.sm },
   alternateItem: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
 
