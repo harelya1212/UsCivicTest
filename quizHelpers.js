@@ -373,7 +373,61 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
  * Returns a relevant image URL for the question/answer.
  * All images are from Wikimedia Commons (public domain / free to use).
  */
-export function getVisualImage(question, answer) {
+// Per-state capitol photos for dynamic state-capital questions.
+// All URLs verified live (HTTP 200, image/jpeg) Oct 28, 2026.
+const STATE_CAPITOL_IMAGES = {
+  'Alabama': 'https://commons.wikimedia.org/wiki/Special:FilePath/Alabama_State_Capitol,_Montgomery,_West_view_20160713_1.jpg?width=480',
+  'Alaska': 'https://commons.wikimedia.org/wiki/Special:FilePath/210103_Snowy_capitol.jpg?width=480',
+  'Arizona': 'https://commons.wikimedia.org/wiki/Special:FilePath/Arizona_State_Capitol,_Washington_Street_and_17th_Avenue,_Phoenix,_AZ_-_54441873193.jpg?width=480',
+  'Arkansas': 'https://commons.wikimedia.org/wiki/Special:FilePath/Arkansas_State_Capitol.jpg?width=480',
+  'California': 'https://commons.wikimedia.org/wiki/Special:FilePath/Sacramento,-California---State-Capitol.jpg?width=480',
+  'Colorado': 'https://commons.wikimedia.org/wiki/Special:FilePath/Colorado_State_Capitol_building.jpg?width=480',
+  'Connecticut': 'https://commons.wikimedia.org/wiki/Special:FilePath/Connecticut_State_Capitol_(55617356712).jpg?width=480',
+  'Delaware': 'https://commons.wikimedia.org/wiki/Special:FilePath/2022-07-20_08_03_40_The_east_side_of_the_Delaware_Legislative_Hall_(Delaware_Capitol_Building)_in_Dover,_Kent_County,_Delaware.jpg?width=480',
+  'Florida': 'https://commons.wikimedia.org/wiki/Special:FilePath/Old_and_New_Florida_State_Capitol,_Tallahassee,_East_view_20160711_1.jpg?width=480',
+  'Georgia': 'https://commons.wikimedia.org/wiki/Special:FilePath/Georgia_State_Capitol,_Atlanta,_West_view_20160716_1.jpg?width=480',
+  'Hawaii': 'https://commons.wikimedia.org/wiki/Special:FilePath/Hawaii_state_capitol_from_the_south-east.jpg?width=480',
+  'Idaho': 'https://commons.wikimedia.org/wiki/Special:FilePath/Idaho_State_Capitol_building.jpg?width=480',
+  'Illinois': 'https://commons.wikimedia.org/wiki/Special:FilePath/Illinois_State_Capitol_pano.jpg?width=480',
+  'Indiana': 'https://commons.wikimedia.org/wiki/Special:FilePath/StateCapitolIndiana.jpg?width=480',
+  'Iowa': 'https://commons.wikimedia.org/wiki/Special:FilePath/Capitol_building,_Des_Moines,_Iowa.jpg?width=480',
+  'Kansas': 'https://commons.wikimedia.org/wiki/Special:FilePath/Kansas_State_Capitol_in_summer_2024.jpg?width=480',
+  'Kentucky': 'https://commons.wikimedia.org/wiki/Special:FilePath/U.S._Route_60_Frankfort,_KY_(23892062134).jpg?width=480',
+  'Louisiana': 'https://commons.wikimedia.org/wiki/Special:FilePath/Louisiana_State_Capitol_Building.jpg?width=480',
+  'Maine': 'https://commons.wikimedia.org/wiki/Special:FilePath/Maine_State_House_exterior_view_(cropped).jpg?width=480',
+  'Maryland': 'https://commons.wikimedia.org/wiki/Special:FilePath/Maryland_State_House_from_College_Ave.JPG?width=480',
+  'Massachusetts': 'https://commons.wikimedia.org/wiki/Special:FilePath/Massachusetts_State_House_Boston_November_2016.jpg?width=480',
+  'Michigan': 'https://commons.wikimedia.org/wiki/Special:FilePath/Michigan_State_Capitol_2024.jpg?width=480',
+  'Minnesota': 'https://commons.wikimedia.org/wiki/Special:FilePath/State_Capitol_with_new_Minnesota_State_Flag_11.jpg?width=480',
+  'Mississippi': 'https://commons.wikimedia.org/wiki/Special:FilePath/Mississippi_State_Capitol_(54893700836).jpg?width=480',
+  'Missouri': 'https://commons.wikimedia.org/wiki/Special:FilePath/MissouriCapitol.jpg?width=480',
+  'Montana': 'https://commons.wikimedia.org/wiki/Special:FilePath/MK01799_Montana_State_Capitol.jpg?width=480',
+  'Nebraska': 'https://commons.wikimedia.org/wiki/Special:FilePath/Nebraska_State_Capitol,_July_2026.jpg?width=480',
+  'Nevada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Nevada_State_Capitol_Building_-_Carson_City.jpg?width=480',
+  'New Hampshire': 'https://commons.wikimedia.org/wiki/Special:FilePath/New_Hampshire_State_House.jpg?width=480',
+  'New Jersey': 'https://commons.wikimedia.org/wiki/Special:FilePath/New_Jersey_State_House_-_2_(55141979306).jpg?width=480',
+  'New Mexico': 'https://commons.wikimedia.org/wiki/Special:FilePath/New_Mexico_State_Capitol.jpg?width=480',
+  'New York': 'https://commons.wikimedia.org/wiki/Special:FilePath/NYSCapitolPanorama.jpg?width=480',
+  'North Carolina': 'https://commons.wikimedia.org/wiki/Special:FilePath/2015_North_Carolina_State_Capitol.JPG?width=480',
+  'North Dakota': 'https://commons.wikimedia.org/wiki/Special:FilePath/North_Dakota_State_Capitol.jpg?width=480',
+  'Ohio': 'https://commons.wikimedia.org/wiki/Special:FilePath/Ohio_Statehouse_exterior.jpg?width=480',
+  'Oklahoma': 'https://commons.wikimedia.org/wiki/Special:FilePath/North_fa%C3%A7ade_of_the_Oklahoma_State_Capitol.jpg?width=480',
+  'Oregon': 'https://commons.wikimedia.org/wiki/Special:FilePath/Oregon_State_Capitol_1.jpg?width=480',
+  'Pennsylvania': 'https://commons.wikimedia.org/wiki/Special:FilePath/Flying_the_Pride_Flag_over_the_Capitol_(50035197647).jpg?width=480',
+  'Rhode Island': 'https://commons.wikimedia.org/wiki/Special:FilePath/2021_Rhode_Island_State_House_from_east.jpg?width=480',
+  'South Carolina': 'https://commons.wikimedia.org/wiki/Special:FilePath/South_Carolina_State_House.JPG?width=480',
+  'South Dakota': 'https://commons.wikimedia.org/wiki/Special:FilePath/South_Dakota_State_Capitol.jpg?width=480',
+  'Tennessee': 'https://commons.wikimedia.org/wiki/Special:FilePath/Tennessee_State_Capitol,_Charlotte_Avenue,_Nashville,_TN_-_54385055916.jpg?width=480',
+  'Texas': 'https://commons.wikimedia.org/wiki/Special:FilePath/TexasStateCapitol-2010-01.JPG?width=480',
+  'Utah': 'https://commons.wikimedia.org/wiki/Special:FilePath/Utah_State_Capitol,_Salt_Lake_City_(7631480380)_(cropped).jpg?width=480',
+  'Vermont': 'https://commons.wikimedia.org/wiki/Special:FilePath/The_Vermont_State_House_in_Montpelier_is_the_state_capitol_building_03.jpg?width=480',
+  'Virginia': 'https://commons.wikimedia.org/wiki/Special:FilePath/MJK50147_Virginia_State_Capitol.jpg?width=480',
+  'Washington': 'https://commons.wikimedia.org/wiki/Special:FilePath/MK03168_Washington_State_Capitol_(Olympia).jpg?width=480',
+  'West Virginia': 'https://commons.wikimedia.org/wiki/Special:FilePath/West_Virginia_State_Capitol_building.jpg?width=480',
+  'Wisconsin': 'https://commons.wikimedia.org/wiki/Special:FilePath/Wisconsin_State_Capitol_Building_6.jpg?width=480',
+  'Wyoming': 'https://commons.wikimedia.org/wiki/Special:FilePath/DSCN5263_cheyennewyomingcapitolfront_e.jpg?width=480',
+};
+export function getVisualImage(question, answer, userState) {
   const q = (question + ' ' + answer).toLowerCase();
 
   // U.S. Constitution / supreme law
@@ -392,10 +446,11 @@ export function getVisualImage(question, answer) {
   if (q.includes('congress') || q.includes('senate') || q.includes('senator') || q.includes('representative') || q.includes('legislative') || q.includes('capitol'))
     return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480';
 
-  // Governor (dynamic state question): a real state capitol building as the
+  // Governor (dynamic state question): the user's own state capitol as the
   // photographic anchor, not the generic flag.
   if (q.includes('governor'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/AZCAPITOL_20121121.jpg?width=480';
+    return (userState && STATE_CAPITOL_IMAGES[userState]) ||
+      'https://commons.wikimedia.org/wiki/Special:FilePath/AZCAPITOL_20121121.jpg?width=480';
 
   // Capital of the United States (federal). Must sit before the Washington
   // branch: the answer "Washington, D.C." contains "washington" and would
@@ -447,9 +502,11 @@ export function getVisualImage(question, answer) {
   if (q.includes('washington, d.c.') || q.includes('capital city') || q.includes('district of columbia'))
     return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_east_side.JPG?width=480';
 
-  // State capital (dynamic): a real state capitol building
+  // State capital (dynamic): the user's own state capitol photo; when the
+  // state is unknown, fall back to the D.C. Capitol (generic case).
   if (q.includes('capital of'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Texas_State_Capitol_building-oblique_view.JPG?width=480';
+    return (userState && STATE_CAPITOL_IMAGES[userState]) ||
+      'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_east_side.JPG?width=480';
 
   // Republic / government form
   if (q.includes('republic') || q.includes('form of government') || q.includes('self-government'))

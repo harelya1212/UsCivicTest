@@ -13,6 +13,7 @@ import {
   StatusBar,
   Platform,
   StyleSheet,
+  PanResponder,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
@@ -146,6 +147,8 @@ function QuizScreen({ route, navigation }) {
   const autoAdvanceTimerRef = useRef(null);
   const autoAdvanceCounterRef = useRef(null);
   const questionShownAtRef = useRef(Date.now());
+  // Wrong-answer question IDs for the end-of-session mistakes review.
+  const mistakeIdsRef = useRef([]);
   const sessionStartedAtRef = useRef(Date.now());
   const recentCorrectAnswerTsRef = useRef([]);
   const recentAllAnswerTsRef = useRef([]);
@@ -612,6 +615,7 @@ function QuizScreen({ route, navigation }) {
         topic: question.topic || question.category || 'General',
         timestamp: new Date().toISOString(),
       });
+      mistakeIdsRef.current.push(String(question.id));
     }
 
     recentAllAnswerTsRef.current = [...recentAllAnswerTsRef.current, now]
@@ -635,8 +639,9 @@ function QuizScreen({ route, navigation }) {
       consecutiveIncorrect: consecutiveIncorrectRef.current,
     });
 
-    // Show feedback immediately after selection
+    // Show feedback immediately after selection, with the Why explanation open.
     setShowFeedback(true);
+    setShowExplanation(true);
 
     // Calculate performance for next question's difficulty
     const performance = calculatePerformance(newHistory);
@@ -705,6 +710,7 @@ function QuizScreen({ route, navigation }) {
         total: pool.length,
         weak,
         type,
+        mistakeIds: mistakeIdsRef.current,
         recoveryCampaignCompleted: recoveryCampaignActive,
         recoveryStepNumber: recoveryCampaignActive ? recoveryStepNumber : 0,
         recoveryTopic: activeTopicFilter || null,
@@ -723,8 +729,28 @@ function QuizScreen({ route, navigation }) {
     }
   };
 
-  const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer);
-  const fallbackImageUrl = getVisualImage(question.question, question.answer);
+  // Swipe left on the feedback overlay = next question. Refs mirror the
+  // latest values so the responder (created once) never goes stale.
+  // (showFeedbackRef already exists above and stays in sync via useEffect.)
+  const handleNextRef = useRef(handleNextQuestion);
+  handleNextRef.current = handleNextQuestion;
+  const swipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) =>
+        showFeedbackRef.current &&
+        Math.abs(gestureState.dx) > 40 &&
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.6,
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx < -90 && showFeedbackRef.current) {
+          handleNextRef.current();
+        }
+      },
+      onPanResponderTerminate: () => {},
+    })
+  ).current;
+
+  const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
+  const fallbackImageUrl = getVisualImage(question.question, question.answer, testDetails?.state);
   const imageSrc = imageFallbackUsed ? fallbackImageUrl : visualImageUrl;
   const handleImageError = () => {
     if (!imageFallbackUsed && visualImageUrl && visualImageUrl !== fallbackImageUrl) {
@@ -867,10 +893,13 @@ function QuizScreen({ route, navigation }) {
             down for. The user sees only the question plus everything that
             used to live in the box below it. */}
         {showFeedback && (
-          <View style={[
-            quizStyles.feedbackOverlay,
-            isAnswerCorrect ? quizStyles.feedbackGood : quizStyles.feedbackBad,
-          ]}>
+          <View
+            style={[
+              quizStyles.feedbackOverlay,
+              isAnswerCorrect ? quizStyles.feedbackGood : quizStyles.feedbackBad,
+            ]}
+            {...swipeResponder.panHandlers}
+          >
             <ScrollView
               contentContainerStyle={quizStyles.feedbackOverlayContent}
               showsVerticalScrollIndicator={false}

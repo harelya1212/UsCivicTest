@@ -384,6 +384,21 @@ function ReviewScreen({ route, navigation }) {
     }
   };
 
+  const mistakeIds = Array.isArray(route?.params?.mistakeIds)
+    ? route.params.mistakeIds.map((id) => String(id))
+    : [];
+
+  const reviewMistakes = async () => {
+    // Ad policy: 1 interstitial per quiz, shown after results
+    await maybeShowInterstitial?.({ trigger: 'quizComplete', sessionQuestionCount: total, score });
+    trackAppEvent?.(APP_EVENT_NAMES.QUIZ_RESTARTED_FROM_REVIEW || 'quiz_restarted_from_review', {
+      quiz_type: type,
+      review_mode: 'mistakes',
+      mistake_count: mistakeIds.length,
+    });
+    navigation.replace('Quiz', { type, questionIds: mistakeIds, focusMode: 'minimal' });
+  };
+
   const practiceAgain = () => {
     trackAppEvent?.(APP_EVENT_NAMES.QUIZ_RESTARTED_FROM_REVIEW || 'quiz_restarted_from_review', {
       quiz_type: type,
@@ -548,6 +563,14 @@ function ReviewScreen({ route, navigation }) {
       )}
 
       {/* Actions */}
+      {mistakeIds.length > 0 && (
+        <Button
+          title={`Review my mistakes (${mistakeIds.length})`}
+          onPress={reviewMistakes}
+          icon={<MaterialCommunityIcons name="alert-circle" size={20} color="#fff" />}
+          style={styles.actionButton}
+        />
+      )}
       <Button
         title="Practice again"
         onPress={async () => {
