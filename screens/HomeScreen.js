@@ -249,6 +249,8 @@ function HomeScreen({ navigation }) {
           <Text style={styles.actionTitle}>Weak spots</Text>
           <Text style={styles.actionSubtitle}>{weakCount > 0 ? `${weakCount} to review` : 'None yet'}</Text>
         </Card>
+        {/* Mock interview hidden from beta UI until polished (code kept, see InterviewScreen) */}
+        {false && (
         <Card style={styles.actionCard} onPress={() => navigation.navigate('Interview')}>
           <View style={[styles.actionIcon, { backgroundColor: colors.infoLight }]}>
             <MaterialCommunityIcons name="microphone" size={24} color={colors.info} />
@@ -256,6 +258,7 @@ function HomeScreen({ navigation }) {
           <Text style={styles.actionTitle}>Mock interview</Text>
           <Text style={styles.actionSubtitle}>Practice out loud</Text>
         </Card>
+        )}
         <Card style={styles.actionCard} onPress={() => navigation.navigate('MasteryMap')}>
           <View style={[styles.actionIcon, { backgroundColor: colors.successLight }]}>
             <MaterialCommunityIcons name="map" size={24} color={colors.success} />
