@@ -13,6 +13,7 @@ import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import DailyChallengeCard from '../components/DailyChallengeCard';
+import { getQuizStreak } from '../utils/streak';
 import Button from '../components/ui/Button';
 import { HomeBannerAd } from '../adMobService';
 import { getQuestionBank } from '../quizHelpers';
