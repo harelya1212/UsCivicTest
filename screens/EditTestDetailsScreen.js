@@ -16,7 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import DatePicker from 'react-datepicker';
 import '../assets/react-datepicker.min.css';
 import { usStates } from '../constants';
-import { colors } from '../theme';
+import { colors, typography } from '../theme';
 import styles from '../styles';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
