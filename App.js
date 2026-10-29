@@ -1084,6 +1084,13 @@ export default function App() {
     });
   };
 
+  // A later correct answer heals the weak-spots bank.
+  const removeErrorItem = (id) => {
+    const key = String(id ?? '');
+    if (!key) return;
+    setErrorBank((prev) => prev.filter((e) => String(e?.id ?? '') !== key));
+  };
+
   const savePausedSession = (sessionSnapshot) => {
     setPausedSession({
       ...sessionSnapshot,
@@ -1323,12 +1330,30 @@ export default function App() {
       if (nextList.length > 0) {
         const nextState = { ...createDefaultSquadSync(), ...nextList[0], updatedAt: new Date().toISOString() };
         applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
-        return nextState;
+      } else {
+        const cleared = createDefaultSquadSync();
+        setSquadSync(cleared);
       }
-      const cleared = createDefaultSquadSync();
-      setSquadSync(cleared);
-      return cleared;
     }
+    // Cloud: remove this device's member from the shared squad doc so other
+    // players stop seeing the leaver on the leaderboard (fire-and-forget).
+    getSquadMemberId().then(async (memberId) => {
+      try {
+        const { db } = await import('./firebaseConfig.js');
+        if (!db || !memberId) return;
+        const { doc, getDoc, setDoc } = await import('firebase/firestore');
+        const ref = doc(db, 'squads', teamId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return;
+        const members = Array.isArray(snap.data().members) ? snap.data().members : [];
+        const next = members.filter((m) => String(m?.id || '') !== memberId);
+        if (next.length !== members.length) {
+          await setDoc(ref, { members: next, updatedAt: new Date().toISOString() }, { merge: true });
+        }
+      } catch (e) {
+        // Offline - local only
+      }
+    }).catch(() => {});
     return squadSync;
   };
 
@@ -2641,6 +2666,7 @@ export default function App() {
           setTestDetails,
           errorBank,
           addErrorItem,
+          removeErrorItem,
           pausedSession,
           savePausedSession,
           clearPausedSession,

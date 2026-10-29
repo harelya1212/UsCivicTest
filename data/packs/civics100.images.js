@@ -94,7 +94,7 @@ export const CIVICS_100_IMAGES = {
   "CIVICS100_088": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Meandering_Mississippi_%285182095595%29.jpg/960px-Meandering_Mississippi_%285182095595%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
   "CIVICS100_089": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/50/ISS034E016601_-_Stratocumulus_Clouds_-_Pacific_Ocean.jpg/960px-ISS034E016601_-_Stratocumulus_Clouds_-_Pacific_Ocean.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
   "CIVICS100_090": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Porto_Covo_January_2014-10a.jpg/960px-Porto_Covo_January_2014-10a.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-  "CIVICS100_091": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/375331634_generated_image.png",
+  "CIVICS100_091": "https://commons.wikimedia.org/wiki/Special:FilePath/2013_Old_San_Juan_01.JPG?width=480",
   "CIVICS100_099": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/6ad95a5d5_generated_image.png",
   "CIVICS100_100": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69710272ce3bc6b1074e1740/4c8398397_generated_image.png"
 };

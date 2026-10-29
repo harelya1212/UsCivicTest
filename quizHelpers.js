@@ -427,6 +427,20 @@ const STATE_CAPITOL_IMAGES = {
   'Wisconsin': 'https://commons.wikimedia.org/wiki/Special:FilePath/Wisconsin_State_Capitol_Building_6.jpg?width=480',
   'Wyoming': 'https://commons.wikimedia.org/wiki/Special:FilePath/DSCN5263_cheyennewyomingcapitolfront_e.jpg?width=480',
 };
+/**
+ * State-specific memory image for dynamic state questions. Returns the user's
+ * own state capitol photo for state-capital / governor questions when the
+ * state is known, otherwise null (caller falls back to the pack image).
+ */
+export function getStateSpecificImage(question, answer, userState) {
+  if (!userState || !STATE_CAPITOL_IMAGES[userState]) return null;
+  const q = (question + ' ' + answer).toLowerCase();
+  if (q.includes('capital of') || q.includes('governor')) {
+    return STATE_CAPITOL_IMAGES[userState];
+  }
+  return null;
+}
+
 export function getVisualImage(question, answer, userState) {
   const q = (question + ' ' + answer).toLowerCase();
 

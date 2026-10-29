@@ -20,14 +20,46 @@ const InterviewPromptPhase = ({ question, onComplete, onExit }) => {
 
   const maxRepeats = 3;
 
+  // Safety net: if TTS never reports done/error (silent platform failure),
+  // don't leave the user stuck on "Playing audio..." forever.
+  const safetyTimerRef = React.useRef(null);
+  const armSafetyTimer = () => {
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    safetyTimerRef.current = setTimeout(() => {
+      setIsSpeaking((speaking) => {
+        if (speaking) {
+          Alert.alert(
+            'Audio unavailable',
+            'The prompt could not be played. You can read the question above and continue.',
+            [
+              { text: 'Try again', onPress: playPrompt },
+              { text: 'Continue', onPress: () => setIsReady(true), style: 'default' },
+            ]
+          );
+          return false;
+        }
+        return speaking;
+      });
+    }, 20000);
+  };
+  const clearSafetyTimer = () => {
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
+  };
+
   // Auto-play on mount
   useEffect(() => {
     playPrompt();
+    return clearSafetyTimer;
   }, []);
 
   const playPrompt = async () => {
     try {
       setIsSpeaking(true);
+      setIsReady(false);
+      armSafetyTimer();
 
       const success = await ttsManager.speak(question.question, {
         rate: 1.0,
@@ -37,10 +69,12 @@ const InterviewPromptPhase = ({ question, onComplete, onExit }) => {
           setIsSpeaking(true);
         },
         onDone: () => {
+          clearSafetyTimer();
           setIsSpeaking(false);
           setIsReady(true);
         },
         onError: (error) => {
+          clearSafetyTimer();
           console.error('[Prompt] TTS error:', error);
           setIsSpeaking(false);
           Alert.alert('Audio Error', 'Could not play prompt. Try again?', [
@@ -52,7 +86,10 @@ const InterviewPromptPhase = ({ question, onComplete, onExit }) => {
 
       if (!success) {
         console.warn('[Prompt] Failed to start TTS');
+        clearSafetyTimer();
         setIsSpeaking(false);
+        // Let the user read the question and continue without audio.
+        setIsReady(true);
       }
     } catch (error) {
       console.error('[Prompt] Error playing prompt:', error);
@@ -131,9 +168,8 @@ const InterviewPromptPhase = ({ question, onComplete, onExit }) => {
 
       {/* Exit Button */}
       <TouchableOpacity
-        onPress={onExit}
+        onPress={() => { clearSafetyTimer(); ttsManager.stop().catch(() => {}); onExit(); }}
         style={styles.exitButton}
-        disabled={isSpeaking}
       >
         <Text style={styles.exitButtonText}>Exit Interview</Text>
       </TouchableOpacity>

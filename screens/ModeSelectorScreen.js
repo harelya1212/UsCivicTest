@@ -135,6 +135,7 @@ function ModeSelectorScreen({ navigation }) {
       topicFilter: selectedTopic === ALL_TOPICS_VALUE ? null : selectedTopic,
       subTopicFilter: selectedSubTopic === ALL_SUBTOPICS_VALUE ? null : selectedSubTopic,
       forceQuestionCount: sessionLength === 'all' ? 0 : parseInt(sessionLength, 10),
+      fullTest: sessionLength === 'all',
     });
   };
 

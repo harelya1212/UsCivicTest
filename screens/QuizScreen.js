@@ -35,6 +35,7 @@ import {
   isAnswerCorrect as checkAnswerCorrect,
   shuffleArray,
   displayQuestionWithState,
+  getStateSpecificImage,
 } from '../quizHelpers';
 import { ttsManager } from '../utils/ttsWrapper';
 import { useHapticEngine } from '../context/HapticProvider';
@@ -46,6 +47,7 @@ function QuizScreen({ route, navigation }) {
     savePausedSession,
     clearPausedSession,
     addErrorItem,
+    removeErrorItem,
     maybeShowInterstitial,
     recordMasterySession,
     trackAppEvent,
@@ -87,7 +89,7 @@ function QuizScreen({ route, navigation }) {
       ? filteredPool
       : fullPool;
   const forcedQuestionCount = Number(route?.params?.forceQuestionCount || 0);
-  const sessionQuestionCount = testDetails?.studyPlan?.questionsPerDay
+  const sessionQuestionCount = (!route.params?.fullTest && testDetails?.studyPlan?.questionsPerDay)
     ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
     : effectivePool.length;
   const shouldResumeSession = Boolean(
@@ -573,6 +575,8 @@ function QuizScreen({ route, navigation }) {
       triggerSensoryEvent(sensoryEvents.QUIZ_ANSWER_CORRECT);
       setFeedbackMessage('✅ Correct! Amazing job! 🎉');
       setScore((prev) => prev + 1);
+      // Heal the weak-spots bank: a correct answer clears the earlier miss.
+      removeErrorItem?.(question.id);
     } else {
       triggerSensoryEvent(sensoryEvents.QUIZ_ANSWER_INCORRECT);
       setFeedbackMessage('❌ Good try! Review the correct answer below.');
@@ -755,8 +759,9 @@ function QuizScreen({ route, navigation }) {
     })
   ).current;
 
-  const visualImageUrl = question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
-  const fallbackImageUrl = getVisualImage(question.question, question.answer, testDetails?.state);
+  const stateImageUrl = getStateSpecificImage(question.question, question.answer, testDetails?.state);
+  const visualImageUrl = stateImageUrl || question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
+  const fallbackImageUrl = question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
   const imageSrc = imageFallbackUsed ? fallbackImageUrl : visualImageUrl;
   const handleImageError = () => {
     if (!imageFallbackUsed && visualImageUrl && visualImageUrl !== fallbackImageUrl) {

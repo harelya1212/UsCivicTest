@@ -63,6 +63,20 @@ class TTSManager {
             onDone();
           }
         },
+        onStopped: () => {
+          this.isSpeaking = false;
+          this.currentUtterance = null;
+          if (onError) {
+            onError(new Error('Speech stopped'));
+          }
+        },
+        onError: (speechError) => {
+          this.isSpeaking = false;
+          this.currentUtterance = null;
+          if (onError) {
+            onError(speechError);
+          }
+        },
       });
 
       return true;

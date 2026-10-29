@@ -79,6 +79,9 @@ function MasteryMapScreen({ navigation }) {
   if (stats.totalAttempts === 0) {
     return (
       <Screen>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.md }}>
+          <HomeButton />
+        </View>
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyEmoji}>🗺️</Text>
           <Text style={styles.emptyTitle}>No progress yet</Text>

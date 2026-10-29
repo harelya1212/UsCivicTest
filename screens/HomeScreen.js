@@ -203,7 +203,17 @@ function HomeScreen({ navigation }) {
       {/* Quick actions */}
       <Text style={styles.sectionTitle}>Keep improving</Text>
       <View style={styles.actionsGrid}>
-        <Card style={styles.actionCard} onPress={() => navigation.navigate('Review')}>
+        <Card style={styles.actionCard} onPress={() => {
+          const ids = (Array.isArray(errorBank) ? errorBank : [])
+            .map((e) => String(e?.id ?? ''))
+            .filter(Boolean);
+          if (ids.length === 0) return;
+          navigation.navigate('Quiz', {
+            type: testDetails?.testType || 'naturalization128',
+            questionIds: ids,
+            focusMode: 'minimal',
+          });
+        }}>
           <View style={[styles.actionIcon, { backgroundColor: colors.dangerLight }]}>
             <MaterialCommunityIcons name="target" size={24} color={colors.danger} />
           </View>
