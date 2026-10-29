@@ -297,7 +297,25 @@ export const fetchSquadSyncSnapshot = async (teamId) => {
         const snap = await getDoc(doc(db, 'squads', safeTeamId));
         if (!snap.exists()) return null;
         const data = snap.data() || {};
-        return data?.payload || null;
+        const payload = data?.payload || null;
+        if (!payload || typeof payload !== 'object') return null;
+        // Defensive: some writers stored members at the top level. Union both
+        // lists by member id so no member is ever lost to a schema mismatch.
+        const topMembers = Array.isArray(data.members) ? data.members : [];
+        const payloadMembers = Array.isArray(payload.members) ? payload.members : [];
+        if (topMembers.length > 0) {
+          const seen = new Set(payloadMembers.map((m) => String(m?.id || '')));
+          const merged = [...payloadMembers];
+          for (const m of topMembers) {
+            const id = String(m?.id || '');
+            if (id && !seen.has(id)) {
+              seen.add(id);
+              merged.push(m);
+            }
+          }
+          return { ...payload, members: merged };
+        }
+        return payload;
     } catch (error) {
         console.error('Error fetching squad sync snapshot:', error);
         return null;

@@ -307,6 +307,10 @@ export default function App() {
     return fresh;
   };
   const lastPushedRevisionRef = useRef(0);
+  // Push/pull race guard: never push the local squad to the cloud before the
+  // first pull has merged remote state - otherwise a stale local copy
+  // clobbers newer cloud data on app start.
+  const initialPullDoneRef = useRef(false);
   const lastSegmentTransitionSignatureRef = useRef('');
   const lastOfferWinnersSignatureRef = useRef('');
   const lastExperimentCohortsSignatureRef = useRef('');
@@ -942,18 +946,20 @@ export default function App() {
 
     let stopped = false;
 
-    const pullRemote = async () => {
+    const pullRemote = async (isInitial = false) => {
       try {
         const remoteSnapshot = await fetchSquadSyncSnapshot(teamId);
+        if (isInitial) initialPullDoneRef.current = true;
         if (stopped || !remoteSnapshot || typeof remoteSnapshot !== 'object') return;
         setSquadSync((prev) => reconcileSquadSync(prev, remoteSnapshot));
       } catch (error) {
+        if (isInitial) initialPullDoneRef.current = true;
         console.log('Remote squad pull failed:', error);
       }
     };
 
-    pullRemote();
-    const intervalId = setInterval(pullRemote, 15000);
+    pullRemote(true);
+    const intervalId = setInterval(() => pullRemote(false), 15000);
 
     return () => {
       stopped = true;
@@ -990,6 +996,9 @@ export default function App() {
   useEffect(() => {
     const teamId = String(squadSync?.teamId || '').trim();
     if (!teamId) return undefined;
+
+    // Don't push before the first pull merged remote state (see guard above).
+    if (!initialPullDoneRef.current) return undefined;
 
     const revision = Number(squadSync?.syncMeta?.revision || 0);
     if (!revision || revision <= lastPushedRevisionRef.current) return undefined;
@@ -1384,8 +1393,14 @@ export default function App() {
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
           const squadData = snapshot.docs[0].data();
-          // Prevent duplicate member: check if this device already in members
-          const existingMembers = Array.isArray(squadData.members) ? squadData.members : [];
+          // Prevent duplicate member: check if this device already in members.
+          // Members may live in payload (revision-push schema) or top-level
+          // (legacy writes) - read payload first, fall back to top-level.
+          const payloadMembers = squadData?.payload?.members;
+          const topMembers = squadData?.members;
+          const existingMembers = Array.isArray(payloadMembers)
+            ? payloadMembers
+            : (Array.isArray(topMembers) ? topMembers : []);
           const selfId = await getSquadMemberId();
           if (existingMembers.some(m => String(m?.id || '') === selfId)) {
             // Already a member, just sync the squad data
