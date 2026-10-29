@@ -435,7 +435,13 @@ const STATE_CAPITOL_IMAGES = {
 export function getStateSpecificImage(question, answer, userState) {
   if (!userState || !STATE_CAPITOL_IMAGES[userState]) return null;
   const q = (question + ' ' + answer).toLowerCase();
-  if (q.includes('capital of') || q.includes('governor')) {
+  const stateLower = String(userState).toLowerCase();
+  // Never for the U.S. capital question - only for the user's own state.
+  if (q.includes('capital of the united states') || q.includes('capital of the u.s.')) return null;
+  const isStateCapital = q.includes('capital of your state')
+    || (q.includes('capital of') && q.includes(stateLower));
+  const isGovernor = q.includes('governor') && (q.includes('your state') || q.includes(stateLower));
+  if (isStateCapital || isGovernor) {
     return STATE_CAPITOL_IMAGES[userState];
   }
   return null;

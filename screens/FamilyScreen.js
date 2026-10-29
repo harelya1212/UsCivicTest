@@ -7,7 +7,7 @@
  * Scoring explained in one line. No clutter.
  */
 import React, { useContext, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Share, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Share, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppDataContext } from '../context/AppDataContext';
@@ -43,6 +43,7 @@ function FamilyScreen({ navigation }) {
   const [selectedTestType, setSelectedTestType] = useState(testDetails?.testType || 'naturalization128');
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [newSquadName, setNewSquadName] = useState('');
+  const [leaveTarget, setLeaveTarget] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
 
   const inSquad = Boolean(squadSync?.teamId);
@@ -112,15 +113,15 @@ function FamilyScreen({ navigation }) {
     setNewSquadName('');
   };
 
+  // In-app confirmation: Alert.alert is a silent no-op on web and native
+  // dialogs are invisible to automation - this modal always renders.
   const handleLeave = (teamId, name) => {
-    Alert.alert(
-      'Leave squad?',
-      `Leave "${name || 'this squad'}"? You can rejoin anytime with its invite code.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Leave', style: 'destructive', onPress: () => leaveSquad?.(teamId) },
-      ]
-    );
+    setLeaveTarget({ teamId, name });
+  };
+  const confirmLeave = () => {
+    const target = leaveTarget;
+    setLeaveTarget(null);
+    if (target?.teamId) leaveSquad?.(target.teamId);
   };
 
   const handleChallenge = () => {
@@ -358,6 +359,29 @@ function FamilyScreen({ navigation }) {
           </View>
         </Card>
       )}
+
+      {/* Leave confirmation - in-app modal (works on web, visible to testers) */}
+      <Modal
+        visible={!!leaveTarget}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaveTarget(null)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Leave squad?</Text>
+            <Text style={styles.confirmMsg}>
+              Leave &quot;{leaveTarget?.name || 'this squad'}&quot;? You can rejoin anytime with its invite code.
+            </Text>
+            <View style={styles.confirmBtns}>
+              <Button title="Cancel" variant="secondary" onPress={() => setLeaveTarget(null)} style={styles.halfBtn} />
+              <TouchableOpacity onPress={confirmLeave} style={[styles.halfBtn, styles.leaveConfirmBtn]} activeOpacity={0.8}>
+                <Text style={styles.leaveConfirmText}>Leave</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -480,6 +504,48 @@ const styles = StyleSheet.create({
 
   challengeBtn: { marginTop: spacing.md },
   scoringNote: { fontSize: typography.caption, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  confirmCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 340,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  confirmMsg: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+    lineHeight: 20,
+  },
+  confirmBtns: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  leaveConfirmBtn: {
+    backgroundColor: colors.danger,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  leaveConfirmText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });
 
 export default FamilyScreen;
