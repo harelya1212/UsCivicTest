@@ -48,7 +48,8 @@ function HomeScreen({ navigation }) {
     return () => { mounted = false; };
   }, []);
 
-  const name = (userProfile?.name || testDetails?.name || '').split(' ')[0] || 'there';
+  const firstName = (userProfile?.name || testDetails?.name || '').split(' ')[0];
+  const name = firstName || '';
 
   const stats = useMemo(() => {
     const byQ = masteryMap?.byQuestion || {};
@@ -124,7 +125,7 @@ function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hey, {name}</Text>
+          <Text style={styles.greeting}>{name ? `Hey, ${name}` : 'Hey!'}</Text>
           <Text style={styles.subgreeting}>Ready to keep your streak going?</Text>
         </View>
         <TouchableOpacity
@@ -266,12 +267,15 @@ function HomeScreen({ navigation }) {
           <Text style={styles.actionTitle}>Mastery map</Text>
           <Text style={styles.actionSubtitle}>See your progress</Text>
         </Card>
-        <Card style={styles.actionCard} onPress={() => navigation.navigate('Family')}>
+        <Card style={[styles.actionCard, styles.actionCardWide]} onPress={() => navigation.navigate('Family')}>
           <View style={[styles.actionIcon, { backgroundColor: colors.goldLight }]}>
             <MaterialCommunityIcons name="trophy-variant" size={24} color={colors.gold} />
           </View>
-          <Text style={styles.actionTitle}>Squad</Text>
-          <Text style={styles.actionSubtitle}>Challenge family</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actionTitle}>Squad</Text>
+            <Text style={styles.actionSubtitle}>Challenge family and friends</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textTertiary} />
         </Card>
       </View>
 
@@ -415,6 +419,12 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: typography.subtitle, fontWeight: typography.bold, color: colors.text, marginBottom: spacing.sm, marginTop: spacing.sm },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4, marginBottom: spacing.md },
   actionCard: { width: '48%', margin: '1%', alignItems: 'center', paddingVertical: spacing.lg },
+  actionCardWide: {
+    width: '98%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
   actionIcon: { width: 52, height: 52, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   actionTitle: { fontSize: typography.caption, fontWeight: typography.semibold, color: colors.text },
   actionSubtitle: { fontSize: typography.small, color: colors.textSecondary, marginTop: 2 },
