@@ -29,8 +29,14 @@ export const TEST_AD_UNIT_IDS = {
 };
 
 // ============ BANNER ADS ============
-// Web stub: render nothing (real AdMob only on native builds with real IDs)
-export const HomeBannerAd = () => null;
+// Web stub: visible placeholder so beta testers can see and comment on ad placement.
+// (Real AdMob only on native builds with real IDs)
+export const HomeBannerAd = () => (
+  <View style={styles.placeholder}>
+    <Text style={styles.placeholderText}>Ad placeholder (banner)</Text>
+    <Text style={styles.placeholderSub}>Testers: how does this placement feel?</Text>
+  </View>
+);
 
 // ============ INTERSTITIAL ADS ============
 export const preloadInterstitialAd = () => {};
