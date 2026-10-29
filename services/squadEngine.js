@@ -120,7 +120,7 @@ function deriveComebackCampaign(runtime = {}, nowMs = Date.now()) {
   };
 }
 
-function buildMemberFromProfile(profile = {}, fallbackName = 'You') {
+function buildMemberFromProfile(profile = {}, fallbackName = 'You', memberId = 'self') {
   const displayName = String(profile.name || fallbackName).trim() || fallbackName;
   const initials = displayName
     .split(' ')
@@ -130,15 +130,17 @@ function buildMemberFromProfile(profile = {}, fallbackName = 'You') {
     .join('') || 'Y';
 
   return {
-    id: 'self',
+    // Unique per device (passed in by the app). Fresh members start at zero -
+    // no demo stats, so the leaderboard reflects real activity only.
+    id: memberId || 'self',
     name: displayName,
     role: 'parent',
-    points: 260,
-    level: 3,
+    points: 0,
+    level: 0,
     initials,
-    completed: 5,
-    effortHours: 4.1,
-    accuracy: 76,
+    completed: 0,
+    effortHours: 0,
+    accuracy: 0,
     status: 'active',
   };
 }

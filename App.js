@@ -74,6 +74,8 @@ import {
   TEST_DETAILS_STORAGE_KEY,
   SQUAD_SYNC_STORAGE_KEY,
   SQUAD_LIST_STORAGE_KEY,
+  SQUAD_MEMBER_ID_KEY,
+  BETA_GATE_STORAGE_KEY,
   DAILY_FREE_PACK_LIMIT,
   FREE_PACK_QUESTION_COUNT,
   FREE_PACK_COOLDOWN_MS,
@@ -188,6 +190,7 @@ import CaseProgressScreen from './screens/CaseProgressScreen';
 import MasteryMapScreen from './screens/MasteryMapScreen';
 import FamilyScreen from './screens/FamilyScreen';
 import AdminScreen from './screens/AdminScreen';
+import BetaGate from './components/ui/BetaGate';
 
 function TabNavigator({ testDetails, onEditTestDetails }) {
   return (
@@ -261,6 +264,9 @@ export default function App() {
     Nunito_800ExtraBold,
   });
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  // Closed-beta web gate: unlocked immediately on native and on localhost;
+  // on a hosted web build it waits for the beta code (persisted per browser).
+  const [betaGatePassed, setBetaGatePassed] = useState(Platform.OS !== 'web');
   const [testDetails, setTestDetails] = useState(null);
   const [errorBank, setErrorBank] = useState([]);
   const [pausedSession, setPausedSession] = useState(null);
@@ -277,6 +283,29 @@ export default function App() {
   const navigationRef = useRef(null);
   const routeNameRef = useRef(null);
   const localDeviceIdRef = useRef(`local-${Platform.OS}-${Math.random().toString(36).slice(2, 8)}`);
+  // Squad member identity: unique per device, persisted. Every device used to
+  // share the id 'self', so two players could never appear on one leaderboard.
+  const squadMemberIdRef = useRef(null);
+  const getSquadMemberId = async () => {
+    if (squadMemberIdRef.current) return squadMemberIdRef.current;
+    try {
+      const stored = await AsyncStorage.getItem(SQUAD_MEMBER_ID_KEY);
+      if (stored && String(stored).trim()) {
+        squadMemberIdRef.current = String(stored).trim();
+        return squadMemberIdRef.current;
+      }
+    } catch (error) {
+      console.log('Failed to load squad member id:', error);
+    }
+    const fresh = `m-${Math.random().toString(36).slice(2, 10)}`;
+    squadMemberIdRef.current = fresh;
+    try {
+      await AsyncStorage.setItem(SQUAD_MEMBER_ID_KEY, fresh);
+    } catch (error) {
+      console.log('Failed to persist squad member id:', error);
+    }
+    return fresh;
+  };
   const lastPushedRevisionRef = useRef(0);
   const lastSegmentTransitionSignatureRef = useRef('');
   const lastOfferWinnersSignatureRef = useRef('');
@@ -569,6 +598,7 @@ export default function App() {
     };
 
     loadTestDetails();
+    getSquadMemberId().catch(() => {});
 
     const loadSquadList = async () => {
       try {
@@ -611,6 +641,25 @@ export default function App() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  // Closed-beta web gate check (web only; native and localhost skip it).
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    try {
+      const host = typeof window !== 'undefined' ? String(window.location?.hostname || '') : '';
+      if (host === 'localhost' || host === '127.0.0.1' || host === '') {
+        setBetaGatePassed(true);
+        return;
+      }
+    } catch (e) {
+      // Fall through to the stored-code check.
+    }
+    AsyncStorage.getItem(BETA_GATE_STORAGE_KEY)
+      .then((v) => {
+        if (v === 'ok') setBetaGatePassed(true);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1121,13 +1170,35 @@ export default function App() {
     }));
   };
 
+  // Shared Firestore writer for squad membership changes (join, challenge
+  // scores). The 15s pullRemote picks these up on other devices.
+  const writeSquadMembersToFirestore = async (teamIdInput = '', members = []) => {
+    const teamId = String(teamIdInput || '').trim();
+    if (!teamId) return false;
+    try {
+      const { db } = await import('./firebaseConfig.js');
+      if (!db) return false;
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(
+        doc(db, 'squads', teamId),
+        { members, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const createSquad = async (teamNameInput = '') => {
     const trimmedName = String(teamNameInput || '').trim();
     const nextTeamName = trimmedName || squadSync.teamName || 'Civics Squad';
-    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const selfId = await getSquadMemberId();
+    const selfMember = buildMemberFromProfile(userProfile, 'You', selfId);
     const existingMembers = Array.isArray(squadSync.members) ? squadSync.members : [];
-    const nextMembers = existingMembers.some((member) => String(member.id) === 'self')
-      ? existingMembers.map((member) => (String(member.id) === 'self' ? { ...member, ...selfMember } : member))
+    const isSelfEntry = (member) => String(member?.id || '') === selfId || String(member?.id || '') === 'self';
+    const nextMembers = existingMembers.some(isSelfEntry)
+      ? existingMembers.map((member) => (isSelfEntry(member) ? { ...member, ...selfMember } : member))
       : [selfMember, ...existingMembers];
 
     const nextState = {
@@ -1205,7 +1276,7 @@ export default function App() {
   // touching the current one. Unlike createSquad, this always starts fresh.
   const createNewSquad = async (teamNameInput = '') => {
     const trimmedName = String(teamNameInput || '').trim();
-    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const selfMember = buildMemberFromProfile(userProfile, 'You', await getSquadMemberId());
     const nextState = {
       ...createDefaultSquadSync(),
       teamId: `team-${Date.now()}`,
@@ -1215,6 +1286,23 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
     applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+    // Sync to Firestore so the invite code actually works for other players.
+    try {
+      const { db } = await import('./firebaseConfig.js');
+      if (db) {
+        const { doc, setDoc } = await import('firebase/firestore');
+        await setDoc(doc(db, 'squads', nextState.teamId), {
+          teamId: nextState.teamId,
+          teamName: nextState.teamName,
+          inviteCode: nextState.inviteCode,
+          members: nextState.members,
+          createdAt: new Date().toISOString(),
+          updatedAt: nextState.updatedAt,
+        });
+      }
+    } catch (e) {
+      // Offline - local only
+    }
     trackAppEvent(APP_EVENT_NAMES.TEAM_CREATED, {
       team_name: nextState.teamName,
       member_count: 1,
@@ -1271,10 +1359,10 @@ export default function App() {
         const snapshot = await getDocs(q);
         if (!snapshot.empty) {
           const squadData = snapshot.docs[0].data();
-          // Prevent duplicate member: check if self already in members
-          const existingMembers = squadData.members || [];
-          const selfId = 'self';
-          if (existingMembers.some(m => String(m.id) === selfId)) {
+          // Prevent duplicate member: check if this device already in members
+          const existingMembers = Array.isArray(squadData.members) ? squadData.members : [];
+          const selfId = await getSquadMemberId();
+          if (existingMembers.some(m => String(m?.id || '') === selfId)) {
             // Already a member, just sync the squad data
             const nextState = {
               ...createDefaultSquadSync(),
@@ -1284,14 +1372,19 @@ export default function App() {
             applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
             return nextState;
           }
-          const selfMember = buildMemberFromProfile(userProfile, 'You');
+          const selfMember = buildMemberFromProfile(userProfile, 'You', selfId);
+          const nextMembers = [...existingMembers, selfMember];
           const nextState = {
             ...createDefaultSquadSync(),
             ...squadData,
-            members: [...existingMembers, selfMember],
+            members: nextMembers,
             updatedAt: new Date().toISOString(),
           };
           applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+          // Persist the new member so other players see them (pullRemote picks
+          // it up within ~15s on their devices).
+          const remoteDocId = String(squadData.teamId || snapshot.docs[0].id || '').trim();
+          await writeSquadMembersToFirestore(remoteDocId, nextMembers);
           trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code });
           return nextState;
         }
@@ -1301,7 +1394,7 @@ export default function App() {
     }
 
     // Local fallback: create a squad with the entered code (demo mode)
-    const selfMember = buildMemberFromProfile(userProfile, 'You');
+    const selfMember = buildMemberFromProfile(userProfile, 'You', await getSquadMemberId());
     const nextState = {
       ...createDefaultSquadSync(),
       teamId: `team-${Date.now()}`,
@@ -1313,6 +1406,48 @@ export default function App() {
     applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
     trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code, offline: true });
     return nextState;
+  };
+
+  // Squad challenge: post the finished quiz score to the active squad's
+  // leaderboard, locally and in Firestore.
+  const postSquadChallengeScore = async ({ score = 0, total = 0 } = {}) => {
+    const teamId = String(squadSync?.teamId || '').trim();
+    const memberId = await getSquadMemberId();
+    if (!teamId || !memberId) return false;
+    const gained = Math.max(0, Math.round(Number(score) || 0));
+    const totalQ = Math.max(1, Math.round(Number(total) || 0));
+    const prevMembers = Array.isArray(squadSync?.members) ? squadSync.members : [];
+    const hasSelf = prevMembers.some((m) => String(m?.id || '') === memberId);
+    const nextMembers = (hasSelf ? prevMembers : [...prevMembers]).map((m) => {
+      if (String(m?.id || '') !== memberId) return m;
+      const prevCompleted = Number(m.completed || 0);
+      const completed = prevCompleted + 1;
+      const accuracy = Math.round(
+        ((Number(m.accuracy || 0) * prevCompleted) + ((gained / totalQ) * 100)) / completed
+      );
+      return {
+        ...m,
+        points: Number(m.points || 0) + gained,
+        completed,
+        accuracy,
+      };
+    });
+    const finalMembers = hasSelf
+      ? nextMembers
+      : [...nextMembers, {
+          ...buildMemberFromProfile(userProfile, 'You', memberId),
+          points: gained,
+          completed: 1,
+          accuracy: Math.round((gained / totalQ) * 100),
+        }];
+    applySquadMutation((prev) => ({ ...prev, members: finalMembers }), ['members']);
+    trackAppEvent(APP_EVENT_NAMES.TEAM_CHALLENGE_COMPLETED || 'team_challenge_completed', {
+      quiz_type: 'squad_challenge',
+      score: gained,
+      total: totalQ,
+    });
+    await writeSquadMembersToFirestore(teamId, finalMembers);
+    return true;
   };
 
   const updateSquadWeeklyGoal = (patch = {}) => {
@@ -2493,6 +2628,11 @@ export default function App() {
     }
   };
 
+  // Closed-beta lock screen (web builds only). Rendered after all hooks.
+  if (!betaGatePassed) {
+    return <BetaGate onUnlock={() => setBetaGatePassed(true)} />;
+  }
+
   return (
     <HapticProvider>
       <AppDataContext.Provider
@@ -2530,6 +2670,7 @@ export default function App() {
           switchSquad,
           leaveSquad,
           joinSquad,
+          postSquadChallengeScore,
           refreshSquadInviteCode,
           updateSquadWeeklyGoal,
           updateSquadChallengeProgress,

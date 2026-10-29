@@ -7,6 +7,11 @@ export const MASTERY_MAP_STORAGE_KEY = 'civics.masteryMap.v1';
 export const USER_PROFILE_STORAGE_KEY = 'civics.userProfile.v1';
 export const SQUAD_SYNC_STORAGE_KEY = 'civics.squadSync.v1';
 export const SQUAD_LIST_STORAGE_KEY = 'civics.squadList.v1';
+export const SQUAD_MEMBER_ID_KEY = 'civics.squad.memberId.v1';
+// Closed-beta web gate: fixed code, soft gate only (client-side, keeps casual
+// visitors out; it is not real security). Web-only, skipped on localhost.
+export const BETA_GATE_CODE = '1234';
+export const BETA_GATE_STORAGE_KEY = 'civic.betaGate.v1';
 export const RECOVERY_CAMPAIGN_STORAGE_PREFIX = 'civics.recoveryCampaign.v1';
 export const ALL_TOPICS_VALUE = '__all_topics__';
 export const ALL_SUBTOPICS_VALUE = '__all_subtopics__';

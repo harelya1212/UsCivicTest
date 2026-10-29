@@ -33,6 +33,7 @@ function FamilyScreen({ navigation }) {
     leaveSquad,
     joinSquad,
     refreshSquadInviteCode,
+    refreshSquadFromRemote,
     testDetails,
     userProfile,
   } = useContext(AppDataContext);
@@ -234,11 +235,8 @@ function FamilyScreen({ navigation }) {
         <Text style={styles.sectionTitle}>🏆 Leaderboard</Text>
         <TouchableOpacity
           onPress={() => {
-            // Manual refresh: re-fetch from Firestore if available
-            if (typeof refreshSquadInviteCode === 'function') {
-              // Trigger a re-render by refreshing the invite code display
-              // The actual leaderboard sync happens via App.js pullRemote interval
-            }
+            // Manual refresh: pull the latest squad state from Firestore.
+            refreshSquadFromRemote?.().catch(() => {});
           }}
           style={{ padding: 8 }}
         >

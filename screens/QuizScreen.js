@@ -49,6 +49,7 @@ function QuizScreen({ route, navigation }) {
     maybeShowInterstitial,
     recordMasterySession,
     trackAppEvent,
+    postSquadChallengeScore,
     reportFocusInteraction,
     activateFocusShieldRewarded,
     adRuntime,
@@ -705,6 +706,11 @@ function QuizScreen({ route, navigation }) {
       const weak = weakAreaEstimator(history);
       recordMasterySession(history, type);
       clearPausedSession();
+      // Squad challenge: post the score to the squad leaderboard (no await -
+      // the function handles its own errors and must not delay navigation).
+      if (route.params?.squadChallenge) {
+        postSquadChallengeScore?.({ score, total: pool.length });
+      }
       navigation.replace('Review', {
         score,
         total: pool.length,
