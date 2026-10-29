@@ -57,7 +57,7 @@ function formatCountdown(ms) {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-export default function DailyChallengeCard({ onPress, style }) {
+export default function DailyChallengeCard({ onPress, style, noSquad = false }) {
   const [done, setDone] = useState(false);
   const [remaining, setRemaining] = useState(msUntilMidnight());
 
@@ -91,13 +91,15 @@ export default function DailyChallengeCard({ onPress, style }) {
         </View>
         <View style={styles.textWrap}>
           <Text style={styles.title}>
-            {done ? "Today's challenge done!" : "Today's challenge"}
+            {done ? "Today's challenge done!" : noSquad ? 'Challenge awaits' : "Today's challenge"}
           </Text>
           <Text style={styles.sub}>
             {done
               ? 'Come back tomorrow for a new one.'
-              : '10 questions. Beat your squad. New challenge in '}
-            {!done && <Text style={styles.countdown}>{formatCountdown(remaining)}</Text>}
+              : noSquad
+                ? 'Create a squad to compete daily.'
+                : '10 questions. Beat your squad. New challenge in '}
+            {!done && !noSquad && <Text style={styles.countdown}>{formatCountdown(remaining)}</Text>}
           </Text>
         </View>
         {!done && (

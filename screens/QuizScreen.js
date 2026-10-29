@@ -721,6 +721,8 @@ function QuizScreen({ route, navigation }) {
           m.markDailyChallengeDone?.()
         ).catch(() => {});
       }
+      // Quiz streak: record today as an active day (async, never blocks)
+      import('../utils/streak').then((m) => m.recordQuizDay?.()).catch(() => {});
       navigation.replace('Review', {
         score,
         total: pool.length,

@@ -5,7 +5,7 @@
  * quick actions to the rest of the app. No experiment clutter.
  * Previous version backed up at screens/HomeScreen.old.js.
  */
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -36,7 +36,16 @@ function HomeScreen({ navigation }) {
     clearPausedSession,
     errorBank,
     trackAppEvent,
+    squadSync,
   } = useContext(AppDataContext);
+  const [quizStreak, setQuizStreak] = useState(0);
+  const inSquad = Boolean(squadSync?.teamId);
+
+  useEffect(() => {
+    let mounted = true;
+    getQuizStreak().then((v) => mounted && setQuizStreak(v));
+    return () => { mounted = false; };
+  }, []);
 
   const name = (userProfile?.name || testDetails?.name || '').split(' ')[0] || 'there';
 
@@ -180,20 +189,27 @@ function HomeScreen({ navigation }) {
           <Text style={styles.statLabel}>Accuracy</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.sessions}</Text>
-          <Text style={styles.statLabel}>Sessions</Text>
+          <Text style={styles.statValue}>🔥 {quizStreak}</Text>
+          <Text style={styles.statLabel}>Day streak</Text>
         </Card>
       </View>
 
       {/* Daily challenge - appointment mechanic */}
       <DailyChallengeCard
         style={{ marginBottom: spacing.md }}
-        onPress={() => navigation.navigate('Quiz', {
-          type: testDetails?.testType || 'naturalization128',
-          forceQuestionCount: 10,
-          squadChallenge: true,
-          dailyChallenge: true,
-        })}
+        noSquad={!inSquad}
+        onPress={() => {
+          if (!inSquad) {
+            navigation.navigate('MainTabs', { screen: 'FamilyTab' });
+            return;
+          }
+          navigation.navigate('Quiz', {
+            type: testDetails?.testType || 'naturalization128',
+            forceQuestionCount: 10,
+            squadChallenge: true,
+            dailyChallenge: true,
+          });
+        }}
       />
 
       {/* Paused session */}
