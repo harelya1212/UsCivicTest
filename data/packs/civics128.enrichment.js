@@ -127,7 +127,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'Your U.S. representative serves your congressional district in the House - look up your current one.',
   },
   'CIVICS_030': {
-    distractors: ['the Senate Majority Leader', 'the Vice President', 'the House Minority Leader'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'The Speaker of the House leads the House of Representatives - check uscis.gov for the current name.',
   },
   'CIVICS_031': {
@@ -163,7 +163,7 @@ export const CIVICS128_ENRICHMENT = {
     why: 'Check uscis.gov/citizenship/testupdates for the current President\'s name.',
   },
   'CIVICS_039': {
-    distractors: ['the First Lady', 'the Speaker of the House', 'the Secretary of Defense'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'Check uscis.gov/citizenship/testupdates for the current Vice President\'s name.',
   },
   'CIVICS_040': {

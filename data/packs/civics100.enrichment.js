@@ -118,11 +118,11 @@ export const CIVICS_100_ENRICHMENT = {
     why: 'Federal elections are held in November - presidential elections every four years.',
   },
   'CIVICS100_028': {
-    distractors: ['the Vice President', 'the Speaker of the House', 'the Chief Justice'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'This answer changes with elections - always check the current officeholder before your interview.',
   },
   'CIVICS100_029': {
-    distractors: ['the Secretary of State', 'the Speaker of the House', 'the Senate Majority Leader'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],,
     why: 'This answer changes with elections - always check the current officeholder before your interview.',
   },
   'CIVICS100_030': {
@@ -194,7 +194,7 @@ export const CIVICS_100_ENRICHMENT = {
     why: 'The President\'s party can change with elections - check before your interview.',
   },
   'CIVICS100_047': {
-    distractors: ['the Vice President', 'the Senate Majority Leader', 'the President Pro Tempore'],
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],,
     why: 'The Speaker leads the House of Representatives - check the current officeholder.',
   },
   'CIVICS100_048': {
