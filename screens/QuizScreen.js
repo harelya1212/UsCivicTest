@@ -152,6 +152,7 @@ function QuizScreen({ route, navigation }) {
   const questionShownAtRef = useRef(Date.now());
   // Wrong-answer question IDs for the end-of-session mistakes review.
   const mistakeIdsRef = useRef([]);
+  const quizCompletedRef = useRef(false);
   const sessionStartedAtRef = useRef(Date.now());
   const recentCorrectAnswerTsRef = useRef([]);
   const recentAllAnswerTsRef = useRef([]);
@@ -456,9 +457,11 @@ function QuizScreen({ route, navigation }) {
 
   useEffect(() => {
     if (current + 1 >= pool.length) return;
+    if (quizCompletedRef.current) return;
 
     // Keep a near-real-time checkpoint so resume is exact even after abrupt exits.
     const checkpointTimer = setTimeout(() => {
+      if (quizCompletedRef.current) return;
       savePausedSession(buildSessionSnapshot('checkpoint'));
     }, 500);
 
@@ -709,6 +712,7 @@ function QuizScreen({ route, navigation }) {
       // Quiz complete - interstitial will show after Review screen (per ad policy)
       const weak = weakAreaEstimator(history);
       recordMasterySession(history, type);
+      quizCompletedRef.current = true;
       clearPausedSession();
       // Squad challenge: post the score to the squad leaderboard (no await -
       // the function handles its own errors and must not delay navigation).
@@ -771,6 +775,8 @@ function QuizScreen({ route, navigation }) {
   const visualImageUrl = stateImageUrl || question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
   const fallbackImageUrl = question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
   const imageSrc = imageFallbackUsed ? fallbackImageUrl : visualImageUrl;
+  const handleImageErrorRef = useRef(null);
+  const imageLoadingRef = useRef(true);
   const handleImageError = () => {
     if (!imageFallbackUsed && visualImageUrl && visualImageUrl !== fallbackImageUrl) {
       setImageFallbackUsed(true);
@@ -778,12 +784,24 @@ function QuizScreen({ route, navigation }) {
       setImageHidden(true);
     }
   };
+  handleImageErrorRef.current = handleImageError;
 
   // Fresh image state for every new question (also covers resume).
+  // 8s timeout: slow/hung images fall back instead of spinning forever.
   useEffect(() => {
     setImageFallbackUsed(false);
     setImageHidden(false);
     setImageLoading(true);
+    imageLoadingRef.current = true;
+    const timeoutId = setTimeout(() => {
+      // Only fire if this question's image is still loading
+      if (imageLoadingRef.current) {
+        setImageLoading(false);
+        imageLoadingRef.current = false;
+        handleImageErrorRef.current?.();
+      }
+    }, 8000);
+    return () => clearTimeout(timeoutId);
   }, [currentQuestion?.id]);
 
   return (
@@ -1007,8 +1025,8 @@ function QuizScreen({ route, navigation }) {
                       source={{ uri: imageSrc }}
                       style={quizStyles.feedbackImage}
                       resizeMode="contain"
-                      onLoad={() => setImageLoading(false)}
-                      onError={handleImageError}
+                      onLoad={() => { imageLoadingRef.current = false; setImageLoading(false); }}
+                      onError={() => { imageLoadingRef.current = false; handleImageError(); }}
                     />
                   </TouchableOpacity>
                 </>

@@ -1385,12 +1385,18 @@ export default function App() {
     }
 
     // Try Firestore first (production), fall back to local
+    let firestoreReachable = false;
     try {
       const { db } = await import('./firebaseConfig.js');
       if (db) {
         const { collection, query, where, getDocs } = await import('firebase/firestore');
         const q = query(collection(db, 'squads'), where('inviteCode', '==', code));
         const snapshot = await getDocs(q);
+        firestoreReachable = true;
+        if (snapshot.empty) {
+          // Code not found in Firestore - don't create a phantom local squad
+          return null;
+        }
         if (!snapshot.empty) {
           const squadData = snapshot.docs[0].data();
           // Prevent duplicate member: check if this device already in members.
@@ -1433,19 +1439,23 @@ export default function App() {
       // Firestore unavailable, fall through to local
     }
 
-    // Local fallback: create a squad with the entered code (demo mode)
-    const selfMember = buildMemberFromProfile(userProfile, 'You', await getSquadMemberId());
-    const nextState = {
-      ...createDefaultSquadSync(),
-      teamId: `team-${Date.now()}`,
-      teamName: 'Joined Squad',
-      inviteCode: code,
-      members: [selfMember],
-      updatedAt: new Date().toISOString(),
-    };
-    applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
-    trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code, offline: true });
-    return nextState;
+    // Local fallback ONLY when Firestore was unreachable (offline demo mode).
+    // If Firestore answered and the code wasn't found, we already returned null above.
+    if (!firestoreReachable) {
+      const selfMember = buildMemberFromProfile(userProfile, 'You', await getSquadMemberId());
+      const nextState = {
+        ...createDefaultSquadSync(),
+        teamId: `team-${Date.now()}`,
+        teamName: 'Joined Squad',
+        inviteCode: code,
+        members: [selfMember],
+        updatedAt: new Date().toISOString(),
+      };
+      applySquadMutation(() => nextState, ['teamId', 'teamName', 'inviteCode', 'members']);
+      trackAppEvent(APP_EVENT_NAMES.TEAM_JOINED, { invite_code: code, offline: true });
+      return nextState;
+    }
+    return null;
   };
 
   // Squad challenge: post the finished quiz score to the active squad's

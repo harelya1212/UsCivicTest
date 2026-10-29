@@ -12,6 +12,7 @@ import {
   Alert,
   TextInput,
   Linking,
+  Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,7 +22,6 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
 import { colors, radius, spacing, typography, shadows } from '../theme';
-import { confirmAction } from '../utils/confirmAction';
 
 const TEST_TYPE_LABELS = {
   naturalization128: 'Citizenship Test (128)',
@@ -30,6 +30,7 @@ const TEST_TYPE_LABELS = {
 };
 
 function ProfileScreen({ navigation }) {
+  const [deleteStep, setDeleteStep] = useState(0); // 0=none, 1=confirm, 2=final
   const { testDetails, userProfile, updateUserProfile, masteryMap, resetAllData } =
     useContext(AppDataContext);
 
@@ -44,7 +45,7 @@ function ProfileScreen({ navigation }) {
     let answered = 0;
     ids.forEach((id) => {
       const q = byQ[id] || {};
-      answered += Number(q.asked || 0);
+      answered += Number(q.attempts || 0);
       correct += Number(q.correct || 0);
     });
     const totalQuestions = Number(masteryMap?.totalQuestions || 0);
@@ -125,29 +126,14 @@ function ProfileScreen({ navigation }) {
     handleAvatarPicked('');
   };
 
-  const handleDeleteAccount = () => {
-    // Web-safe: Alert.alert is a no-op on web, so use confirmAction
-    confirmAction({
-      title: 'Delete Account & Data',
-      message: 'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.',
-      confirmText: 'Delete Everything',
-      destructive: true,
-      onConfirm: () => {
-        confirmAction({
-          title: 'Are you sure?',
-          message: 'This is your last chance. All data will be permanently deleted.',
-          confirmText: 'Yes, Delete My Account',
-          destructive: true,
-          onConfirm: () => {
-            if (typeof resetAllData === 'function') {
-              resetAllData();
-            }
-            Alert.alert('Account Deleted', 'All your data has been removed.');
-            goBack();
-          },
-        });
-      },
-    });
+  const handleDeleteAccount = () => setDeleteStep(1);
+
+  const confirmDeleteAccount = () => {
+    if (typeof resetAllData === 'function') {
+      resetAllData();
+    }
+    setDeleteStep(0);
+    goBack();
   };
 
   const initial = (String(editableName || profileName || 'F').trim()[0] || 'F').toUpperCase();
@@ -272,6 +258,39 @@ function ProfileScreen({ navigation }) {
           onPress={handleDeleteAccount}
         />
       </Card>
+
+      {/* Delete confirmation - in-app modal (works on web, visible to testers) */}
+      <Modal
+        visible={deleteStep > 0}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteStep(0)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>
+              {deleteStep === 1 ? 'Delete Account & Data' : 'Are you sure?'}
+            </Text>
+            <Text style={styles.confirmMsg}>
+              {deleteStep === 1
+                ? 'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.'
+                : 'This is your last chance. All data will be permanently deleted.'}
+            </Text>
+            <View style={styles.confirmBtns}>
+              <Button title="Cancel" variant="secondary" onPress={() => setDeleteStep(0)} style={styles.halfBtn} />
+              {deleteStep === 1 ? (
+                <TouchableOpacity onPress={() => setDeleteStep(2)} style={[styles.halfBtn, styles.deleteConfirmBtn]} activeOpacity={0.8}>
+                  <Text style={styles.deleteConfirmText}>Delete Everything</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={confirmDeleteAccount} style={[styles.halfBtn, styles.deleteConfirmBtn]} activeOpacity={0.8}>
+                  <Text style={styles.deleteConfirmText}>Yes, Delete My Account</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -398,6 +417,49 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: typography.caption, color: colors.textSecondary, fontWeight: typography.medium },
   divider: { height: 1, backgroundColor: colors.borderLight, marginLeft: spacing.md },
   editBtn: { marginBottom: spacing.md },
+
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  confirmCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+  },
+  confirmTitle: {
+    fontSize: typography.title,
+    fontWeight: typography.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  confirmMsg: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  confirmBtns: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfBtn: { flex: 1, marginHorizontal: 4 },
+  deleteConfirmBtn: {
+    backgroundColor: colors.danger,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  deleteConfirmText: {
+    color: '#FFFFFF',
+    fontWeight: typography.bold,
+    fontSize: typography.body,
+  },
 });
 
 export default ProfileScreen;
