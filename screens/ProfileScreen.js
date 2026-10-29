@@ -38,6 +38,12 @@ function ProfileScreen({ navigation }) {
   const [editableName, setEditableName] = useState(profileName);
   const [avatarUri, setAvatarUri] = useState(userProfile?.avatarUri || '');
 
+  // Sync local edits when the profile is reset externally (e.g. Delete Account)
+  React.useEffect(() => {
+    setEditableName(userProfile?.name || testDetails?.name || 'Future Citizen');
+    setAvatarUri(userProfile?.avatarUri || '');
+  }, [userProfile, testDetails]);
+
   const stats = useMemo(() => {
     const byQ = masteryMap?.byQuestion || {};
     const ids = Object.keys(byQ);
@@ -128,9 +134,9 @@ function ProfileScreen({ navigation }) {
 
   const handleDeleteAccount = () => setDeleteStep(1);
 
-  const confirmDeleteAccount = () => {
+  const confirmDeleteAccount = async () => {
     if (typeof resetAllData === 'function') {
-      resetAllData();
+      await resetAllData();
     }
     setDeleteStep(0);
     goBack();
