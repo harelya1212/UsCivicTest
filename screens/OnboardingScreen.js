@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  hint: { fontSize: typography.small, color: colors.textTertiary, marginTop: spacing.sm },
+  hint: { fontSize: typography.small, color: colors.textSecondary, marginTop: spacing.sm },
 
   option: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   optionSelected: { borderColor: colors.primary, borderWidth: 2, backgroundColor: colors.primaryLight },

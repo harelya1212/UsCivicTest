@@ -206,7 +206,7 @@ function TabNavigator({ testDetails, onEditTestDetails }) {
           height: 64,
         },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: '#98A2B3',
+        tabBarInactiveTintColor: '#667085', // 4.97:1 on white - WCAG AA
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

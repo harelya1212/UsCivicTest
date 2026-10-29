@@ -1166,7 +1166,7 @@ const quizStyles = StyleSheet.create({
   },
   nextBtnText: { fontSize: typography.body, fontWeight: typography.bold, color: '#fff', marginRight: 6 },
 
-  helperText: { textAlign: 'center', fontSize: typography.caption, color: colors.textTertiary, marginTop: spacing.sm },
+  helperText: { textAlign: 'center', fontSize: typography.caption, color: colors.textSecondary, marginTop: spacing.sm },
 });
 
 export default QuizScreen;
