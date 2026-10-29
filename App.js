@@ -267,6 +267,7 @@ export default function App() {
   // Closed-beta web gate: unlocked immediately on native and on localhost;
   // on a hosted web build it waits for the beta code (persisted per browser).
   const [betaGatePassed, setBetaGatePassed] = useState(Platform.OS !== 'web');
+  const [webInterstitialVisible, setWebInterstitialVisible] = useState(false); // beta: show where interstitial ads appear
   const [testDetails, setTestDetails] = useState(null);
   const [errorBank, setErrorBank] = useState([]);
   const [pausedSession, setPausedSession] = useState(null);
@@ -2287,6 +2288,18 @@ export default function App() {
     // shown after the Review screen. No daily cap, no cadence skip, no low-score
     // block for quiz completions. The call site (ReviewScreen) ensures 1 per quiz.
     if (triggerName === 'quizComplete') {
+      // Beta web: show a visible placeholder so testers see where the ad appears
+      if (Platform.OS === 'web') {
+        setWebInterstitialVisible(true);
+        logOfferCapDecision({
+          channel: 'interstitial',
+          trigger: triggerName,
+          decision: 'allowed',
+          reason: 'quiz_complete_policy_web_placeholder',
+          segment: 'policy',
+        });
+        return true;
+      }
       try {
         await showInterstitialAd();
         logOfferCapDecision({
@@ -2832,6 +2845,32 @@ export default function App() {
         </Stack.Navigator>
         </NavigationContainer>
         <StatusBar style="light" />
+
+      {/* Web interstitial ad placeholder (beta only) */}
+      <Modal
+        visible={webInterstitialVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setWebInterstitialVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 32, alignItems: 'center', maxWidth: 340, width: '100%' }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#98A2B3', letterSpacing: 2, marginBottom: 16 }}>ADVERTISEMENT</Text>
+            <View style={{ width: '100%', height: 200, backgroundColor: '#F2F4F7', borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: '#D0D5DD', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#667085' }}>Interstitial Ad</Text>
+              <Text style={{ fontSize: 12, color: '#98A2B3', marginTop: 8, textAlign: 'center', paddingHorizontal: 16 }}>
+                Testers: an ad would appear here after each quiz. How does this timing feel?
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setWebInterstitialVisible(false)}
+              style={{ backgroundColor: '#1B2A4A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>Close Ad</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       </AppDataContext.Provider>
     </HapticProvider>
   );
