@@ -48,6 +48,7 @@ function OnboardingScreen({ navigation, route }) {
   const [squadName, setSquadName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [squadBusy, setSquadBusy] = useState(false);
+  const [squadError, setSquadError] = useState('');
   const [squadDone, setSquadDone] = useState(false);
   const [name, setName] = useState('');
   const [testType, setTestType] = useState(null);
@@ -108,19 +109,20 @@ function OnboardingScreen({ navigation, route }) {
   const handleJoinSquad = async () => {
     const code = joinCode.trim().toUpperCase();
     if (!code) {
-      Alert.alert('Enter a code', 'Ask your friend for their squad invite code.');
+      setSquadError('Enter a code - ask your friend for their squad invite code.');
       return;
     }
+    setSquadError('');
     setSquadBusy(true);
     try {
       const result = await joinSquad?.(code);
       if (result) {
         setSquadDone(true);
       } else {
-        Alert.alert('Code not found', 'Check the code and try again.');
+        setSquadError('Code not found. Check the code and try again.');
       }
     } catch (e) {
-      Alert.alert('Could not join', 'Please try again.');
+      setSquadError('Could not join. Please try again.');
     } finally {
       setSquadBusy(false);
     }
@@ -357,6 +359,9 @@ function OnboardingScreen({ navigation, route }) {
                 returnKeyType="done"
                 onSubmitEditing={handleJoinSquad}
               />
+              {squadError ? (
+                <Text style={styles.squadErrorText}>{squadError}</Text>
+              ) : null}
               <Button
                 title={squadBusy ? 'Joining...' : 'Join squad'}
                 onPress={handleJoinSquad}
@@ -521,6 +526,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.sm,
   },
+  squadErrorText: { color: colors.danger, fontSize: typography.caption, marginBottom: spacing.sm, fontWeight: typography.semibold },
   codeInput: {
     textTransform: 'uppercase',
     letterSpacing: 2,

@@ -44,6 +44,7 @@ function FamilyScreen({ navigation }) {
   const [showCreateNew, setShowCreateNew] = useState(false);
   const [newSquadName, setNewSquadName] = useState('');
   const [leaveTarget, setLeaveTarget] = useState(null);
+  const [joinError, setJoinError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
 
   const inSquad = Boolean(squadSync?.teamId);
@@ -64,13 +65,23 @@ function FamilyScreen({ navigation }) {
     setSquadName('');
   };
 
-  const handleJoin = () => {
-    if (!joinCode.trim()) {
-      Alert.alert('Enter code', 'Ask your friend for their squad invite code.');
+  const handleJoin = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code) {
+      setJoinError('Enter a code - ask your friend for their squad invite code.');
       return;
     }
-    joinSquad?.(joinCode.trim().toUpperCase());
-    setJoinCode('');
+    setJoinError('');
+    try {
+      const result = await joinSquad?.(code);
+      if (result) {
+        setJoinCode('');
+      } else {
+        setJoinError('Code not found. Check the code and try again.');
+      }
+    } catch (e) {
+      setJoinError('Could not join. Please try again.');
+    }
   };
 
   // Share template: the join link uses the app's deep-link scheme (works on
@@ -166,6 +177,9 @@ function FamilyScreen({ navigation }) {
                 />
                 <Button title="Join" onPress={handleJoin} style={styles.joinButton} />
               </View>
+              {joinError ? (
+                <Text style={styles.joinErrorText}>{joinError}</Text>
+              ) : null}
             </Card>
           </>
         ) : (
@@ -393,6 +407,7 @@ const styles = StyleSheet.create({
   heroSub: { fontSize: typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, paddingHorizontal: spacing.lg },
   bigButton: { marginBottom: spacing.md },
   joinCard: { marginBottom: spacing.md },
+  joinErrorText: { color: colors.danger, fontSize: typography.caption, marginTop: spacing.sm, fontWeight: typography.semibold },
   joinTitle: { fontSize: typography.body, fontWeight: typography.semibold, color: colors.text, marginBottom: spacing.sm },
   joinRow: { flexDirection: 'row', gap: spacing.sm },
   codeInput: {
