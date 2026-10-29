@@ -21,6 +21,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
 import { colors, radius, spacing, typography, shadows } from '../theme';
+import { confirmAction } from '../utils/confirmAction';
 
 const TEST_TYPE_LABELS = {
   naturalization128: 'Citizenship Test (128)',
@@ -125,37 +126,28 @@ function ProfileScreen({ navigation }) {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account & Data',
-      'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Are you sure?',
-              'This is your last chance. All data will be permanently deleted.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Yes, Delete My Account',
-                  style: 'destructive',
-                  onPress: () => {
-                    if (typeof resetAllData === 'function') {
-                      resetAllData();
-                    }
-                    Alert.alert('Account Deleted', 'All your data has been removed.');
-                    goBack();
-                  },
-                },
-              ],
-            );
+    // Web-safe: Alert.alert is a no-op on web, so use confirmAction
+    confirmAction({
+      title: 'Delete Account & Data',
+      message: 'This will permanently erase all your progress, Squad history, and profile data. This cannot be undone.',
+      confirmText: 'Delete Everything',
+      destructive: true,
+      onConfirm: () => {
+        confirmAction({
+          title: 'Are you sure?',
+          message: 'This is your last chance. All data will be permanently deleted.',
+          confirmText: 'Yes, Delete My Account',
+          destructive: true,
+          onConfirm: () => {
+            if (typeof resetAllData === 'function') {
+              resetAllData();
+            }
+            Alert.alert('Account Deleted', 'All your data has been removed.');
+            goBack();
           },
-        },
-      ],
-    );
+        });
+      },
+    });
   };
 
   const initial = (String(editableName || profileName || 'F').trim()[0] || 'F').toUpperCase();

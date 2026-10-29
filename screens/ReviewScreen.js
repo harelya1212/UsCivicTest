@@ -316,20 +316,30 @@ function ReviewScreen({ route, navigation }) {
       inviteCode: squadInviteCode,
       userName: shareUserName,
     });
-    try {
-      const result = await Share.share({ message, title: 'Civics Coach Challenge' });
-      // Web fallback: Share.share may resolve without actually sharing
-      if (result?.action === Share.dismissedAction && typeof navigator !== 'undefined' && navigator.clipboard) {
+    const copyToClipboard = async () => {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(message);
         Alert.alert('Copied!', 'Your challenge message is copied - paste it anywhere.');
+        return true;
+      }
+      return false;
+    };
+    try {
+      const result = await Share.share({ message, title: 'Civics Coach Challenge' });
+      // If the native share sheet actually shared, we're done
+      if (result?.action === Share.sharedAction) {
+        trackAppEvent?.(APP_EVENT_NAMES.SCORE_SHARED || 'score_shared', { percentage });
+        return;
+      }
+      // Otherwise (dismissed, or web where Share is a no-op) fall back to clipboard
+      if (!(await copyToClipboard())) {
+        Alert.alert('Share this challenge', message);
       }
       trackAppEvent?.(APP_EVENT_NAMES.SCORE_SHARED || 'score_shared', { percentage });
     } catch (err) {
-      // Last resort: copy to clipboard
       try {
-        if (typeof navigator !== 'undefined' && navigator.clipboard) {
-          await navigator.clipboard.writeText(message);
-          Alert.alert('Copied!', 'Your challenge message is copied - paste it anywhere.');
+        if (!(await copyToClipboard())) {
+          Alert.alert('Share this challenge', message);
         }
       } catch {}
       console.error(err);
