@@ -436,11 +436,11 @@ export function getVisualImage(question, answer, userState) {
 
   // Declaration of Independence
   if (q.includes('declaration') || q.includes('independence') || q.includes('britain') || q.includes('british'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Declaration_of_Independence_rotunda.jpg?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_Declaration_of_Independence.jpg?width=480';
 
   // President / White House / Executive branch
   if (q.includes('president') || q.includes('white house') || q.includes('executive'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/White_House_-_2006_-_during_snow.JPG?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/White_House_north_and_south_sides.jpg?width=480';
 
   // Congress / Capitol / Legislative (incl. senators: "senators" does not contain "senate")
   if (q.includes('congress') || q.includes('senate') || q.includes('senator') || q.includes('representative') || q.includes('legislative') || q.includes('capitol'))
@@ -484,19 +484,19 @@ export function getVisualImage(question, answer, userState) {
 
   // Voting / Elections / Democracy
   if (q.includes('vot') || q.includes('elect') || q.includes('ballot') || q.includes('democrat'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Ballot_box_using_hand.jpg?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Wooden_ballot_box_-_Smithsonian.jpg?width=480';
 
   // World War I or II
   if (q.includes('world war') || q.includes('wwi') || q.includes('wwii') || q.includes('war ii') || q.includes('war i '))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Raising_the_Flag_on_Iwo_Jima,_larger_-_edit2.jpg?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Raising_the_Flag_on_Iwo_Jima,_larger_-_edit1.jpg?width=480';
 
   // Native Americans / American Indians
   if (q.includes('native') || q.includes('american indian') || q.includes('indigenous'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/CrowFairMontana.jpg?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Entry_Omaha.jpg?width=480';
 
   // 13 colonies
   if (q.includes('coloni') || q.includes('thirteen') || q.includes('13'))
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_of_America_-_Consolidation_Map.png?width=480';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_Thirteen_Colonies_1775.svg?width=480';
 
   // Washington D.C. geography
   if (q.includes('washington, d.c.') || q.includes('capital city') || q.includes('district of columbia'))
