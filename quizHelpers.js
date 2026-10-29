@@ -378,19 +378,19 @@ export function getVisualImage(question, answer) {
 
   // U.S. Constitution / supreme law
   if (q.includes('constitution') || q.includes('supreme law') || q.includes('amendment') || q.includes('bill of rights'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Constitution_of_the_United_States%2C_page_1.jpg/480px-Constitution_of_the_United_States%2C_page_1.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480';
 
   // Declaration of Independence
   if (q.includes('declaration') || q.includes('independence') || q.includes('britain') || q.includes('british'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/US_Declaration_of_Independence_rotunda.jpg/480px-US_Declaration_of_Independence_rotunda.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Declaration_of_Independence_rotunda.jpg?width=480';
 
   // President / White House / Executive branch
   if (q.includes('president') || q.includes('white house') || q.includes('executive'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/White_House_-_2006_-_during_snow.JPG/480px-White_House_-_2006_-_during_snow.JPG';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/White_House_-_2006_-_during_snow.JPG?width=480';
 
   // Congress / Capitol / Legislative (incl. senators: "senators" does not contain "senate")
   if (q.includes('congress') || q.includes('senate') || q.includes('senator') || q.includes('representative') || q.includes('legislative') || q.includes('capitol'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480';
 
   // Governor (dynamic state question): a real state capitol building as the
   // photographic anchor, not the generic flag.
@@ -401,51 +401,51 @@ export function getVisualImage(question, answer) {
   // branch: the answer "Washington, D.C." contains "washington" and would
   // otherwise win the George Washington portrait.
   if (q.includes('capital of the united') || q.includes('capital of the u.s'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/US_Capitol_east_side.JPG/480px-US_Capitol_east_side.JPG';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_east_side.JPG?width=480';
 
   // Supreme Court / Judicial
   if (q.includes('supreme court') || q.includes('judicial') || q.includes('judge'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/US_Supreme_Court_Building.jpg/480px-US_Supreme_Court_Building.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Supreme_Court_Building.jpg?width=480';
 
   // Abraham Lincoln / Civil War
   if (q.includes('lincoln') || q.includes('civil war') || q.includes('slavery') || q.includes('emancipation'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/480px-Abraham_Lincoln_O-77_matte_collodion_print.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Abraham_Lincoln_O-77_matte_collodion_print.jpg?width=480';
 
   // George Washington
   if (q.includes('washington') || q.includes('first president'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg/480px-Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Gilbert_Stuart_Williamstown_Portrait_of_George_Washington.jpg?width=480';
 
   // Martin Luther King / Civil Rights
   if (q.includes('martin luther king') || q.includes('mlk') || q.includes('civil rights'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Martin_Luther_King%2C_Jr..jpg/480px-Martin_Luther_King%2C_Jr..jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Martin_Luther_King,_Jr..jpg?width=480';
 
   // Statue of Liberty / Immigration / Freedom
   if (q.includes('statue of liberty') || q.includes('immigration') || q.includes('freedom') || q.includes('liberty'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Statue_of_Liberty_7.jpg/480px-Statue_of_Liberty_7.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Statue_of_Liberty_7.jpg?width=480';
 
   // U.S. Flag / National Anthem
   if (q.includes('flag') || q.includes('anthem') || q.includes('star-spangled') || q.includes('stripes'))
-    return 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/480px-Flag_of_the_United_States.svg.png';
+    return 'https://en.wikipedia.org/wiki/Special:FilePath/Flag_of_the_United_States.svg?width=480';
 
   // Voting / Elections / Democracy
   if (q.includes('vot') || q.includes('elect') || q.includes('ballot') || q.includes('democrat'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Ballot_box_using_hand.jpg/480px-Ballot_box_using_hand.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Ballot_box_using_hand.jpg?width=480';
 
   // World War I or II
   if (q.includes('world war') || q.includes('wwi') || q.includes('wwii') || q.includes('war ii') || q.includes('war i '))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Raising_the_Flag_on_Iwo_Jima%2C_larger_-_edit2.jpg/480px-Raising_the_Flag_on_Iwo_Jima%2C_larger_-_edit2.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/Raising_the_Flag_on_Iwo_Jima,_larger_-_edit2.jpg?width=480';
 
   // Native Americans / American Indians
   if (q.includes('native') || q.includes('american indian') || q.includes('indigenous'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/CrowFairMontana.jpg/480px-CrowFairMontana.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/CrowFairMontana.jpg?width=480';
 
   // 13 colonies
   if (q.includes('coloni') || q.includes('thirteen') || q.includes('13'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/United_States_of_America_-_Consolidation_Map.png/480px-United_States_of_America_-_Consolidation_Map.png';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_of_America_-_Consolidation_Map.png?width=480';
 
   // Washington D.C. geography
   if (q.includes('washington, d.c.') || q.includes('capital city') || q.includes('district of columbia'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/US_Capitol_east_side.JPG/480px-US_Capitol_east_side.JPG';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_east_side.JPG?width=480';
 
   // State capital (dynamic): a real state capitol building
   if (q.includes('capital of'))
@@ -453,10 +453,10 @@ export function getVisualImage(question, answer) {
 
   // Republic / government form
   if (q.includes('republic') || q.includes('form of government') || q.includes('self-government'))
-    return 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/US_Capitol_Building_at_night_Jan_2006.jpg/480px-US_Capitol_Building_at_night_Jan_2006.jpg';
+    return 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480';
 
   // Default: American flag
-  return 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/480px-Flag_of_the_United_States.svg.png';
+  return 'https://en.wikipedia.org/wiki/Special:FilePath/Flag_of_the_United_States.svg?width=480';
 }
 
 /**
