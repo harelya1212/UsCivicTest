@@ -2859,7 +2859,7 @@ export default function App() {
             <View style={{ width: '100%', height: 200, backgroundColor: '#F2F4F7', borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: '#D0D5DD', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: '#667085' }}>Interstitial Ad</Text>
               <Text style={{ fontSize: 12, color: '#98A2B3', marginTop: 8, textAlign: 'center', paddingHorizontal: 16 }}>
-                Testers: an ad would appear here after each quiz. How does this timing feel?
+                Testers: an ad appears here between quizzes. How does this timing feel?
               </Text>
             </View>
             <TouchableOpacity

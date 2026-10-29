@@ -433,7 +433,8 @@ function ReviewScreen({ route, navigation }) {
     trackAppEvent?.(APP_EVENT_NAMES.QUIZ_RESTARTED_FROM_REVIEW || 'quiz_restarted_from_review', {
       quiz_type: type,
     });
-    navigation.replace('Quiz', { type });
+    // Preserve the session length (don't jump to a full 128Q test)
+    navigation.replace('Quiz', { type, questionCount: total });
   };
 
   // ---- Presentation helpers ----

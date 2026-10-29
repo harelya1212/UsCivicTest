@@ -89,9 +89,11 @@ function QuizScreen({ route, navigation }) {
       ? filteredPool
       : fullPool;
   const forcedQuestionCount = Number(route?.params?.forceQuestionCount || 0);
-  const sessionQuestionCount = (!route.params?.fullTest && testDetails?.studyPlan?.questionsPerDay)
-    ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
-    : effectivePool.length;
+  const sessionQuestionCount = route.params?.questionCount
+    ? Math.min(effectivePool.length, Math.max(1, route.params.questionCount))
+    : (!route.params?.fullTest && testDetails?.studyPlan?.questionsPerDay)
+      ? Math.min(effectivePool.length, Math.max(4, testDetails.studyPlan.questionsPerDay))
+      : effectivePool.length;
   const shouldResumeSession = Boolean(
     route?.params?.resumeSession &&
     pausedSession &&
@@ -800,7 +802,7 @@ function QuizScreen({ route, navigation }) {
         imageLoadingRef.current = false;
         handleImageErrorRef.current?.();
       }
-    }, 8000);
+    }, 4000);
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.id]);
 
