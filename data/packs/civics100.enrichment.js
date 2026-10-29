@@ -122,7 +122,7 @@ export const CIVICS_100_ENRICHMENT = {
     why: 'This answer changes with elections - always check the current officeholder before your interview.',
   },
   'CIVICS100_029': {
-    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],,
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'This answer changes with elections - always check the current officeholder before your interview.',
   },
   'CIVICS100_030': {
@@ -194,7 +194,7 @@ export const CIVICS_100_ENRICHMENT = {
     why: 'The President\'s party can change with elections - check before your interview.',
   },
   'CIVICS100_047': {
-    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],,
+    distractors: ['LeBron James', 'Tom Hanks', 'Taylor Swift'],
     why: 'The Speaker leads the House of Representatives - check the current officeholder.',
   },
   'CIVICS100_048': {
