@@ -6,7 +6,7 @@
 <title>US Civic Test - Beta Tester Instructions</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: #F6F7FB; color: #1B2A4A; margin: 0; padding: 16px; }
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; background: #F9F6F1; color: #1B2A4A; margin: 0; padding: 16px; }
   .wrap { max-width: 680px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
   h1 { font-size: 26px; margin: 0 0 4px; }
   h1 span { color: #D99A00; }
@@ -19,7 +19,8 @@
   .cta:active { background: #2A4365; }
   .warn { background: #FEF6E0; border: 1px solid #F5B301; border-radius: 10px; padding: 12px 16px; }
   .dont { background: #FDECEC; border: 1px solid #E63946; border-radius: 10px; padding: 12px 16px; }
-  code { background: #E8ECF4; padding: 2px 6px; border-radius: 6px; font-size: 15px; }
+  .new { background: #E6F9F0; border: 1px solid #12B76A; border-radius: 10px; padding: 12px 16px; }
+  code { background: #EDE8DE; padding: 2px 6px; border-radius: 6px; font-size: 15px; }
   .small { font-size: 14px; color: #5b6478; }
   .lang { display: inline-block; margin-bottom: 12px; color: #1B2A4A; }
 </style>
@@ -41,52 +42,63 @@
     <li>If something looks broken - take a screenshot. It helps more than any description.</li>
   </ul>
 
+  <div class="new">
+    <p style="margin:0"><b>New in this version:</b> daily challenge, day streak counter, share card with squad code, join-a-squad during onboarding, and ad placeholders (see below).</p>
+  </div>
+
   <h2>What is in the app - screen by screen</h2>
 
   <h3>Home - the main screen</h3>
-  <p>Here you see your stats (how many questions you answered, accuracy, number of sessions, weak spots), a quick practice button, continuing where you left off, and links to the Mastery Map and the Mock Interview.</p>
+  <p>Here you see your stats (how many questions you answered, accuracy, day streak), a quick practice button, the <b>daily challenge</b> (10 new questions every day with a countdown), continuing where you left off, and links to weak spots, the Mastery Map, and your squad.</p>
 
   <h3>Practice Setup</h3>
-  <p>Pick a test type (Citizenship 128 questions, Citizenship 100 questions, or Arizona High School), a topic and subtopic, and a session length. You can mix everything or focus on one topic.</p>
+  <p>Pick a test type (Citizenship 128 questions, Citizenship 100 questions, or High School), a topic and subtopic, and a session length. You can mix everything or focus on one topic.</p>
 
   <h3>Quiz</h3>
-  <p>US civics questions with 4 answers each. After every answer you get immediate feedback with an explanation, and sometimes a picture or a memory trick. Tapping a picture enlarges it to fullscreen. At the end of a session you reach the Review screen.</p>
+  <p>US civics questions with 4 answers each. After every answer you get immediate feedback with an explanation, and sometimes a picture or a memory trick. Tapping a picture enlarges it to fullscreen. <b>You can swipe left to go to the next question.</b> At the end of a session you reach the Review screen.</p>
 
   <h3>Review</h3>
-  <p>Your score, correct and wrong answers, and your weak spots - the topics worth revisiting.</p>
+  <p>Your score, correct and wrong answers, your weak spots, a <b>share card</b> with your squad code (screenshot it and share with friends), and a "Review my mistakes" button to retry what you missed.</p>
 
-  <h3>Squad (Family/Squad) - the trophy tab</h3>
-  <p>Create a group (Squad), get an invite code, share it with friends, and see a leaderboard. You can create several squads (for example one for family and one for friends) and switch between them. <b>Squads sync between devices</b> - two testers who join the same invite code will see each other on the leaderboard.</p>
+  <h3>Squad - the trophy tab</h3>
+  <p>Create a group (Squad), get an invite code, share it with friends, and see a leaderboard. You can create several squads (for example one for family and one for friends) and switch between them. <b>Squads sync between devices</b> - two testers who join the same invite code will see each other on the leaderboard. You can also join a squad right from the onboarding screens.</p>
+
+  <h3>Weak Spots</h3>
+  <p>The questions you struggle with most - the app collects them automatically so you can practice just those.</p>
 
   <h3>Mastery Map</h3>
   <p>A map by topic showing where you are strong and where you are weak, with overall accuracy and per-topic accuracy.</p>
 
-  <h3>Mock Interview</h3>
-  <p>A simulation of the test interview: spoken questions, your answers, and a score at the end with follow-up questions.</p>
+  <h3>Profile</h3>
+  <p>Your details, statistics, and editing your test details (test type, state, date). Note: changing your state changes the answers to state-specific questions (governor, senators, capital) in your next quizzes. There is also a delete-account option that wipes all your data.</p>
 
-  <h3>Case Progress</h3>
-  <p>Tracking for the stages of your immigration case: case type, current stage, document checklist, notes, and weekly reminders.</p>
-
-  <h3>Profile / Progress</h3>
-  <p>Your details, statistics, and editing your test details (test type, state, date). Note: changing your state changes the answers to state-specific questions (governor, senators, capital) in your next quizzes.</p>
+  <h2>Ads - we want your opinion</h2>
+  <div class="warn">
+    <p>In this beta you will see <b>placeholders</b> instead of real ads:</p>
+    <ul>
+      <li><b>Banner</b> at the bottom of the Home screen - how does the placement feel? Intrusive or fine?</li>
+      <li><b>Full-screen ad</b> after each quiz - how does the timing feel? Too early, fine, or too late?</li>
+    </ul>
+    <p style="margin-bottom:0">Tell us what you think about the placement and timing - it will help us tune the ad experience for the final version.</p>
+  </div>
 
   <h2>What to test</h2>
   <ol>
     <li>A 10-question session from start to Review - do the answers and explanations make sense?</li>
     <li>Do the distractors (the wrong answers) make sense, or are there weird, unrelated options?</li>
+    <li>Try the <b>daily challenge</b> - does the countdown work? Does it reset at midnight?</li>
     <li>Create a squad, share the code, join with another tester's code, and check the leaderboard.</li>
-    <li>Create a second squad and switch between squads.</li>
-    <li>Try one mock interview, and the Mastery Map after a few sessions.</li>
+    <li>Try the <b>Share</b> button on the Review screen - does a dialog open? Is the message copied?</li>
+    <li>Deliberately miss a few questions and check <b>weak spots</b> and "Review my mistakes".</li>
     <li>Close the browser, open it again - are your name and progress still saved?</li>
+    <li>Change your state in the profile (e.g. to Texas) - do state-specific questions change accordingly?</li>
   </ol>
 
   <h2>What does NOT work in this version - do not try</h2>
   <div class="dont">
     <ul>
-      <li><b>The Admin tab (shield icon) - do not touch.</b> It is an internal tool for the developer, not part of the test.</li>
-      <li><b>Real ads</b> - in the web version only placeholders are shown, not real ads.</li>
+      <li><b>Real ads</b> - only placeholders are shown (see above).</li>
       <li><b>Push notifications</b> - they do not arrive in the web version.</li>
-      <li><b>Printing a certificate</b> from the Case Progress screen (Export PDF / Print) - does not work in the web version.</li>
       <li><b>Store download links</b> in share messages - the app is not in the stores yet, so those links lead nowhere.</li>
       <li><b>Payments</b> - there is nothing to buy. The app is completely free.</li>
     </ul>
