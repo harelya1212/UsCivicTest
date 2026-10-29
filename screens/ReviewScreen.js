@@ -13,6 +13,8 @@ import {
   StyleSheet,
   Share,
   Alert,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -70,6 +72,7 @@ function ReviewScreen({ route, navigation }) {
   const reviewBonusVariant = reviewBonusVariantResult.value;
   const reviewWeakVariant = reviewWeakVariantResult.value;
   const [showWeakScoreUpsell, setShowWeakScoreUpsell] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState(''); // in-app share feedback (web-safe)
   const [recoveryCampaign, setRecoveryCampaign] = useState({
     completedSessions: 0,
     lastTopic: null,
@@ -319,7 +322,7 @@ function ReviewScreen({ route, navigation }) {
     const copyToClipboard = async () => {
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         await navigator.clipboard.writeText(message);
-        Alert.alert('Copied!', 'Your challenge message is copied - paste it anywhere.');
+        setShareFeedback('Copied! Your challenge message is copied - paste it anywhere.');
         return true;
       }
       return false;
@@ -333,13 +336,13 @@ function ReviewScreen({ route, navigation }) {
       }
       // Otherwise (dismissed, or web where Share is a no-op) fall back to clipboard
       if (!(await copyToClipboard())) {
-        Alert.alert('Share this challenge', message);
+        setShareFeedback(message);
       }
       trackAppEvent?.(APP_EVENT_NAMES.SCORE_SHARED || 'score_shared', { percentage });
     } catch (err) {
       try {
         if (!(await copyToClipboard())) {
-          Alert.alert('Share this challenge', message);
+          setShareFeedback(message);
         }
       } catch {}
       console.error(err);
@@ -634,6 +637,21 @@ function ReviewScreen({ route, navigation }) {
           style={styles.halfButton}
         />
       </View>
+      {/* Share feedback - in-app modal (web-safe, replaces Alert.alert) */}
+      <Modal
+        visible={!!shareFeedback}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShareFeedback('')}
+      >
+        <View style={styles.shareOverlay}>
+          <View style={styles.shareCard}>
+            <Text style={styles.shareTitle}>Share this challenge</Text>
+            <Text style={styles.shareMsg}>{shareFeedback}</Text>
+            <Button title="Got it" onPress={() => setShareFeedback('')} />
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -709,6 +727,33 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', marginHorizontal: -4 },
   halfButton: { flex: 1, marginHorizontal: 4 },
   shareCard: { marginBottom: spacing.md, marginTop: spacing.sm },
+
+  shareOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  shareCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  shareTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#101828',
+    marginBottom: 12,
+  },
+  shareMsg: {
+    fontSize: 16,
+    color: '#475467',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
 });
 
 export default ReviewScreen;
