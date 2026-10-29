@@ -5,7 +5,7 @@
  * Same data collection + navigation contract as before:
  * onComplete({ name, testType, state, testDate }) on the final step.
  */
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -28,19 +28,27 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { usStates } from '../constants';
 import { getStateCodeAndFlag } from '../utils/stateFlags';
 import { colors, radius, spacing, typography, shadows } from '../theme';
+import { AppDataContext } from '../context/AppDataContext';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const STEP_META = {
   1: { icon: '👋', bg: colors.primaryLight, title: 'What should we call you?', subtitle: "This is how we'll cheer you on." },
   2: { icon: '🎯', bg: colors.goldLight, title: 'Which test are you taking?', subtitle: "We'll build your practice around it." },
   3: { icon: '📍', bg: colors.infoLight, title: 'Which state are you in?', subtitle: 'Some answers depend on your state.' },
   4: { icon: '📅', bg: colors.successLight, title: "When's test day?", subtitle: "We'll count down with you." },
+  5: { icon: '👥', bg: colors.primaryLight, title: 'Learn together, win together', subtitle: 'Study squads beat solo study - challenge friends daily.' },
 };
 
 function OnboardingScreen({ navigation, route }) {
   const onComplete = route?.params?.onComplete;
-  const [step, setStep] = useState(1); // 1=name, 2=testType, 3=state, 4=date
+  const [step, setStep] = useState(1); // 1=name, 2=testType, 3=state, 4=date, 5=squad
+  const { createNewSquad, joinSquad } = useContext(AppDataContext) || {};
+  const [squadMode, setSquadMode] = useState(null); // 'create' | 'join' | null
+  const [squadName, setSquadName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [squadBusy, setSquadBusy] = useState(false);
+  const [squadDone, setSquadDone] = useState(false);
   const [name, setName] = useState('');
   const [testType, setTestType] = useState(null);
   const [selectedState, setSelectedState] = useState('');
@@ -72,11 +80,49 @@ function OnboardingScreen({ navigation, route }) {
       return;
     }
 
-    if (step === 4) {
-      // Complete onboarding
+    if (step === 5) {
+      // Squad is optional - complete onboarding either way
       onComplete({ name, testType, state: selectedState, testDate: testDate.toLocaleDateString() });
     } else {
       setStep(step + 1);
+    }
+  };
+
+  const handleCreateSquad = async () => {
+    const trimmed = squadName.trim();
+    if (!trimmed) {
+      Alert.alert('Name your squad', 'Give your squad a name first.');
+      return;
+    }
+    setSquadBusy(true);
+    try {
+      await createNewSquad?.(trimmed);
+      setSquadDone(true);
+    } catch (e) {
+      Alert.alert('Could not create squad', 'Please try again.');
+    } finally {
+      setSquadBusy(false);
+    }
+  };
+
+  const handleJoinSquad = async () => {
+    const code = joinCode.trim().toUpperCase();
+    if (!code) {
+      Alert.alert('Enter a code', 'Ask your friend for their squad invite code.');
+      return;
+    }
+    setSquadBusy(true);
+    try {
+      const result = await joinSquad?.(code);
+      if (result) {
+        setSquadDone(true);
+      } else {
+        Alert.alert('Code not found', 'Check the code and try again.');
+      }
+    } catch (e) {
+      Alert.alert('Could not join', 'Please try again.');
+    } finally {
+      setSquadBusy(false);
     }
   };
 
@@ -248,6 +294,81 @@ function OnboardingScreen({ navigation, route }) {
         </View>
       )}
 
+      {/* STEP 5: SQUAD */}
+      {step === 5 && (
+        <View>
+          {squadDone ? (
+            <Card style={styles.squadDoneCard}>
+              <Text style={styles.squadDoneEmoji}>🎉</Text>
+              <Text style={styles.squadDoneTitle}>You're in a squad!</Text>
+              <Text style={styles.squadDoneSub}>Daily challenges and leaderboards await.</Text>
+            </Card>
+          ) : squadMode === null ? (
+            <View>
+              <Card onPress={() => setSquadMode('create')} style={styles.option}>
+                <Text style={styles.optionIcon}>🚀</Text>
+                <View style={styles.optionText}>
+                  <Text style={styles.optionTitle}>Create a squad</Text>
+                  <Text style={styles.optionDesc}>Invite friends, compete daily</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={26} color={colors.border} />
+              </Card>
+              <Card onPress={() => setSquadMode('join')} style={styles.option}>
+                <Text style={styles.optionIcon}>🔑</Text>
+                <View style={styles.optionText}>
+                  <Text style={styles.optionTitle}>Join with a code</Text>
+                  <Text style={styles.optionDesc}>Got an invite from a friend?</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={26} color={colors.border} />
+              </Card>
+            </View>
+          ) : squadMode === 'create' ? (
+            <Card>
+              <Text style={styles.label}>Squad name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Future Citizens"
+                value={squadName}
+                onChangeText={setSquadName}
+                placeholderTextColor={colors.textTertiary}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleCreateSquad}
+              />
+              <Button
+                title={squadBusy ? 'Creating...' : 'Create squad'}
+                onPress={handleCreateSquad}
+                disabled={squadBusy}
+                style={styles.squadAction}
+              />
+              <Button title="Back" variant="ghost" onPress={() => setSquadMode(null)} />
+            </Card>
+          ) : (
+            <Card>
+              <Text style={styles.label}>Invite code</Text>
+              <TextInput
+                style={[styles.input, styles.codeInput]}
+                placeholder="e.g. A30-P6AP"
+                value={joinCode}
+                onChangeText={(t) => setJoinCode(t.toUpperCase())}
+                placeholderTextColor={colors.textTertiary}
+                autoCapitalize="characters"
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleJoinSquad}
+              />
+              <Button
+                title={squadBusy ? 'Joining...' : 'Join squad'}
+                onPress={handleJoinSquad}
+                disabled={squadBusy}
+                style={styles.squadAction}
+              />
+              <Button title="Back" variant="ghost" onPress={() => setSquadMode(null)} />
+            </Card>
+          )}
+        </View>
+      )}
+
       <View style={styles.spacer} />
 
       {/* Actions */}
@@ -260,7 +381,7 @@ function OnboardingScreen({ navigation, route }) {
           style={styles.backButton}
         />
         <Button
-          title={step === 4 ? "Let's do this" : 'Continue'}
+          title={step === 5 ? (squadDone ? "Let's do this" : 'Skip for now') : step === 4 ? 'Continue' : 'Continue'}
           onPress={handleContinue}
           style={styles.continueButton}
         />
@@ -376,6 +497,35 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
   backButton: { flex: 1, marginRight: spacing.sm },
   continueButton: { flex: 2 },
+
+  squadDoneCard: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  squadDoneEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.sm,
+  },
+  squadDoneTitle: {
+    fontSize: typography.title,
+    fontWeight: typography.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  squadDoneSub: {
+    fontSize: typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  squadAction: {
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  codeInput: {
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    fontWeight: '700',
+  },
 });
 
 export default OnboardingScreen;

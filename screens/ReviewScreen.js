@@ -27,6 +27,7 @@ import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
+import ShareScoreCard, { buildShareMessage } from '../components/ShareScoreCard';
 import ProgressBar from '../components/ui/ProgressBar';
 import { colors, gradients, radius, spacing, typography, shadows } from '../theme';
 
@@ -46,7 +47,9 @@ function sanitizeVariant(variantKey, candidate) {
 }
 
 function ReviewScreen({ route, navigation }) {
-  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank, maybeShowInterstitial } = useContext(AppDataContext);
+  const { trackAdEvent, trackAppEvent, getOfferVariant, adRuntime, errorBank, maybeShowInterstitial, squadSync, userProfile } = useContext(AppDataContext);
+  const squadInviteCode = squadSync?.inviteCode || '';
+  const shareUserName = userProfile?.name || '';
   const { score = 0, total = 0, type = 'unknown', weak = [] } = route.params || {};
   const percentage = Math.round((score / total) * 100);
   const weakScoreThreshold = 70;
@@ -308,13 +311,27 @@ function ReviewScreen({ route, navigation }) {
   };
 
   const handleShare = async () => {
+    const message = buildShareMessage({
+      percentage,
+      inviteCode: squadInviteCode,
+      userName: shareUserName,
+    });
     try {
-      await Share.share({
-        message: `I just scored ${percentage}% on the US Civic ${type} test! Challenge me on Civics Coach! 🇺🇸`,
-        url: 'https://civics-coach.app',
-        title: 'Civics Coach Challenge',
-      });
+      const result = await Share.share({ message, title: 'Civics Coach Challenge' });
+      // Web fallback: Share.share may resolve without actually sharing
+      if (result?.action === Share.dismissedAction && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(message);
+        Alert.alert('Copied!', 'Your challenge message is copied - paste it anywhere.');
+      }
+      trackAppEvent?.(APP_EVENT_NAMES.SCORE_SHARED || 'score_shared', { percentage });
     } catch (err) {
+      // Last resort: copy to clipboard
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(message);
+          Alert.alert('Copied!', 'Your challenge message is copied - paste it anywhere.');
+        }
+      } catch {}
       console.error(err);
     }
   };
@@ -581,6 +598,13 @@ function ReviewScreen({ route, navigation }) {
         icon={<MaterialCommunityIcons name="refresh" size={20} color="#fff" />}
         style={styles.actionButton}
       />
+      {/* Shareable challenge card - screenshot-ready, carries the squad invite code */}
+      <ShareScoreCard
+        percentage={percentage}
+        inviteCode={squadInviteCode}
+        userName={shareUserName}
+        style={styles.shareCard}
+      />
       <View style={styles.actionRow}>
         <Button
           title="Back home"
@@ -674,6 +698,7 @@ const styles = StyleSheet.create({
   actionButton: { marginTop: spacing.sm, marginBottom: spacing.sm },
   actionRow: { flexDirection: 'row', marginHorizontal: -4 },
   halfButton: { flex: 1, marginHorizontal: 4 },
+  shareCard: { marginBottom: spacing.md, marginTop: spacing.sm },
 });
 
 export default ReviewScreen;

@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
 import Card from '../components/ui/Card';
+import DailyChallengeCard from '../components/DailyChallengeCard';
 import Button from '../components/ui/Button';
 import { HomeBannerAd } from '../adMobService';
 import { getQuestionBank } from '../quizHelpers';
@@ -183,6 +184,17 @@ function HomeScreen({ navigation }) {
           <Text style={styles.statLabel}>Sessions</Text>
         </Card>
       </View>
+
+      {/* Daily challenge - appointment mechanic */}
+      <DailyChallengeCard
+        style={{ marginBottom: spacing.md }}
+        onPress={() => navigation.navigate('Quiz', {
+          type: testDetails?.testType || 'naturalization128',
+          forceQuestionCount: 10,
+          squadChallenge: true,
+          dailyChallenge: true,
+        })}
+      />
 
       {/* Paused session */}
       {pausedSession && (

@@ -715,6 +715,12 @@ function QuizScreen({ route, navigation }) {
       if (route.params?.squadChallenge) {
         postSquadChallengeScore?.({ score, total: pool.length });
       }
+      // Daily challenge: record completion for today (async, never blocks)
+      if (route.params?.dailyChallenge) {
+        import('../components/DailyChallengeCard').then((m) =>
+          m.markDailyChallengeDone?.()
+        ).catch(() => {});
+      }
       navigation.replace('Review', {
         score,
         total: pool.length,
