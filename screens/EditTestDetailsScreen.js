@@ -121,7 +121,7 @@ function EditTestDetailsScreen({ navigation, testDetails, onSave }) {
         </View>
         <Text style={styles.hint}>Questions like "who is your governor" depend on this.</Text>
         {selectedState !== '' && selectedState !== (testDetails?.state || testDetails?.location || '') && (
-          <Text style={[styles.hint, { color: colors.energy, fontWeight: typography.bold }]}>
+          <Text style={[styles.hint, { color: colors.danger, fontWeight: typography.bold }]}>
             Note: changing your state will change the answers to state-specific questions (governor, senators, capital) in your next quizzes.
           </Text>
         )}

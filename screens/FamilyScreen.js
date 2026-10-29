@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   squadRowActive: { borderColor: colors.primary, borderWidth: 1.5, backgroundColor: colors.primaryLight },
   squadRowName: { fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
   squadRowMeta: { fontSize: typography.caption, color: colors.textSecondary, marginTop: 2 },
-  leaveText: { fontSize: typography.caption, fontWeight: typography.bold, color: colors.energy },
+  leaveText: { fontSize: typography.caption, fontWeight: typography.bold, color: colors.danger },
   createAnotherBtn: { marginTop: spacing.sm },
   boardRowGold: {
     backgroundColor: '#FFFBEB',

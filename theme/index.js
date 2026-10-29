@@ -10,10 +10,10 @@
  */
 
 export const colors = {
-  // Backgrounds
-  background: '#F6F7FB',
+  // Backgrounds - warm paper tones, softer than blue-white for long sessions
+  background: '#F9F6F1',
   surface: '#FFFFFF',
-  surfaceAlt: '#EEF1F7',
+  surfaceAlt: '#F1ECE4',
 
   // Text
   text: '#101828',
@@ -25,12 +25,10 @@ export const colors = {
   // Brand - navy / gold / warm red
   primary: '#1B2A4A',
   primaryDark: '#121E35',
-  primaryLight: '#E8ECF4',
+  primaryLight: '#EDE8DE',
   accent: '#F5B301',
   accentDark: '#D99A00',
   accentLight: '#FEF6E0',
-  energy: '#E63946',
-  energyLight: '#FDECEC',
 
   // Status
   success: '#12B76A',
@@ -43,8 +41,8 @@ export const colors = {
   infoLight: '#EAF3FE',
 
   // Borders & dividers
-  border: '#E4E7EC',
-  borderLight: '#F2F4F7',
+  border: '#E5DDD0',
+  borderLight: '#F2EEE6',
 
   // Gamification
   gold: '#F5B301',
@@ -58,7 +56,7 @@ export const gradients = {
   hero: ['#1B2A4A', '#1B2A4A'],
   gold: ['#F5B301', '#F79009'],
   success: ['#12B76A', '#0E9384'],
-  energy: ['#E63946', '#F79009'],
+  danger: ['#E63946', '#B42318'],
   dark: ['#101828', '#1D2939'],
 };
 
