@@ -802,7 +802,7 @@ function QuizScreen({ route, navigation }) {
         imageLoadingRef.current = false;
         handleImageErrorRef.current?.();
       }
-    }, 4000);
+    }, 10000);
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.id]);
 
