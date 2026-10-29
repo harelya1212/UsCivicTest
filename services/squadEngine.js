@@ -386,11 +386,15 @@ function buildSeasonLeaderboard(members = []) {
     .map((member) => {
       const weighted = getSeasonWeightedScore(member);
       const intent = getIntentSegmentAssignment(member, weighted);
+      // Leaderboard score is raw 1:1 challenge points (1 correct answer = 1 pt).
+      // Simple and transparent; the weighted season fields stay available below
+      // for analytics but are no longer the displayed score.
+      const challengePoints = Math.max(0, Math.round(Number(member.points || 0)));
       return {
         id: String(member.id),
         name: String(member.name || member.id || 'Member').trim() || 'Member',
         role: String(member.role || 'child').trim() || 'child',
-        score: weighted.weightedScore,
+        score: challengePoints,
         rawScore: weighted.rawScore,
         weightedScore: weighted.weightedScore,
         fairPlayMultiplier: weighted.fairPlay.multiplier,
