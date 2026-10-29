@@ -343,7 +343,11 @@ function FamilyScreen({ navigation }) {
                 {count} member{count === 1 ? '' : 's'}{isActive ? ' - Active' : ''}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleLeave(s.teamId, s.teamName)} style={{ padding: 8 }}>
+            <TouchableOpacity
+              onPress={() => handleLeave(s.teamId, s.teamName)}
+              style={{ paddingVertical: 12, paddingHorizontal: 16 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Text style={styles.leaveText}>Leave</Text>
             </TouchableOpacity>
           </Card>

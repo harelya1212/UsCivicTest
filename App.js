@@ -2683,6 +2683,33 @@ export default function App() {
     return <BetaGate onUnlock={() => setBetaGatePassed(true)} />;
   }
 
+  // Delete Account & Data: wipe all local storage and reset state to defaults.
+  // (Beta gate key is preserved so the user isn't re-gated.)
+  const resetAllData = async () => {
+    const keysToWipe = [
+      PAUSED_SESSION_STORAGE_KEY,
+      AD_RUNTIME_STORAGE_KEY,
+      MASTERY_MAP_STORAGE_KEY,
+      USER_PROFILE_STORAGE_KEY,
+      TEST_DETAILS_STORAGE_KEY,
+      SQUAD_SYNC_STORAGE_KEY,
+      SQUAD_LIST_STORAGE_KEY,
+      SQUAD_MEMBER_ID_KEY,
+      'civic.dailyChallenge.v1',
+      'civic.quizStreak.v1',
+    ];
+    try {
+      await AsyncStorage.multiRemove(keysToWipe);
+    } catch (e) {}
+    setPausedSession(null);
+    setMasteryMap(null);
+    setUserProfile(null);
+    setTestDetails(null);
+    setSquadSync(null);
+    setSquadList([]);
+    setErrorBank([]);
+  };
+
   return (
     <HapticProvider>
       <AppDataContext.Provider
@@ -2711,6 +2738,7 @@ export default function App() {
           claimComebackReward,
           masteryMap,
           recordMasterySession,
+          resetAllData,
           resetMasteryMap,
           userProfile,
           updateUserProfile,

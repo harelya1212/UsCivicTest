@@ -442,7 +442,7 @@ function ReviewScreen({ route, navigation }) {
       ? 'Great effort! Keep practicing!'
       : "Don't give up! Review your weak areas and try again!";
 
-  const weakTopics = Array.isArray(weak) ? weak : [];
+  const weakTopics = (Array.isArray(weak) ? weak : []).filter((t) => Number(t?.ratio || 0) > 0);
   const errorItems = Array.isArray(errorBank) ? errorBank : [];
   const hasWeakSpots = weakTopics.length > 0 || errorItems.length > 0;
 

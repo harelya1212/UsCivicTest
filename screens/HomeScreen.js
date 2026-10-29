@@ -147,7 +147,7 @@ function HomeScreen({ navigation }) {
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               <MaterialCommunityIcons name="alert-circle-outline" size={20} color={colors.warning} style={{ marginRight: spacing.sm, marginTop: 2 }} />
               <Text style={{ flex: 1, fontSize: typography.caption, color: colors.text, lineHeight: 20 }}>
-                Heads up: governor and senator answers were last verified on {freshness.lastVerified} ({freshness.ageDays} days ago). Officeholders can change after elections - please double-check current names at uscis.gov before your test.
+                Heads up: governor and senator answers were last verified on {freshness.lastVerified} - {freshness.ageDays} days ago. Officeholders can change after elections - please double-check current names at uscis.gov before your test.
               </Text>
             </View>
           </Card>
@@ -163,7 +163,7 @@ function HomeScreen({ navigation }) {
               <Text style={styles.heroBadgeText}>{testLabel}</Text>
             </View>
             {daysUntilTest !== null && (
-              <Text style={styles.heroDays}>{daysUntilTest}d left</Text>
+              <Text style={styles.heroDays}>{daysUntilTest <= 0 ? "Test soon!" : daysUntilTest === 1 ? "1 day left" : `${daysUntilTest} days left`}</Text>
             )}
           </View>
           <Text style={styles.heroTitle}>Start Practice</Text>
