@@ -26,6 +26,7 @@ import {
 } from '../adMobService';
 import { playAdStartFeedback, playHighScoreFeedback } from '../utils/audioHaptics';
 import Screen from '../components/ui/Screen';
+import BannerAd from '../components/ui/BannerAd';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
@@ -577,6 +578,7 @@ function ReviewScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+          <BannerAd />
     </Screen>
   );
 }

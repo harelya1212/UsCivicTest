@@ -32,7 +32,7 @@ export const CIVICS_128_MNEMONICS = {
   'CIVICS_019': 'Congress has two houses: Senate (small, 100) and House (big, 435).',
   'CIVICS_020': 'Congress writes laws - that is its superpower, pen in hand.',
   'CIVICS_021': '100 senators: 50 states times 2 senators each - simple multiplication.',
-  'CIVICS_022': 'Senators: 6 years. Senate is UPPER - bigger number!',
+  'CIVICS_022': '6 YEARS! 3 classes x 2 years = 6! A third elected every 2 years!',
   'CIVICS_023': "2 senators per state! YOUR 2 - 2x50=100 total!",
   'CIVICS_024': '435 House members - picture a huge classroom with 435 desks.',
   'CIVICS_025': 'House: 2 years. House is LOWER - smaller number! 6 > 2.',

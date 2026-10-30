@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
+import BannerAd from '../components/ui/BannerAd';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import HomeButton from '../components/ui/HomeButton';
@@ -297,6 +298,7 @@ function ProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+          <BannerAd />
     </Screen>
   );
 }

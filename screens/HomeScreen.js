@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppDataContext } from '../context/AppDataContext';
 import Screen from '../components/ui/Screen';
+import BannerAd from '../components/ui/BannerAd';
 import Card from '../components/ui/Card';
 import DailyChallengeCard from '../components/DailyChallengeCard';
 import { getQuizStreak } from '../utils/streak';
@@ -352,6 +353,7 @@ function HomeScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+      <BannerAd />
     </Screen>
   );
 }

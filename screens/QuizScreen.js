@@ -19,6 +19,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from '../styles';
 import { AppDataContext } from '../context/AppDataContext';
 import ProgressBar from '../components/ui/ProgressBar';
+import BannerAd from '../components/ui/BannerAd';
 import { colors, radius, spacing, typography, shadows } from '../theme';
 import {
   getQuestionTopic,
@@ -1053,6 +1054,8 @@ function QuizScreen({ route, navigation }) {
           </View>
         )}
       </View>
+
+      <BannerAd />
 
       {/* Fullscreen image: tap the memory-hook picture to enlarge, tap again to close */}
       <Modal
