@@ -520,6 +520,7 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   // July 4 / Independence Day: FIREWORKS - the image IS the celebration!
   'when do we celebrate independence day': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fireworks.jpg?width=480',
   'what is independence day': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fireworks.jpg?width=480',
+  'when was the declaration of independence adopted': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fireworks.jpg?width=480',
   'the colonists came to america': 'https://commons.wikimedia.org/wiki/Special:FilePath/Statue_of_Liberty_7.jpg?width=480',
   'what war did the americans fight to win independence': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_Thirteen_Colonies_1775.svg?width=480',
   'name one reason why the americans declared independence': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boston_Tea_Party_1846.jpg?width=480',
