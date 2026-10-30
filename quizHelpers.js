@@ -452,6 +452,13 @@ const STATE_CAPITOL_IMAGES = {
 export function getStateSpecificImage(question, answer, userState) {
   if (!userState || !STATE_CAPITOL_IMAGES[userState]) return null;
   const q = (question + ' ' + answer).toLowerCase();
+
+  // Check memorable overrides first (curated for memory triggers)
+  for (const [key, imgUrl] of Object.entries(MEMORABLE_IMAGE_OVERRIDES)) {
+    if (q.includes(key.toLowerCase())) {
+      return imgUrl;
+    }
+  }
   const stateLower = String(userState).toLowerCase();
   // Never for the U.S. capital question - only for the user's own state.
   if (q.includes('capital of the united states') || q.includes('capital of the u.s.')) return null;
@@ -463,6 +470,16 @@ export function getStateSpecificImage(question, answer, userState) {
   }
   return null;
 }
+
+// MEMORABLE IMAGES: curated overrides where the image encodes the ANSWER
+// Principle: for ADHD users, the image must trigger memory of the correct answer.
+// Simple, unexpected, smile-inducing. Not a generic topic illustration.
+const MEMORABLE_IMAGE_OVERRIDES = {
+  // Maine borders Canada: MAP showing Maine on the border, not the US flag
+  'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
+  // Two longest rivers: map is more memorable than satellite photo
+  // (Missouri/Mississippi - the map shows WHY they're long)
+};
 
 export function getVisualImage(question, answer, userState) {
   const q = (question + ' ' + answer).toLowerCase();
