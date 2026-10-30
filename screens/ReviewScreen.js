@@ -516,43 +516,6 @@ function ReviewScreen({ route, navigation }) {
         </>
       )}
 
-      {/* Weak-score upsell */}
-      {isWeakScoreSession && !showWeakScoreUpsell && (
-        <Card style={styles.infoCard}>
-          <View style={styles.cardHeaderRow}>
-            <MaterialCommunityIcons name="magnify" size={20} color={colors.info} />
-            <Text style={styles.cardTitle}>Checking your recovery path</Text>
-          </View>
-          <Text style={styles.cardBody}>
-            You had a tough session, so we're lining up a targeted recovery offer instead of a generic upsell.
-          </Text>
-        </Card>
-      )}
-
-      {isWeakScoreSession && showWeakScoreUpsell && (
-        <Card style={styles.upsellCard}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>Recovery round ready</Text>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>Weak-score only</Text>
-            </View>
-          </View>
-          <Text style={styles.cardBody}>{reviewBonusBody}</Text>
-          <Button
-            title={reviewBonusLabel}
-            onPress={watchAdForBonusQuestions}
-            icon={<MaterialCommunityIcons name="play-circle" size={20} color="#fff" />}
-            style={styles.upsellButton}
-          />
-          <Button
-            title={reviewWeakLabel}
-            onPress={watchAdForWeakAreaRescue}
-            variant="secondary"
-            icon={<MaterialCommunityIcons name="target" size={20} color={colors.primary} />}
-            style={styles.upsellButton}
-          />
-        </Card>
-      )}
 
       {/* Actions */}
       {mistakeIds.length > 0 && (
