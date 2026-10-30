@@ -499,6 +499,10 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   // (fallback to portrait if $1 image fails)
 
   // ===== CONCEPTS: image IS the answer =====
+  // First Amendment speech: SPEECH BUBBLE - simple, iconic, IS the answer
+  'what is one right or freedom from the first amendment': 'https://commons.wikimedia.org/wiki/Special:FilePath/Speech_balloon.svg?width=480',
+  // Two parts of Congress: the CAPITOL houses both Senate + House - one building, two parts!
+  'what are the two parts of the u.s. congress': 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480',
   // Maine borders Canada: MAP, not flag
   'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
   'what state borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
