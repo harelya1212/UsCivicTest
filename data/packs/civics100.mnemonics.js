@@ -77,7 +77,7 @@ export const CIVICS_100_MNEMONICS = {
   'CIVICS100_067': "MADISON wrote the Federalist Papers - he fathered the Constitution too.",
   'CIVICS100_068': "Franklin the DIPLOMAT - kite, key, and deals with France.",
   'CIVICS100_069': "WASHINGTON fathered the country - first in war, first in peace.",
-  'CIVICS100_070': "First President? WASHINGTON - unanimous choice, first of all.",
+  'CIVICS100_070': "First President? WASHINGTON - the capital Washington D.C. is named after him!",
   'CIVICS100_071': "LOUISIANA from France in 1803 - Napoleon's bargain doubled America.",
   'CIVICS100_072': "The War of 1812 - fought in the 1800s, named for its year.",
   'CIVICS100_073': "North versus South - the CIVIL War divided the nation.",

@@ -494,7 +494,7 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   // ===== NAMES: distinctive, not formal portraits =====
   // Washington: CROSSING THE DELAWARE - dramatic, memorable, not a stiff portrait
   'who is the "father of our country"': 'https://commons.wikimedia.org/wiki/Special:FilePath/Washington_Crossing_the_Delaware_by_Emanuel_Leutze,_MMA-NYC,_1851.jpg?width=480',
-  'who was the first president': 'https://commons.wikimedia.org/wiki/Special:FilePath/Washington_Crossing_the_Delaware_by_Emanuel_Leutze,_MMA-NYC,_1851.jpg?width=480',
+  'who was the first president': 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480',
   // Washington: $1 bill - everyone knows it, makes you smile
   // (fallback to portrait if $1 image fails)
 
