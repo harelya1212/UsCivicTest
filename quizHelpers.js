@@ -485,13 +485,16 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   'how many justices are on the supreme court': 'https://commons.wikimedia.org/wiki/Special:FilePath/Supreme_Court_of_the_United_States_-_Roberts_Court_2017.jpg?width=480',
   'how many seats are on the supreme court': 'https://commons.wikimedia.org/wiki/Special:FilePath/Supreme_Court_of_the_United_States_-_Roberts_Court_2017.jpg?width=480',
   // July 4, 1776: FIREWORKS - everyone smiles, everyone remembers July 4th
-  'when was the declaration of independence adopted': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fireworks_over_Washington_Monument.jpg?width=480',
+  'when was the declaration of independence adopted': 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_Declaration_of_Independence.jpg?width=480',
   // 1787 Constitution: the actual document dated 1787
   'when was the constitution written': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
   // 18 to vote: young voter
-  'how old do citizens have to be to vote': 'https://commons.wikimedia.org/wiki/Special:FilePath/Voting_booth.jpg?width=480',
+  'how old do citizens have to be to vote': 'https://commons.wikimedia.org/wiki/Special:FilePath/Wooden_ballot_box_-_Smithsonian.jpg?width=480',
 
   // ===== NAMES: distinctive, not formal portraits =====
+  // Washington: CROSSING THE DELAWARE - dramatic, memorable, not a stiff portrait
+  'who is the "father of our country"': 'https://commons.wikimedia.org/wiki/Special:FilePath/Washington_Crossing_the_Delaware_by_Emanuel_Leutze,_MMA-NYC,_1851.jpg?width=480',
+  'who was the first president': 'https://commons.wikimedia.org/wiki/Special:FilePath/Washington_Crossing_the_Delaware_by_Emanuel_Leutze,_MMA-NYC,_1851.jpg?width=480',
   // Washington: $1 bill - everyone knows it, makes you smile
   // (fallback to portrait if $1 image fails)
 
