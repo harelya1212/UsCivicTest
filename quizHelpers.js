@@ -499,6 +499,9 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   // (fallback to portrait if $1 image fails)
 
   // ===== CONCEPTS: image IS the answer =====
+  // Capitalism: WALL STREET - IS capitalism visually!
+  'capitalism': 'https://commons.wikimedia.org/wiki/Special:FilePath/NYSE_facade.jpg?width=480',
+  'what is the economic system': 'https://commons.wikimedia.org/wiki/Special:FilePath/NYSE_facade.jpg?width=480',
   // First Amendment speech: SPEECH BUBBLE - simple, iconic, IS the answer
   'what is one right or freedom from the first amendment': 'https://commons.wikimedia.org/wiki/Special:FilePath/Speech_balloon.svg?width=480',
   // Two parts of Congress: the CAPITOL houses both Senate + House - one building, two parts!

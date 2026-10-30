@@ -8,6 +8,7 @@ export const DYNAMIC_CIVICS_DATA = {
     vicePresident: 'J.D. Vance',
     speakerOfHouse: 'Mike Johnson',
     chiefJustice: 'John Roberts',
+    party: 'Republican',
   },
   // Optional per-state live officeholders (governor/senators) for "your state" questions.
   // Example:
@@ -206,6 +207,10 @@ export function getDynamicCivicsAnswer(question, fallbackAnswer, context = {}) {
 
   if (q.includes('who is the chief justice of the united states now')) {
     return DYNAMIC_CIVICS_DATA.federal.chiefJustice;
+  }
+
+  if (q.includes('political party of the president')) {
+    return DYNAMIC_CIVICS_DATA.federal.party;
   }
 
   if (q.includes('how many justices are on the supreme court')) {
