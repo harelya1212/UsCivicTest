@@ -516,7 +516,48 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   // Maine borders Canada: MAP, not flag
   'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
   'what state borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
+  // ===== HISTORY: images that encode the answer =====
+  'the colonists came to america': 'https://commons.wikimedia.org/wiki/Special:FilePath/Statue_of_Liberty_7.jpg?width=480',
+  'what war did the americans fight to win independence': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_Thirteen_Colonies_1775.svg?width=480',
+  'name one reason why the americans declared independence': 'https://commons.wikimedia.org/wiki/Special:FilePath/Boston_Tea_Party_1846.jpg?width=480',
+  'battle of) bunker hill': 'https://commons.wikimedia.org/wiki/Special:FilePath/Bunker_Hill_Monument_2010.jpg?width=480',
+  'the federalist papers supported': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
+  'why were the federalist papers important': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
+  'what territory did the united states buy from france': 'https://commons.wikimedia.org/wiki/Special:FilePath/Louisiana_Purchase_map.jpg?width=480',
+  'fort sumter': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fort_Sumter_aerial.jpg?width=480',
+  'abraham lincoln is famous': 'https://commons.wikimedia.org/wiki/Special:FilePath/Emancipation_Proclamation.jpg?width=480',
+  'what did the emancipation proclamation do': 'https://commons.wikimedia.org/wiki/Special:FilePath/Emancipation_Proclamation.jpg?width=480',
+  'what u.s. war ended slavery': 'https://commons.wikimedia.org/wiki/Special:FilePath/Abraham_Lincoln_O-77_matte_collodion_print.jpg?width=480',
+  'susan b. anthony': 'https://commons.wikimedia.org/wiki/Special:FilePath/Susan_B_Anthony_by_Mathew_Brady.jpg?width=480',
+  'name one war fought by the united states in the 1900s': 'https://commons.wikimedia.org/wiki/Special:FilePath/American_doughboys_WWI.jpg?width=480',
+  'why did the united states enter world war i': 'https://commons.wikimedia.org/wiki/Special:FilePath/Lusitania_sinking_1915.jpg?width=480',
+  'when did all women get the right to vote': 'https://commons.wikimedia.org/wiki/Special:FilePath/Woman_suffrage_parade_1913.jpg?width=480',
+  'what was the great depression': 'https://commons.wikimedia.org/wiki/Special:FilePath/Bread_line_1932.jpg?width=480',
+  'when did the great depression start': 'https://commons.wikimedia.org/wiki/Special:FilePath/Wall_Street_crash_1929.jpg?width=480',
+  'who was president during the great depression': 'https://commons.wikimedia.org/wiki/Special:FilePath/Franklin_D_Roosevelt_portrait.jpg?width=480',
+  'why did the united states enter world war ii': 'https://commons.wikimedia.org/wiki/Special:FilePath/Pearl_Harbor_aerial_view.jpg?width=480',
+  'dwight eisenhower is famous': 'https://commons.wikimedia.org/wiki/Special:FilePath/Dwight_D_Eisenhower_official_portrait.jpg?width=480',
+  'main rival during the cold war': 'https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_Soviet_Union.svg?width=480',
+  'during the cold war, what was one main concern': 'https://commons.wikimedia.org/wiki/Special:FilePath/Berlin_Wall_1989.jpg?width=480',
+  'why did the united states enter the korean war': 'https://commons.wikimedia.org/wiki/Special:FilePath/Korean_War_Veterans_Memorial.jpg?width=480',
+  'why did the united states enter the vietnam war': 'https://commons.wikimedia.org/wiki/Special:FilePath/Vietnam_Veterans_Memorial.jpg?width=480',
+  'what did the civil rights movement do': 'https://commons.wikimedia.org/wiki/Special:FilePath/Civil_rights_march_Washington_1963.jpg?width=480',
+  'martin luther king': 'https://commons.wikimedia.org/wiki/Special:FilePath/Martin_Luther_King,_Jr..jpg?width=480',
+  'why did the united states enter the persian gulf war': 'https://commons.wikimedia.org/wiki/Special:FilePath/Operation_Desert_Storm.jpg?width=480',
+  'september 11, 2001': 'https://commons.wikimedia.org/wiki/Special:FilePath/National_September_11_Memorial.jpg?width=480',
+  'name one example of an american innovation': 'https://commons.wikimedia.org/wiki/Special:FilePath/Edison_light_bulb.jpg?width=480',
+
 };
+
+export function getMemorableOverride(question, answer) {
+  const q = (question + ' ' + answer).toLowerCase();
+  for (const [key, imgUrl] of Object.entries(MEMORABLE_IMAGE_OVERRIDES)) {
+    if (q.includes(key.toLowerCase())) {
+      return imgUrl;
+    }
+  }
+  return null;
+}
 
 export function getVisualImage(question, answer, userState) {
   const q = (question + ' ' + answer).toLowerCase();

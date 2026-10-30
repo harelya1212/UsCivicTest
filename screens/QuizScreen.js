@@ -31,6 +31,7 @@ import {
   getAdaptiveDifficulty,
   calculatePerformance,
   getVisualImage,
+  getMemorableOverride,
   getQuestionBank,
   isAnswerCorrect as checkAnswerCorrect,
   shuffleArray,
@@ -774,7 +775,8 @@ function QuizScreen({ route, navigation }) {
   ).current;
 
   const stateImageUrl = getStateSpecificImage(question.question, question.answer, testDetails?.state);
-  const visualImageUrl = stateImageUrl || question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
+  const memorableOverride = getMemorableOverride(question.question, question.answer);
+  const visualImageUrl = memorableOverride || stateImageUrl || question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
   const fallbackImageUrl = question.imageUrl || getVisualImage(question.question, question.answer, testDetails?.state);
   const imageSrc = imageFallbackUsed ? fallbackImageUrl : visualImageUrl;
   const handleImageErrorRef = useRef(null);
