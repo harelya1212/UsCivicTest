@@ -95,7 +95,7 @@ export const CIVICS_128_MNEMONICS = {
   'CIVICS_082': '1787 wrote the Constitution - the "87" rhymes with "heaven" for the supreme law.',
   'CIVICS_083': "85 essays - Madisons 85-piece SALES PITCH for the Constitution!",
   'CIVICS_084': "Papers that PERSUADED - the ultimate sales pitch!",
-  'CIVICS_085': "Franklins FREE libraries - free books for everyone!",
+  'CIVICS_085': "Franklin = FIRST Postmaster! He delivered the MAIL!",
   'CIVICS_086': 'Washington: Father of Our Country - the first President fathered the nation.',
   'CIVICS_087': 'Jefferson WROTE the Declaration - the document IS his legacy!',
   'CIVICS_088': 'Madison = Father of the Constitution - he FATHERED the document!',
