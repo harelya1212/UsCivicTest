@@ -503,6 +503,8 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   'what is one right or freedom from the first amendment': 'https://commons.wikimedia.org/wiki/Special:FilePath/Speech_balloon.svg?width=480',
   // Two parts of Congress: the CAPITOL houses both Senate + House - one building, two parts!
   'what are the two parts of the u.s. congress': 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480',
+  // Two major parties: DONKEY - smile! Triggers "Democrats (donkey) and Republicans (elephant)!"
+  'what are the two major political parties': 'https://commons.wikimedia.org/wiki/Special:FilePath/Donkey_1.jpg?width=480',
   // Maine borders Canada: MAP, not flag
   'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
   'what state borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
