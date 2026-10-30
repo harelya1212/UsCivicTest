@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography } from '../../constants/theme';
+import { colors, typography } from '../../theme';
 
 /**
  * BannerAd - Placeholder banner ad at bottom of every screen.
