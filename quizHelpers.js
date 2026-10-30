@@ -505,6 +505,11 @@ const MEMORABLE_IMAGE_OVERRIDES = {
   'what are the two parts of the u.s. congress': 'https://commons.wikimedia.org/wiki/Special:FilePath/US_Capitol_Building_at_night_Jan_2006.jpg?width=480',
   // Two major parties: DONKEY - smile! Triggers "Democrats (donkey) and Republicans (elephant)!"
   'what are the two major political parties': 'https://commons.wikimedia.org/wiki/Special:FilePath/Donkey_1.jpg?width=480',
+  // Madison = "Father of the Constitution" - show the Constitution HE fathered!
+  'james madison is famous for many things': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
+  // Jefferson wrote the Declaration - show what HE wrote!
+  'thomas jefferson is famous for many things': 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_Declaration_of_Independence.jpg?width=480',
+  'who wrote the declaration of independence': 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_Declaration_of_Independence.jpg?width=480',
   // Maine borders Canada: MAP, not flag
   'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
   'what state borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
