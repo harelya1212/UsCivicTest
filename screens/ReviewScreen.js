@@ -554,45 +554,6 @@ function ReviewScreen({ route, navigation }) {
         </Card>
       )}
 
-      {/* Recovery path */}
-      {(isWeakScoreSession || recoveryCampaign.completedSessions > 0) && (
-        <Card style={styles.recoveryCard}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>3-session recovery path</Text>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{recoveryCampaign.completedSessions}/3 done</Text>
-            </View>
-          </View>
-          <Text style={styles.cardBody}>
-            Session 1 is ad-light. Sessions 2-3 use rewarded unlock to keep recovery high-intent.
-          </Text>
-          <Text style={styles.recoveryTopic}>
-            Target topic: {weakestTopic || recoveryCampaign.lastTopic || 'detecting...'}
-          </Text>
-          <View style={styles.recoverySteps}>
-            {[1, 2, 3].map((step) => {
-              const done = Boolean(recoveryCampaign.stepTimestamps?.[step]);
-              return (
-                <View key={step} style={styles.recoveryStep}>
-                  <View style={[styles.recoveryDot, done && styles.recoveryDotDone]}>
-                    {done && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
-                  </View>
-                  <Text style={styles.recoveryStepText}>
-                    Step {step}: {done ? formatRecoveryTs(recoveryCampaign.stepTimestamps[step]) : 'Pending'}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-          <Button
-            title={isRecoveryLoading ? 'Loading...' : recoveryStepLabel}
-            onPress={startRecoveryCampaignStep}
-            disabled={isRecoveryLoading}
-            icon={<MaterialCommunityIcons name={recoveryComplete ? 'check-circle' : 'rocket-launch'} size={20} color="#fff" />}
-          />
-        </Card>
-      )}
-
       {/* Actions */}
       {mistakeIds.length > 0 && (
         <Button
