@@ -208,6 +208,10 @@ export function getDynamicCivicsAnswer(question, fallbackAnswer, context = {}) {
     return DYNAMIC_CIVICS_DATA.federal.chiefJustice;
   }
 
+  if (q.includes('how many justices are on the supreme court')) {
+    return 'nine (9)';
+  }
+
   if (q.includes('what is the capital of your state')) {
     return STATE_CAPITALS[selectedState] || fallbackAnswer;
   }

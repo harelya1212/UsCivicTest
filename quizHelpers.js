@@ -277,6 +277,21 @@ export function generateWrongAnswers(question, correctAnswer, alternateAnswers =
  * Includes difficulty progression for distractors
  */
 export function generateQuizQuestion(questionData, difficulty = 'easy', context = {}) {
+  // Rephrase "name two / what are two" questions for single-select format
+  let displayQuestion = questionData.question || '';
+  const twoPattern = /^(what are (the )?two|name two)/i;
+  if (twoPattern.test(displayQuestion)) {
+    displayQuestion = displayQuestion.replace(twoPattern, (m) => {
+      if (/^name two/i.test(m)) return 'Which one of these is a correct answer to: name two';
+      return 'Which one of these is a correct answer to: ' + m.toLowerCase();
+    });
+    // Clean up: "Which one of these is a correct answer to: what are the two parts..."
+    // -> better as "Which of these is one of the two parts..."
+    displayQuestion = displayQuestion
+      .replace('Which one of these is a correct answer to: what are the two', 'Which of these is one of the two')
+      .replace('Which one of these is a correct answer to: what are two', 'Which of these is one of the two')
+      .replace('Which one of these is a correct answer to: name two', 'Name one of these: name two');
+  }
   const baseCorrectAnswer = questionData.correctAnswer || questionData.answer || '';
   const resolvedCorrectAnswer = getDynamicCivicsAnswer(
     questionData.question,
@@ -360,6 +375,8 @@ export function generateQuizQuestion(questionData, difficulty = 'easy', context 
   
   return {
     ...questionData,
+    question: displayQuestion,
+    displayQuestion,
     options: shuffledOptions,
     answer: resolvedCorrectAnswer,
     correctAnswer: resolvedCorrectAnswer,

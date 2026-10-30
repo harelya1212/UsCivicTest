@@ -1143,7 +1143,7 @@ const quizStyles = StyleSheet.create({
   zoomHintText: { fontSize: typography.caption, color: colors.textSecondary, marginLeft: 6 },
   imageLoadingText: { textAlign: 'center', fontSize: typography.caption, color: colors.textSecondary, marginTop: 6 },
   feedbackGood: { backgroundColor: colors.successLight, borderColor: colors.success },
-  feedbackBad: { backgroundColor: colors.infoLight, borderColor: colors.info },
+  feedbackBad: { backgroundColor: '#FDECEC', borderColor: colors.danger },
   feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   feedbackEmoji: { fontSize: 28, marginRight: spacing.sm },
   feedbackMessage: { flex: 1, fontSize: typography.body, fontWeight: typography.bold, color: colors.text },
