@@ -475,10 +475,30 @@ export function getStateSpecificImage(question, answer, userState) {
 // Principle: for ADHD users, the image must trigger memory of the correct answer.
 // Simple, unexpected, smile-inducing. Not a generic topic illustration.
 const MEMORABLE_IMAGE_OVERRIDES = {
-  // Maine borders Canada: MAP showing Maine on the border, not the US flag
+  // ===== NUMBERS: image should help remember the NUMBER =====
+  // 27 amendments: Bill of Rights (10) + 17 more = 27. Show the document.
+  'how many amendments does': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
+  // 100 senators: Senate chamber - imagine 100 desks
+  // 435 House: packed chamber - "a big crowd" (memory hook)
+  'how many voting members are in the house': 'https://commons.wikimedia.org/wiki/Special:FilePath/United_States_House_of_Representatives_chamber.jpg?width=480',
+  // 9 justices: COUNT THEM in the group photo!
+  'how many justices are on the supreme court': 'https://commons.wikimedia.org/wiki/Special:FilePath/Supreme_Court_of_the_United_States_-_Roberts_Court_2017.jpg?width=480',
+  'how many seats are on the supreme court': 'https://commons.wikimedia.org/wiki/Special:FilePath/Supreme_Court_of_the_United_States_-_Roberts_Court_2017.jpg?width=480',
+  // July 4, 1776: FIREWORKS - everyone smiles, everyone remembers July 4th
+  'when was the declaration of independence adopted': 'https://commons.wikimedia.org/wiki/Special:FilePath/Fireworks_over_Washington_Monument.jpg?width=480',
+  // 1787 Constitution: the actual document dated 1787
+  'when was the constitution written': 'https://commons.wikimedia.org/wiki/Special:FilePath/Constitution_of_the_United_States,_page_1.jpg?width=480',
+  // 18 to vote: young voter
+  'how old do citizens have to be to vote': 'https://commons.wikimedia.org/wiki/Special:FilePath/Voting_booth.jpg?width=480',
+
+  // ===== NAMES: distinctive, not formal portraits =====
+  // Washington: $1 bill - everyone knows it, makes you smile
+  // (fallback to portrait if $1 image fails)
+
+  // ===== CONCEPTS: image IS the answer =====
+  // Maine borders Canada: MAP, not flag
   'name one state that borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
-  // Two longest rivers: map is more memorable than satellite photo
-  // (Missouri/Mississippi - the map shows WHY they're long)
+  'what state borders canada': 'https://commons.wikimedia.org/wiki/Special:FilePath/Map_of_USA_highlighting_Maine.png?width=480',
 };
 
 export function getVisualImage(question, answer, userState) {
